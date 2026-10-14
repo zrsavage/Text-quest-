@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0f1218">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Hollowmere: Bloodline</title>
+<style>
+:root{--bg:#0f1218;--panel:#1a1f2a;--panel2:#232a38;--line:#2d3649;--tx:#e8ecf3;--mut:#8b95a7;--acc:#f0b94a;--good:#5fd38d;--bad:#ff6b6b;--blue:#4aa3ff;--purple:#c077ff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;touch-action:manipulation}
+body{-webkit-user-select:none;user-select:none}
+input,textarea{-webkit-user-select:text;user-select:text}
+#app{max-width:640px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column}
+#top{position:sticky;top:0;z-index:5;background:#121620;border-bottom:1px solid var(--line);padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top))}
+#top .row{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--mut)}
+#top b{color:var(--tx)}
+#view{flex:1;padding:12px 14px 96px}
+#nav{position:fixed;bottom:0;left:0;right:0;max-width:640px;margin:0 auto;display:flex;background:#121620;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:6}
+#nav button{flex:1;background:none;border:0;color:var(--mut);padding:10px 2px 8px;font-size:11px;position:relative;min-height:54px}
+#nav button span{display:block;font-size:20px;line-height:1.1}
+#nav button.on{color:var(--acc)}
+#nav .dot{position:absolute;top:6px;right:22%;background:var(--bad);color:#fff;border-radius:9px;font-size:10px;padding:0 5px}
+h1{font-size:22px;margin:4px 0 2px}h2{font-size:17px;margin:16px 0 6px;color:var(--acc)}h3{font-size:15px;margin:10px 0 4px}
+p{margin:6px 0}.mut{color:var(--mut)}.sm{font-size:13px}.c{text-align:center}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{display:block;width:100%;min-height:48px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--tx);font-size:15px;font-weight:600;text-align:left;cursor:pointer}
+.btn small{display:block;font-weight:400;color:var(--mut);font-size:12px}
+.btn:active{filter:brightness(1.3)}
+.btn[disabled]{opacity:.4}
+.btn.pri{background:#3a2f12;border-color:var(--acc);color:var(--acc)}
+.btn.bad{background:#3a1717;border-color:var(--bad);color:var(--bad)}
+.btn.good{background:#143324;border-color:var(--good);color:var(--good)}
+.btn.c{text-align:center}
+.bar{height:12px;background:#0b0e14;border-radius:6px;overflow:hidden;border:1px solid var(--line);margin:3px 0}
+.bar i{display:block;height:100%}
+.hp i{background:linear-gradient(90deg,#c0392b,#ff6b6b)}.ehp i{background:linear-gradient(90deg,#8e2b2b,#e65a5a)}
+.fc i{background:linear-gradient(90deg,#2f6fb5,#4aa3ff)}.xp i{background:linear-gradient(90deg,#8a6d1e,#f0b94a)}.sta i{background:linear-gradient(90deg,#2d8a58,#5fd38d)}
+.log{background:#0b0e14;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:14px;max-height:200px;overflow:auto}
+.log div{margin:2px 0;color:#c9d1de}.log div.e{color:#ff9a9a}.log div.g{color:var(--good)}.log div.y{color:var(--acc)}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:9px;border:1px solid var(--line);color:var(--mut);margin-left:4px}
+.row2{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px;border:1px solid var(--line);background:var(--panel);border-radius:10px;margin:6px 0;cursor:pointer;min-height:48px}
+.item .n{font-weight:600;font-size:14px}.item .s{font-size:12px;color:var(--mut)}
+.mod{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.mod>div{background:#171c27;border:1px solid var(--line);border-radius:16px 16px 0 0;width:100%;max-width:640px;max-height:88dvh;overflow:auto;padding:14px 14px calc(14px + env(safe-area-inset-bottom))}
+input[type=text],textarea{width:100%;background:#0b0e14;border:1px solid var(--line);border-radius:10px;color:var(--tx);padding:12px;font-size:16px}
+textarea{height:110px;font-size:12px}
+.up{color:var(--good)}.dn{color:var(--bad)}
+.skull{letter-spacing:2px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="top" style="display:none"></div>
+  <div id="view"></div>
+  <div id="nav" style="display:none"></div>
+</div>
+<div id="modal"></div>
+<script>
+'use strict';
+/* ============================================================
+   HOLLOWMERE: BLOODLINE — a text-adventure RPG of loops & legacy
+   ============================================================ */
+const $=s=>document.querySelector(s);
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const ri=(a,b)=>Math.floor(rnd(a,b+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const fmt=n=>n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e4?(n/1e3).toFixed(1)+'k':String(Math.round(n));
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function wroll(ws){let t=ws.reduce((a,b)=>a+b,0),r=Math.random()*t;for(let i=0;i<ws.length;i++){if((r-=ws[i])<0)return i;}return ws.length-1;}
+
+/* ---------------- static data ---------------- */
+const GUILD='Lanternwatch Guild', TOWN='Hollowmere';
+const FIGHT_COST=1, BOSS_COST=3, LIFESPAN=600, INV_MAX=40, UNLOCK_TC=10, HEIR_TC=3, GUILD_KILLS=25;
+const SLOTS=['weapon','helm','armor','boots','ring','amulet'];
+const SLOT_ICON={weapon:'⚔️',helm:'🪖',armor:'🛡️',boots:'👢',ring:'💍',amulet:'📿'};
+const RAR=[{n:'Common',c:'#b8c0cc'},{n:'Uncommon',c:'#5fd38d'},{n:'Rare',c:'#4aa3ff'},{n:'Epic',c:'#c077ff'},{n:'Legendary',c:'#ffb02e'}];
+const TIER_MIN=[1,6,14,24,36,50];
+const TIER_ADJ=['Crude','Iron','Steel','Runed','Frostforged','Voidtouched'];
+const tierOf=l=>{let t=0;TIER_MIN.forEach((m,i)=>{if(l>=m)t=i;});return t;};
+const RANKS=[{n:'Unranked',c:0},{n:'Copper',c:4},{n:'Bronze',c:10},{n:'Silver',c:20},{n:'Gold',c:32},{n:'Mythril',c:48},{n:'Adamant',c:70}];
+const STATS=['str','vit','agi','int'];
+const STAT_NAME={str:'Strength',vit:'Vitality',agi:'Agility',int:'Intellect'};
+const STAT_DESC={str:'Raises attack damage',vit:'Raises max HP and defense',agi:'Crit, dodge, escaping',int:'Focus pool and magic power'};
+const TRAIN={str:['Lift & Push-ups','Heavy stones and bodyweight work.'],vit:['Endurance Run','Laps around the town wall.'],agi:['Agility Drills','Dodging thrown pebbles.'],int:['Study & Meditation','Old books and quiet breathing.']};
+
+const ZONES=[
+ {n:'Dewfield Meadow',ic:'🌾',min:1,max:6,mats:['Slime Gel','Rat Pelt','Boar Tusk'],
+  mon:[{n:'Gel Slime',hp:1.1,atk:.8,def:.6,pat:'aar'},{n:'Field Rat',hp:.8,atk:1,def:.6,pat:'aa'},{n:'Wild Boar',hp:1.2,atk:1,def:.9,pat:'aah'},{n:'Crow Pack',hp:.7,atk:.9,def:.6,pat:'ap'},{n:'Thistle Sprite',hp:.8,atk:.9,def:.7,pat:'ab'}],
+  boss:{n:'Gelatinous King',hp:1,atk:1,def:1,pat:'ahrah'}},
+ {n:'Whisperwood',ic:'🌲',min:6,max:14,mats:['Wolf Fang','Silkthread','Heartwood Splinter'],
+  mon:[{n:'Timber Wolf',hp:1,atk:1.1,def:.8,pat:'aah'},{n:'Bramble Goblin',hp:.9,atk:1,def:.9,pat:'as'},{n:'Cave Spider',hp:.8,atk:.9,def:.7,pat:'app'},{n:'Moss Golem',hp:1.5,atk:.9,def:1.5,pat:'ah'},{n:'Hollow Stag',hp:1.2,atk:1.1,def:1,pat:'aahr'}],
+  boss:{n:'Grandmother Oak',hp:1,atk:1,def:1.1,pat:'arhp'}},
+ {n:'Sunken Catacombs',ic:'💀',min:14,max:24,mats:['Bone Dust','Grave Iron','Ectoplasm'],
+  mon:[{n:'Skeleton Soldier',hp:1,atk:1.05,def:1.1,pat:'aah'},{n:'Drowned Ghoul',hp:1.2,atk:1,def:.9,pat:'ap'},{n:'Bone Archer',hp:.8,atk:1.2,def:.8,pat:'aah'},{n:'Wailing Wraith',hp:.9,atk:1.1,def:.7,pat:'ash'},{n:'Crypt Leech',hp:1.1,atk:.9,def:1,pat:'ar'}],
+  boss:{n:'Vael the Drowned',hp:1,atk:1,def:1,pat:'aphbh'}},
+ {n:'Ashen Cliffs',ic:'🌋',min:24,max:36,mats:['Cinder Shard','Drake Scale','Obsidian Chip'],
+  mon:[{n:'Ash Hound',hp:1,atk:1.15,def:.8,pat:'aah'},{n:'Cinder Imp',hp:.8,atk:1.1,def:.8,pat:'abh'},{n:'Magma Crab',hp:1.3,atk:.9,def:1.8,pat:'ah'},{n:'Harpy Raider',hp:.9,atk:1.2,def:.8,pat:'aas'},{n:'Obsidian Wyrmling',hp:1.3,atk:1.1,def:1.2,pat:'ahp'}],
+  boss:{n:'Cinderwing',hp:1,atk:1,def:1.1,pat:'aahbh'}},
+ {n:'Frostmarch Wastes',ic:'❄️',min:36,max:50,mats:['Frost Crystal','Yeti Fur','Glacier Core'],
+  mon:[{n:'Frost Wolf',hp:1,atk:1.2,def:.9,pat:'aah'},{n:'Ice Wraith',hp:.9,atk:1.1,def:.8,pat:'asp'},{n:'Yeti',hp:1.5,atk:1.1,def:1,pat:'ah'},{n:'Rime Archer',hp:.8,atk:1.3,def:.8,pat:'aah'},{n:'Glacier Golem',hp:1.6,atk:1,def:1.8,pat:'arh'}],
+  boss:{n:'Hrimgar the Unmelting',hp:1,atk:1,def:1.2,pat:'ahbsh'}},
+ {n:'The Abyssal Rift',ic:'🌀',min:50,max:70,mats:['Void Shard','Gloom Essence','Rift Ore'],
+  mon:[{n:'Rift Stalker',hp:1,atk:1.25,def:.9,pat:'aah'},{n:'Void Maw',hp:1.4,atk:1.1,def:1,pat:'ahr'},{n:'Hollow Knight',hp:1.2,atk:1.2,def:1.6,pat:'abh'},{n:'Gloom Weaver',hp:.9,atk:1.1,def:.8,pat:'psp'},{n:'Eldritch Eye',hp:.9,atk:1.4,def:.8,pat:'ash'}],
+  boss:{n:'Nyx-Orum, the Hollow God',hp:1,atk:1,def:1.2,pat:'ahpbsh'}}
+];
+const MT={};ZONES.forEach((z,i)=>z.mats.forEach(m=>MT[m]=i));TIER_ADJ.forEach((a,i)=>MT[a+' Scrap']=i);
+const PAT_MULT={a:1,h:1.9,p:.7,s:.8,b:0,r:0};
+const INTENT={a:['attacks','⚔️'],h:['is winding up a HEAVY blow','⚠️'],p:['is preparing a poisonous strike','☠️'],s:['is aiming to stun you','💫'],b:['is working itself into a frenzy','🔥'],r:['is recovering','💚']};
+
+/* ----- affixes (rolled on gear) ----- */
+const AF={
+ str:{l:'STR',w:3,f:i=>1+i*.32,pre:['Brutal','Mighty','Savage',"Titan's"],suf:['of Strength','of the Bear','of Might']},
+ vit:{l:'VIT',w:3,f:i=>1+i*.32,pre:['Sturdy','Hardy','Stout'],suf:['of Vitality','of the Ox','of Endurance']},
+ agi:{l:'AGI',w:3,f:i=>1+i*.32,pre:['Swift','Nimble','Fleet'],suf:['of Agility','of the Fox','of the Wind']},
+ int:{l:'INT',w:3,f:i=>1+i*.32,pre:['Wise','Arcane',"Sage's"],suf:['of Insight','of the Owl','of Sorcery']},
+ hp:{l:'HP',w:3,f:i=>8+i*3.5,pre:['Hale','Vital','Robust'],suf:['of Life','of Vigor','of the Troll']},
+ def:{l:'DEF',w:3,f:i=>2+i*.9,pre:['Warding','Bulwark','Reinforced'],suf:['of Warding','of the Wall','of Shelter']},
+ atk:{l:'ATK',w:3,f:i=>3+i*1.6,pre:['Keen','Honed','Wicked'],suf:['of Slaying','of Ruin','of the Wolf']},
+ crit:{l:'Crit %',pct:1,w:1.2,f:i=>1.5+i*.07,pre:['Deadly','Precise','Lethal'],suf:['of Precision','of the Hawk','of Assassins']},
+ critdmg:{l:'Crit Dmg %',pct:1,w:1,f:i=>5+i*.3,pre:['Vicious','Ruthless'],suf:['of Cruelty','of Carnage']},
+ dodge:{l:'Dodge %',pct:1,w:1,f:i=>1+i*.05,pre:['Elusive','Shadowy'],suf:['of Evasion','of Mist']},
+ lifesteal:{l:'Lifesteal %',pct:1,w:.8,f:i=>1+i*.04,pre:['Vampiric','Hungering'],suf:['of the Leech','of Blood']},
+ thorns:{l:'Thorns %',pct:1,w:.8,f:i=>3+i*.2,pre:['Thorned','Spiked'],suf:['of Thorns','of Retribution']},
+ goldf:{l:'Gold Find %',pct:1,w:1,f:i=>4+i*.25,pre:['Gilded','Prosperous'],suf:['of Fortune','of Greed']},
+ dropf:{l:'Loot Find %',pct:1,w:1,f:i=>3+i*.18,pre:['Lucky','Fortunate'],suf:['of Plenty','of the Magpie']},
+ xpf:{l:'XP Bonus %',pct:1,w:1,f:i=>3+i*.18,pre:["Scholar's",'Studious'],suf:['of Learning','of Experience']},
+ regen:{l:'Regen/turn',w:.8,f:i=>1+i*.45,pre:['Mending','Verdant'],suf:['of Renewal','of the Spring']},
+ maxfocus:{l:'Max Focus',w:.8,f:i=>2+i*.12,pre:['Focused','Attuned'],suf:['of Clarity','of Calm']}
+};
+const AFK=Object.keys(AF);
+const BASES={
+ weapon:[['Sword',{atk:1}],['Axe',{atk:1.15}],['Mace',{atk:1.05,def:.25}],['Dagger',{atk:.8,crit:.5}],['Spear',{atk:1,agi:.12}],['Staff',{atk:.7,int:.18}],['Bow',{atk:.9,agi:.16}]],
+ helm:[['Cap',{def:.6}],['Helm',{def:.8}],['Hood',{def:.4,int:.3}],['Coif',{def:.6,hp:.4}],['Circlet',{def:.3,int:.4}]],
+ armor:[['Tunic',{def:.8,agi:.2}],['Mail',{def:1}],['Plate',{def:1.25}],['Robe',{def:.5,int:.4}],['Jerkin',{def:.7,hp:.5}]],
+ boots:[['Sandals',{def:.3,agi:.4}],['Boots',{def:.55}],['Greaves',{def:.75}],['Treads',{def:.4,dodge:.5}]],
+ ring:[['Band',{str:.5}],['Signet',{vit:.5}],['Loop',{agi:.5}],['Seal',{int:.5}],['Ring',{hp:.8}]],
+ amulet:[['Charm',{hp:.8}],['Pendant',{int:.4,hp:.4}],['Talisman',{vit:.4,def:.3}],['Locket',{str:.3,vit:.3}],['Amulet',{agi:.3,int:.3}]]
+};
+function baseStat(k,i,m){
+ if(k==='atk')return Math.round((6+i*2.8)*m);
+ if(k==='def')return Math.round((3+i*1.1)*m);
+ if(k==='hp')return Math.round((10+i*4)*m);
+ if(k==='crit')return Math.round(8*m*10)/10;
+ if(k==='dodge')return Math.round(4*m*10)/10;
+ return Math.max(1,Math.round((1+i*.3)*m));
+}
+const VAL_MULT=[1,2,4.5,9,30];
+
+/* ----- hand-made legendaries ----- */
+const LEGENDS=[
+ {k:'locket',n:"Gravewalker's Locket",slot:'amulet',il:5,b:{hp:1.4,vit:.6},fx:{regen:2},sp:'bloodline',lore:'Worn by every heir who walked before you.'},
+ {k:'slimeslicer',n:'Slimeslicer',slot:'weapon',il:6,b:{atk:1.2},fx:{crit:8,dropf:10},lore:'It never gets sticky. Nobody knows why.'},
+ {k:'boarhide',n:'Boarhide Mantle',slot:'armor',il:8,b:{def:1.3,hp:.6},fx:{thorns:12},lore:'Still smells of the thing that wore it first.'},
+ {k:'phoenix',n:'Ring of Second Chances',slot:'ring',il:14,b:{hp:1,vit:.5},fx:{},sp:'phoenix',lore:'A cracked band that burns once.'},
+ {k:'whisperfang',n:'Whisperfang',slot:'weapon',il:16,b:{atk:1},fx:{crit:18,critdmg:45,agi:6},lore:'You only hear it after the cut.'},
+ {k:'oakhood',n:'Hood of the Hollow Oak',slot:'helm',il:18,b:{def:.8,int:.6},fx:{regen:5,maxfocus:6},lore:'Roots still twitch inside the lining.'},
+ {k:'midas',n:'Midas Band',slot:'ring',il:20,b:{str:.6,int:.6},fx:{goldf:50,dropf:15},lore:'Coins seem to find your pockets.'},
+ {k:'drownedcrown',n:"The Drowned King's Crown",slot:'helm',il:24,b:{def:1,int:.8},fx:{lifesteal:5,maxfocus:10},lore:'Cold, wet, and utterly certain of itself.'},
+ {k:'cinderheart',n:'Cinderheart Plate',slot:'armor',il:30,b:{def:1.5,hp:1.2},fx:{thorns:28,vit:10},lore:'The ember inside has never gone out.'},
+ {k:'lastmile',n:'Boots of the Last Mile',slot:'boots',il:32,b:{def:.7,agi:1},fx:{dodge:12},sp:'runner',lore:'They always know the way out.'},
+ {k:'scholar',n:"Scholar's Eye",slot:'amulet',il:38,b:{int:1,hp:.6},fx:{xpf:40,maxfocus:12},lore:'It watches you learn.'},
+ {k:'dawnbreaker',n:'Dawnbreaker',slot:'weapon',il:38,b:{atk:1.3},fx:{lifesteal:7,crit:10,str:10},lore:'A sword for the morning after.'},
+ {k:'frostedge',n:"Hrimgar's Frostedge",slot:'weapon',il:46,b:{atk:1.35},fx:{crit:16,critdmg:55},lore:'Never thaws. Never dulls.'},
+ {k:'unmelting',n:'Aegis of the Unmelting',slot:'armor',il:48,b:{def:1.7,hp:1.5},fx:{dodge:6,vit:14},lore:'A shield sewn into a breastplate.'},
+ {k:'voidtreads',n:'Voidwalker Treads',slot:'boots',il:56,b:{def:.8,agi:1.2},fx:{dodge:16},lore:'Leaves no print, and sometimes no foot.'},
+ {k:'maw',n:"Nyx-Orum's Maw",slot:'weapon',il:64,b:{atk:1.45},fx:{lifesteal:11,crit:20,critdmg:40},lore:'It is always a little hungry.'},
+ {k:'hollowheart',n:'Heart of the Hollow God',slot:'amulet',il:66,b:{hp:2,vit:1},fx:{lifesteal:8,regen:20,maxfocus:15},lore:'It beats once a day. The day is always today.'}
+];
+const SPECIAL={phoenix:'Once per life: if you would die, rise with 50% HP. The ring crumbles.',bloodline:'Bloodline bonuses (catch-up XP and training) are 50% stronger.',runner:'You always escape ordinary fights.'};
+
+/* ----- skills (lost on death) ----- */
+const SK={
+ power:{n:'Power Strike',t:0,c:3,d:l=>`A heavy blow: ${Math.round((1.6+.15*(l-1))*100)}% damage.`},
+ flurry:{n:'Flurry',t:1,c:4,d:l=>`Three quick cuts, ${Math.round((.6+.06*(l-1))*100)}% each.`},
+ bash:{n:'Shield Bash',t:1,c:4,d:l=>`${Math.round((1+.1*(l-1))*100)}% damage, ${Math.round((50+8*l))}% to stun.`},
+ mend:{n:'Mend',t:0,c:4,d:l=>`Heal ${Math.round(22+5*(l-1))}% max HP (+INT).`},
+ venom:{n:'Venom Stab',t:1,c:4,d:l=>`${Math.round((.8+.08*(l-1))*100)}% damage and 3 turns of poison.`},
+ cry:{n:'Battle Cry',t:0,c:3,d:l=>`+${Math.round(30+5*(l-1))}% attack for 3 turns.`},
+ fire:{n:'Fireball',t:2,c:5,d:l=>`Magic blast, ${Math.round((2+.2*(l-1))*100)}%, ignores half defense.`},
+ iron:{n:'Iron Skin',t:2,c:4,d:l=>`+${Math.round(50+10*(l-1))}% defense for 3 turns.`},
+ bite:{n:'Vampiric Bite',t:2,c:5,d:l=>`${Math.round((1.3+.12*(l-1))*100)}% damage, heal half of it.`},
+ exec:{n:'Execute',t:3,c:6,d:l=>`More damage the lower the foe's HP (up to ${Math.round((3.2+.4*(l-1))*100)}%).`},
+ meteor:{n:'Meteor',t:4,c:12,d:l=>`Massive magic strike, ${Math.round((4+.5*(l-1))*100)}%.`}
+};
+const POTS={hp1:{n:'Healing Potion',pct:.4,min:30,price:20},hp2:{n:'Greater Healing Potion',pct:.7,min:80,price:80},hp3:{n:'Elixir of Life',pct:1,min:200,price:260}};
+
+/* ---------------- state ---------------- */
+let S=null;
+const SAVE_KEY='tq_bloodline_v1';
+function uid(){return S.world.nextId++;}
+function newWorld(){return{gold:0,inv:[],mats:{},pots:{hp1:0,hp2:0,hp3:0},gen:1,anc:[],bestLevel:0,legacy:{str:0,vit:0,agi:0,int:0},kills:0,guild:false,board:[],shop:[],nextId:1};}
+function newHero(name,fam,gen){
+ const w=S.world,f=gen>1?Math.min(.4,.1*(gen-1)):0,st={};
+ STATS.forEach(k=>st[k]=3+Math.floor((w.legacy[k]||0)*f));
+ return{name,fam,gen,lvl:1,xp:0,st,pts:0,hp:1,day:1,sta:1,tc:0,kills:0,contracts:0,equip:{},skills:{},active:[]};
+}
+function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}}
+function load(){try{const t=localStorage.getItem(SAVE_KEY);return t?JSON.parse(t):null;}catch(e){return null;}}
+function note(t,c){S.log.push({t,c:c||''});if(S.log.length>40)S.log.shift();}
+
+/* ---------------- derived stats ---------------- */
+function gearTotals(){const g={};for(const s of SLOTS){const it=S.hero.equip[s];if(it)for(const k in it.st)g[k]=(g[k]||0)+it.st[k];}return g;}
+function hasSpecial(sp){return SLOTS.some(s=>S.hero.equip[s]&&S.hero.equip[s].sp===sp);}
+function rankIdx(c){let r=0;RANKS.forEach((x,i)=>{if(c>=x.c)r=i;});return r;}
+function P(){
+ const h=S.hero,g=gearTotals(),st={};
+ STATS.forEach(k=>st[k]=Math.floor(h.st[k])+(g[k]||0));
+ const ren=1+Math.min(.6,h.contracts*.012);
+ const p={st,ren};
+ p.maxhp=Math.round((40+st.vit*6+h.lvl*5+(g.hp||0))*ren);
+ p.atk=Math.round((st.str*2+(g.atk||0)+(S.hero.equip.weapon?0:2))*ren);
+ p.def=Math.round((st.vit*.8+(g.def||0))*ren);
+ p.crit=clamp(5+st.agi*.2+(g.crit||0),0,75);
+ p.critdmg=150+(g.critdmg||0);
+ p.dodge=clamp(st.agi*.25+(g.dodge||0),0,45);
+ p.lifesteal=clamp(g.lifesteal||0,0,25);
+ p.thorns=clamp(g.thorns||0,0,100);
+ p.goldf=g.goldf||0;p.dropf=g.dropf||0;p.xpf=g.xpf||0;p.regen=Math.round(g.regen||0);
+ p.int=st.int;
+ p.maxfocus=10+Math.floor(st.int/2)+(g.maxfocus||0);
+ p.maxsta=10+Math.floor(st.vit/6)+rankIdx(h.contracts)*2;
+ return p;
+}
+function catchMult(){
+ const w=S.world,h=S.hero;if(w.bestLevel<=h.lvl)return 1;
+ let m=1+Math.min(1.5,(w.bestLevel-h.lvl)/w.bestLevel*2.5);
+ if(hasSpecial('bloodline'))m=1+(m-1)*1.5;
+ return m;
+}
+const xpNeed=l=>Math.round(24*Math.pow(l,1.5));
+function mit(def,lvl){return clamp(def/(def+30+8*lvl),0,.8);}
+function ageLeft(){return LIFESPAN-S.hero.day;}
+
+/* ---------------- items ---------------- */
+function itemFromBases(slot,il,bs,m){const st={};for(const k in bs)st[k]=baseStat(k,il,bs[k]*m);return st;}
+function genItem(il,rar,slot){
+ slot=slot||SLOTS[wroll([3,2,2,2,1.5,1.5])];
+ const [bn,bs]=pick(BASES[slot]),t=tierOf(il),st={};
+ for(const k in bs)st[k]=baseStat(k,il,bs[k]);
+ const n=[0,1,2,3][rar],used=[];
+ while(used.length<n){
+  const k=AFK[wroll(AFK.map(x=>AF[x].w))];
+  if(used.includes(k))continue;
+  if(k==='atk'&&slot!=='weapon'&&Math.random()<.7)continue;
+  used.push(k);
+ }
+ const m=[1,1,1.12,1.3][rar];
+ used.forEach(k=>{const a=AF[k];let v=a.f(il)*rnd(.8,1.2)*m;v=a.pct?Math.round(v*10)/10:Math.max(1,Math.round(v));st[k]=Math.round(((st[k]||0)+v)*10)/10;});
+ const pre=n>=1?pick(AF[used[0]].pre):'',suf=n>=2?pick(AF[used[1]].suf):'';
+ const name=[pre,TIER_ADJ[t],bn,suf].filter(Boolean).join(' ')+(n>=3?' ✦':'');
+ return{id:uid(),slot,name,il,tier:t,rar,req:Math.max(1,il-2),st,val:Math.round((8+il*3.5)*VAL_MULT[rar])};
+}
+function genLegend(d){
+ const st=itemFromBases(d.slot,d.il,d.b,1.4);
+ for(const k in d.fx)st[k]=(st[k]||0)+d.fx[k];
+ return{id:uid(),slot:d.slot,name:d.n,il:d.il,tier:tierOf(d.il),rar:4,req:Math.max(1,d.il-2),st,val:Math.round((8+d.il*3.5)*VAL_MULT[4]),leg:d.k,sp:d.sp,lore:d.lore};
+}
+const rarName=it=>`<span style="color:${RAR[it.rar].c}">${esc(it.name)}</span>`;
+function statLine(k,v){const a=AF[k];return `+${v}${a.pct?'%':''} ${a.l}`;}
+function score(it){if(!it)return 0;const s=it.st;let t=0;for(const k in s){const w={atk:1.2,def:1.3,hp:.25,str:2.4,vit:2,agi:2,int:2,crit:3,critdmg:1,dodge:3,lifesteal:6,thorns:1.2,goldf:.5,dropf:.5,xpf:.6,regen:3,maxfocus:1}[k]||1;t+=s[k]*w;}return Math.round(t);}
+function rollRarity(ws,boost){const w=ws.slice();for(let i=1;i<w.length;i++)w[i]*=boost||1;return wroll(w);}
+function addItem(it){
+ const w=S.world;
+ if(it.rar===0&&S.set.autosell){w.gold+=sellVal(it);return 'sold';}
+ if(w.inv.length>=INV_MAX){w.gold+=sellVal(it);return 'full';}
+ w.inv.push(it);return 'ok';
+}
+const sellVal=it=>Math.max(1,Math.round(it.val*.45));
+function findItem(id){const w=S.world;id=+id;let it=w.inv.find(x=>x.id===id);if(it)return{it,where:'inv'};for(const s of SLOTS){const e=S.hero.equip[s];if(e&&e.id===id)return{it:e,where:'eq'};}return null;}
+
+/* ---------------- leveling ---------------- */
+function addXP(n){
+ const h=S.hero,out=[];h.xp+=n;
+ while(h.xp>=xpNeed(h.lvl)){
+  h.xp-=xpNeed(h.lvl);h.lvl++;STATS.forEach(k=>h.st[k]+=1);h.pts+=3;
+  h.hp=Math.min(P().maxhp,h.hp+Math.round(P().maxhp*.25));
+  out.push(`⭐ Level ${h.lvl}! (+3 stat points)`);
+ }
+ return out;
+}
+
+/* ---------------- contracts ---------------- */
+function genContract(ri_){
+ const zi=ri(Math.max(0,ri_-2),Math.min(ri_,5)),z=ZONES[zi],lvl=(z.min+z.max)/2;
+ const type=pick(['kill','kill','kill','boss','gather']);
+ const c={id:S.world.nextId++,type,zi,prog:0,rankReq:Math.min(zi,ri_)};
+ if(type==='kill'){
+  c.n=ri(8,14);c.target=Math.random()<.5?'any':pick(z.mon).n;
+  c.text=`Slay ${c.n} ${c.target==='any'?'monsters':c.target+'s'} in ${z.n}`;
+  c.gold=Math.round(c.n*(10+lvl*4.2));c.xp=Math.round(c.n*(10+lvl*3.2)*.8);c.q=1;
+ }else if(type==='boss'){
+  c.n=1;c.text=`Defeat ${z.boss.n} (${z.n})`;
+  c.gold=Math.round(80+lvl*45);c.xp=Math.round((10+lvl*3.2)*14);c.q=2;
+ }else{
+  c.n=ri(6,10);c.target=pick(z.mats);c.text=`Deliver ${c.n} × ${c.target}`;
+  c.gold=Math.round(c.n*(8+lvl*3));c.xp=Math.round(c.n*(8+lvl*2.4));c.q=1;
+ }
+ return c;
+}
+function refreshBoard(){
+ const r=rankIdx(S.hero.contracts);S.world.board=[];
+ for(let i=0;i<5;i++)S.world.board.push(genContract(r));
+}
+function contractDone(c){return c.type==='gather'?(S.world.mats[c.target]||0)>=c.n:c.prog>=c.n;}
+
+/* ---------------- shop ---------------- */
+function refreshShop(){
+ const h=S.hero,w=S.world;w.shop=[];
+ for(let i=0;i<6;i++){const it=genItem(Math.max(1,h.lvl+ri(-2,3)),wroll([40,40,17,3]));it.price=Math.round(it.val*2.4);w.shop.push(it);}
+}
+const tomePrice=(id,lvl)=>Math.round(60*(1+SK[id].t*2.5)*Math.pow(lvl+1,1.6));
+
+/* ---------------- enemies ---------------- */
+function makeEnemy(zi,boss){
+ const z=ZONES[zi],h=S.hero;
+ const last=zi===ZONES.length-1,zmax=last?9999:z.max;
+ let lvl=boss?(last?Math.max(z.max,h.lvl+1):z.max):clamp(h.lvl+ri(-1,2),z.min,zmax);
+ const tpl=boss?z.boss:pick(z.mon),el=!boss&&h.lvl>=3&&Math.random()<.12,tier=boss?'b':el?'e':'n';
+ if(el)lvl=Math.min(lvl+1,zmax+1);
+ const hm={n:1,e:1.9,b:3.6}[tier],am={n:1,e:1.3,b:1.5}[tier];
+ const base=14+13*lvl+.6*lvl*lvl;
+ const hp=Math.round(base*tpl.hp*hm);
+ return{name:(el?pick(['Alpha','Ravenous','Ancient','Frenzied'])+' ':'')+tpl.n,base:tpl.n,lvl,tier,zi,
+  hp,max:hp,atk:Math.round((2.5+2.4*lvl+.08*lvl*lvl)*1.35*tpl.atk*am),def:Math.round((2+1.3*lvl)*tpl.def),
+  pat:tpl.pat,pi:0,stun:0,poison:0,pd:0,buff:0};
+}
+function danger(e){
+ const p=P(),h=S.hero;
+ const avg=e.pat.split('').reduce((a,t)=>a+PAT_MULT[t],0)/e.pat.length;
+ const hd=Math.max(1,p.atk*(1-mit(e.def,h.lvl)))*(1+p.crit/100*(p.critdmg/100-1));
+ const ed=Math.max(1,e.atk*avg*(1-mit(p.def,e.lvl)))*(1-p.dodge/100);
+ const r=(h.hp/ed)/(e.hp/hd);
+ return r>=3?['Easy','var(--good)',1]:r>=1.8?['Fair','var(--acc)',2]:r>=1.15?['Risky','#ff9a3c',3]:['Deadly','var(--bad)',4];
+}
+
+/* ---------------- combat ---------------- */
+function say(t,c){S.cb.log.push({t,c:c||''});if(S.cb.log.length>60)S.cb.log.shift();}
+function healHero(n){const h=S.hero,m=P().maxhp;const b=h.hp;h.hp=Math.min(m,h.hp+n);return h.hp-b;}
+function startCombat(e,boss){
+ const h=S.hero,p=P();
+ h.sta-=boss?BOSS_COST:FIGHT_COST;
+ S.cb={e,boss,log:[],turn:1,focus:Math.floor(p.maxfocus/2),panel:null,hb:{atk:0,atkT:0,def:0,defT:0,poison:0,pd:0,stun:0},over:false};
+ say(`${e.tier==='b'?'👑':e.tier==='e'?'⭐':'⚔️'} ${esc(e.name)} (Lv ${e.lvl}) appears!`,'y');
+ S.screen='combat';
+}
+function strike(mult,o){
+ o=o||{};const p=P(),c=S.cb,e=c.e,h=S.hero;
+ let b=(o.magic?(p.int*2.6+p.atk*.35):p.atk)*mult*rnd(.9,1.1)*(1+c.hb.atk);
+ const crit=!o.nocrit&&Math.random()*100<p.crit;if(crit)b*=p.critdmg/100;
+ const d=Math.max(1,Math.round(b*(1-mit(e.def,h.lvl)*(1-(o.pierce||0)))));
+ e.hp=Math.max(0,e.hp-d);
+ let ls=0;if(p.lifesteal)ls=healHero(Math.round(d*p.lifesteal/100));
+ say(`${o.label||'You hit'} ${esc(e.name)} for <b>${d}</b>${crit?' 💥 CRIT':''}${ls?` (+${ls} HP)`:''}`);
+ return d;
+}
+function castSkill(id){
+ const c=S.cb,h=S.hero,p=P(),e=c.e,l=h.skills[id],s=SK[id];
+ if(c.focus<s.c){say('Not enough Focus!','e');return false;}
+ c.focus-=s.c;
+ switch(id){
+  case 'power':strike(1.6+.15*(l-1),{label:'💪 Power Strike hits'});break;
+  case 'flurry':for(let i=0;i<3&&e.hp>0;i++)strike(.6+.06*(l-1),{label:'🗡️ Flurry cuts'});break;
+  case 'bash':strike(1+.1*(l-1),{label:'🛡️ Shield Bash hits'});if(Math.random()<(50+8*l)/100){e.stun=1;say(`${esc(e.name)} is stunned!`,'g');}break;
+  case 'mend':{const n=healHero(Math.round(p.maxhp*(.22+.05*(l-1))+p.int*2));say(`💚 Mend restores ${n} HP.`,'g');break;}
+  case 'venom':strike(.8+.08*(l-1),{label:'🐍 Venom Stab hits'});e.poison=3;e.pd=Math.max(1,Math.round(p.atk*.35*(1+.1*(l-1))));say(`${esc(e.name)} is poisoned!`,'g');break;
+  case 'cry':c.hb.atk=.3+.05*(l-1);c.hb.atkT=3;say('📣 Battle Cry! Attack up for 3 turns.','g');break;
+  case 'fire':strike(2+.2*(l-1),{magic:1,pierce:.5,label:'🔥 Fireball scorches'});break;
+  case 'iron':c.hb.def=.5+.1*(l-1);c.hb.defT=3;say('🪨 Iron Skin! Defense up for 3 turns.','g');break;
+  case 'bite':{const d=strike(1.3+.12*(l-1),{label:'🧛 Vampiric Bite tears'});const n=healHero(Math.round(d*.5));if(n)say(`You drain ${n} HP.`,'g');break;}
+  case 'exec':strike(1.2+(1-e.hp/e.max)*(2+.4*(l-1)),{label:'☠️ Execute strikes'});break;
+  case 'meteor':strike(4+.5*(l-1),{magic:1,label:'☄️ Meteor crashes into'});break;
+ }
+ return true;
+}
+function enemyTurn(){
+ const c=S.cb,e=c.e,h=S.hero,p=P();
+ if(e.poison>0){e.hp=Math.max(0,e.hp-e.pd);e.poison--;say(`☠ ${esc(e.name)} takes ${e.pd} poison damage.`);if(e.hp<=0)return;}
+ if(e.stun>0){e.stun--;say(`💫 ${esc(e.name)} is stunned and loses its turn!`,'g');return;}
+ const tk=e.pat[e.pi%e.pat.length];e.pi++;
+ if(tk==='r'){const n=Math.round(e.max*.12);e.hp=Math.min(e.max,e.hp+n);say(`💚 ${esc(e.name)} recovers ${n} HP.`);return;}
+ if(tk==='b'){e.buff=3;say(`🔥 ${esc(e.name)} rages! Its attacks grow stronger.`,'e');return;}
+ const mult=PAT_MULT[tk]*(e.buff>0?1.3:1);
+ if(e.buff>0)e.buff--;
+ if(Math.random()*100<p.dodge){say(`💨 You dodge ${esc(e.name)}'s attack!`,'g');return;}
+ const def=p.def*(1+c.hb.def);
+ let d=e.atk*mult*rnd(.9,1.1)*(1-mit(def,e.lvl));
+ if(c.guard)d*=.45;
+ d=Math.max(1,Math.round(d));
+ h.hp-=d;
+ say(`${esc(e.name)} ${tk==='h'?'smashes':'hits'} you for <b>${d}</b>${c.guard?' (guarded)':''}.`,'e');
+ if(p.thorns){const t=Math.round(d*p.thorns/100);if(t>0){e.hp=Math.max(0,e.hp-t);say(`🌵 Thorns deal ${t} back.`,'g');}}
+ if(tk==='p'){c.hb.poison=3;c.hb.pd=Math.max(1,Math.round(e.atk*.12));say('☠ You are poisoned!','e');}
+ if(tk==='s'&&Math.random()<.4){c.hb.stun=1;say('💫 You are stunned!','e');}
+}
+function checkDeath(){
+ const h=S.hero;if(h.hp>0)return true;
+ for(const s of SLOTS){const it=h.equip[s];if(it&&it.sp==='phoenix'){delete h.equip[s];h.hp=Math.round(P().maxhp*.5);say('🔥 The Ring of Second Chances burns away — you rise again!','y');note('The Ring of Second Chances saved your life, and crumbled.','y');return true;}}
+ die(`slain by ${S.cb?S.cb.e.name:'the wilds'}`);return false;
+}
+function afterPlayer(){
+ const c=S.cb,h=S.hero,p=P();
+ if(c.e.hp<=0)return victory();
+ enemyTurn();
+ if(c.e.hp<=0)return victory();
+ if(!checkDeath())return;
+ if(c.hb.poison>0){h.hp-=c.hb.pd;c.hb.poison--;say(`☠ Poison burns you for ${c.hb.pd}.`,'e');if(!checkDeath())return;}
+ if(p.regen){const n=healHero(p.regen);if(n)say(`🌿 You regenerate ${n} HP.`,'g');}
+ c.focus=Math.min(p.maxfocus,c.focus+2);
+ if(c.hb.atkT>0&&--c.hb.atkT===0)c.hb.atk=0;
+ if(c.hb.defT>0&&--c.hb.defT===0)c.hb.def=0;
+ c.turn++;c.guard=false;c.panel=null;
+}
+function playerAct(type,arg){
+ const c=S.cb;if(!c||c.over)return;
+ const h=S.hero,p=P(),e=c.e;
+ c.guard=false;
+ if(c.hb.stun>0){c.hb.stun=0;say('💫 You are stunned and cannot act!','e');return afterPlayer();}
+ if(type==='atk'){strike(1);c.focus=Math.min(p.maxfocus,c.focus+1);}
+ else if(type==='guard'){c.guard=true;c.focus=Math.min(p.maxfocus,c.focus+3);say('🛡️ You brace yourself.');}
+ else if(type==='skill'){if(!castSkill(arg))return;}
+ else if(type==='pot'){
+  const w=S.world,po=POTS[arg];if(!w.pots[arg])return;
+  if(h.hp>=p.maxhp){say('You are already at full health.');return;}
+  w.pots[arg]--;const n=healHero(Math.max(po.min,Math.round(p.maxhp*po.pct)));say(`🧪 ${po.n}: +${n} HP.`,'g');
+ }
+ else if(type==='flee'){
+  if(c.boss){say('You cannot flee from a boss!','e');return;}
+  const ch=hasSpecial('runner')?100:clamp(45+p.st.agi*.6-e.lvl*.4,15,90);
+  if(Math.random()*100<ch){c.over=true;note(`You escaped from ${e.name}.`);S.screen='hunt';S.cb=null;return;}
+  say('You fail to get away!','e');
+ }
+ afterPlayer();
+}
+function victory(){
+ const c=S.cb,e=c.e,h=S.hero,w=S.world,p=P();c.over=true;
+ const mult={n:1,e:2.2,b:6}[e.tier],lines=[];
+ const gold=Math.round((4+e.lvl*3.2)*mult*rnd(.8,1.2)*(1+p.goldf/100));
+ const xp=Math.round((10+e.lvl*3.2)*mult*clamp(1-(h.lvl-e.lvl)*.08,.1,1.5)*(1+p.xpf/100)*catchMult());
+ w.gold+=gold;lines.push(`💰 +${gold} gold`);lines.push(`✨ +${xp} XP`);
+ lines.push(...addXP(xp));
+ h.kills++;w.kills++;
+ // loot
+ const z=ZONES[e.zi],ch={n:.16,e:.6,b:1}[e.tier]*(1+p.dropf/100);
+ if(Math.random()<ch){
+  const ws={n:[60,28,9,3],e:[30,40,22,8],b:[0,20,55,25]}[e.tier];
+  const it=genItem(e.lvl+ri(0,2),rollRarity(ws,1+p.dropf/200));
+  const r=addItem(it);lines.push(`🎁 ${rarName(it)} <span class="mut">(${RAR[it.rar].n}, Lv ${it.il})</span>${r==='sold'?' — auto-sold':r==='full'?' — pack full, sold':''}`);
+ }
+ const lg={n:.0008,e:.006,b:.07}[e.tier]*(1+p.dropf/100);
+ if(Math.random()<lg){
+  const pool=LEGENDS.filter(d=>d.il>=z.min-4&&d.il<=z.max+6);
+  if(pool.length){const it=genLegend(pick(pool));const r=addItem(it);lines.push(`🌟 <b>LEGENDARY!</b> ${rarName(it)}${r==='full'?' — pack full, sold':''}`);note(`Legendary drop: ${it.name}!`,'y');}
+ }
+ const tc={n:.05,e:.15,b:.5}[e.tier];
+ if(Math.random()<tc){
+  const pool=Object.keys(SK).filter(k=>SK[k].t<=e.zi&&(h.skills[k]||0)<5);
+  if(pool.length){const k=pick(pool);h.skills[k]=(h.skills[k]||0)+1;lines.push(`📖 <b>${SK[k].n}</b> ${h.skills[k]===1?'learned!':'upgraded to Lv '+h.skills[k]+'!'}`);}
+ }
+ const nm=e.tier==='b'?ri(5,8):e.tier==='e'?ri(2,4):(Math.random()<.65?ri(1,2):0);
+ if(nm){const m=pick(z.mats);w.mats[m]=(w.mats[m]||0)+nm;lines.push(`🧶 +${nm} ${m}`);}
+ // contracts
+ h.active.forEach(ct=>{
+  if(ct.type==='kill'&&ct.zi===e.zi&&ct.prog<ct.n&&(ct.target==='any'||ct.target===e.base))ct.prog++;
+  if(ct.type==='boss'&&e.tier==='b'&&ct.zi===e.zi&&ct.prog<1)ct.prog=1;
+ });
+ if(h.active.some(ct=>ct.type!=='gather'&&contractDone(ct)))lines.push('📜 A contract is ready to turn in!');
+ // unlocks
+ if(!w.guild&&w.kills>=GUILD_KILLS){w.guild=true;refreshBoard();lines.push(`🏮 <b>The ${GUILD} has noticed you!</b> Visit them in town.`);note(`The ${GUILD} now accepts you.`,'y');}
+ if(e.tier==='b')lines.push(`👑 ${esc(e.name)} has fallen!`);
+ S.res={lines,zi:e.zi,boss:c.boss,name:e.name,lvl:e.lvl};
+ S.screen='result';S.cb=null;
+}
+function die(cause){
+ const h=S.hero,w=S.world;
+ S.death={name:h.name,fam:h.fam,lvl:h.lvl,day:h.day,cause,contracts:h.contracts,kills:h.kills,gen:h.gen,gold:w.gold};
+ w.anc.push({name:h.name,gen:h.gen,lvl:h.lvl,day:h.day,cause,contracts:h.contracts});
+ w.bestLevel=Math.max(w.bestLevel,h.lvl);
+ STATS.forEach(k=>w.legacy[k]=Math.max(w.legacy[k]||0,Math.floor(h.st[k])));
+ S.cb=null;S.enc=null;S.res=null;S.screen='death';
+}
+const FIRST=['Ash','Briar','Cade','Dara','Edda','Finn','Garrick','Hana','Ivo','Juna','Kellan','Lysa','Marek','Nia','Orin','Petra','Quill','Rhea','Soren','Tamsin','Ulric','Vera','Wren','Yara'];
+function makeHeir(){
+ const w=S.world,old=S.hero;
+ SLOTS.forEach(s=>{if(old.equip[s])w.inv.push(old.equip[s]);});
+ w.gen++;
+ S.hero=newHero(pick(FIRST),old.fam,w.gen);
+ S.hero.contracts=Math.floor(old.contracts*.4);
+ S.hero.hp=P().maxhp;S.hero.sta=P().maxsta;
+ w.board=[];if(w.guild)refreshBoard();refreshShop();
+ S.death=null;S.screen='town';
+ note(`${S.hero.name} ${S.hero.fam} takes up the family name. The road is familiar now.`,'y');
+}
+
+/* ---------------- day cycle ---------------- */
+function sleepDay(){
+ const h=S.hero;h.day++;
+ if(h.day>LIFESPAN){die('old age');return;}
+ const p=P();h.hp=p.maxhp;h.sta=p.maxsta;
+ if(S.world.guild){
+  refreshBoard();
+ }
+ refreshShop();
+ const tips=['A traveller whispers of a ring that burns only once.','The baker says the Whisperwood is getting louder.','Children chant the names of dead heroes.','Someone swears the old mill glows at night.','Your muscles ache. A good sign.'];
+ note(`🌙 Day ${h.day}. You wake rested. ${pick(tips)}`);
+ if(h.day>LIFESPAN-60&&h.day%10===0)note(`You feel your years. About ${LIFESPAN-h.day} days remain.`,'y');
+}
+function huntUnlocked(){return S.hero.tc>=(S.world.gen>1?HEIR_TC:UNLOCK_TC);}
+
+/* ---------------- actions ---------------- */
+const ACT={
+ start(){
+  const n=($('#in-name').value||'').trim()||'Wanderer',f=($('#in-fam').value||'').trim()||'Ashford';
+  S={v:1,world:newWorld(),hero:null,screen:'town',log:[],cb:null,enc:null,res:null,death:null,modal:null,set:{autosell:false},tab:'town',tcount:0};
+  S.hero=newHero(n.slice(0,16),f.slice(0,16),1);
+  S.world.gold=30;S.world.pots.hp1=2;
+  S.hero.hp=P().maxhp;S.hero.sta=P().maxsta;
+  refreshShop();
+  note(`You arrive as ${S.hero.name} ${S.hero.fam}. You can barely lift a bucket. Time to train.`,'y');
+ },
+ go(p){S.screen=p;S.modal=null;},
+ train(k){
+  const h=S.hero,p=P();if(h.sta<2){note('Too tired. Sleep first.','e');return;}
+  h.sta-=2;h.tc++;
+  const gain=(.35+Math.random()*.15)*catchMult()/(1+h.st[k]/30);
+  const before=Math.floor(h.st[k]);h.st[k]+=gain;
+  const x=addXP(Math.max(1,Math.round(2*catchMult())));
+  note(`${TRAIN[k][0]}: ${STAT_NAME[k]} +${gain.toFixed(2)}${Math.floor(h.st[k])>before?' — a whole point!':''}`,Math.floor(h.st[k])>before?'g':'');
+  x.forEach(t=>note(t,'y'));
+  if(h.tc===(S.world.gen>1?HEIR_TC:UNLOCK_TC))note('You finally feel strong enough to leave the gates and face the weakest creatures outside.','y');
+ },
+ sleep(){sleepDay();},
+ zone(zi){
+  const h=S.hero;zi=+zi;if(h.sta<FIGHT_COST){note('Too tired to hunt. Sleep first.','e');S.screen='town';return;}
+  S.enc={zi,boss:false,e:makeEnemy(zi,false)};S.screen='enc';
+ },
+ boss(zi){
+  const h=S.hero;zi=+zi;if(h.sta<BOSS_COST){note('Too tired for a boss. You need '+BOSS_COST+' stamina.','e');return;}
+  S.enc={zi,boss:true,e:makeEnemy(zi,true)};S.screen='enc';
+ },
+ fight(){const en=S.enc;S.enc=null;startCombat(en.e,en.boss);},
+ avoid(){S.enc=null;S.screen='hunt';},
+ again(){const r=S.res;S.res=null;if(r.boss)ACT.boss(r.zi);else ACT.zone(r.zi);},
+ atk(){playerAct('atk');},guard(){playerAct('guard');},flee(){playerAct('flee');},
+ skill(id){playerAct('skill',id);},
+ pot(id){playerAct('pot',id);},
+ panel(p){S.cb.panel=p||null;},
+ // inventory
+ open(id){S.modal={t:'item',id};},
+ close(){S.modal=null;},
+ equip(id){
+  const f=findItem(id);if(!f||f.where!=='inv')return;const it=f.it,h=S.hero;
+  if(h.lvl<it.req){note(`You need level ${it.req} to use that.`,'e');return;}
+  const w=S.world;w.inv=w.inv.filter(x=>x.id!==it.id);
+  if(h.equip[it.slot])w.inv.push(h.equip[it.slot]);
+  h.equip[it.slot]=it;S.modal=null;
+  h.hp=Math.min(h.hp,P().maxhp);
+ },
+ unequip(id){
+  const f=findItem(id);if(!f||f.where!=='eq')return;
+  if(S.world.inv.length>=INV_MAX){note('Pack is full.','e');return;}
+  delete S.hero.equip[f.it.slot];S.world.inv.push(f.it);S.modal=null;h_clamp();
+ },
+ sell(id){const f=findItem(id);if(!f)return;const v=sellVal(f.it);S.world.gold+=v;ACT._rm(f);note(`Sold ${f.it.name} for ${v}g.`);S.modal=null;},
+ salvage(id){
+  const f=findItem(id);if(!f)return;const it=f.it,n=1+it.rar*2+(it.rar>=3?2:0),name=TIER_ADJ[it.tier]+' Scrap';
+  S.world.mats[name]=(S.world.mats[name]||0)+n;ACT._rm(f);note(`Salvaged ${it.name} → ${n} ${name}.`);S.modal=null;
+ },
+ _rm(f){if(f.where==='inv')S.world.inv=S.world.inv.filter(x=>x.id!==f.it.id);else delete S.hero.equip[f.it.slot];h_clamp();},
+ sellAll(r){
+  r=+r;let g=0,n=0;S.world.inv=S.world.inv.filter(it=>{if(it.rar<=r&&it.rar<3){g+=sellVal(it);n++;return false;}return true;});
+  S.world.gold+=g;note(`Sold ${n} item(s) for ${g}g.`);
+ },
+ usePot(id){const p=P(),w=S.world,po=POTS[id];if(!w.pots[id]||S.hero.hp>=p.maxhp)return;w.pots[id]--;const n=healHero(Math.max(po.min,Math.round(p.maxhp*po.pct)));note(`${po.n}: +${n} HP.`,'g');},
+ alloc(k){const h=S.hero;if(h.pts<1)return;h.pts--;h.st[k]+=1;},
+ // shop
+ buyPot(id){const w=S.world,po=POTS[id];if(w.gold<po.price){note('Not enough gold.','e');return;}w.gold-=po.price;w.pots[id]++;},
+ buyGear(i){
+  const w=S.world,it=w.shop[+i];if(!it)return;if(w.gold<it.price){note('Not enough gold.','e');return;}
+  if(w.inv.length>=INV_MAX){note('Your pack is full.','e');return;}
+  w.gold-=it.price;delete it.price;w.inv.push(it);w.shop.splice(+i,1);note(`Bought ${it.name}.`);S.modal=null;
+ },
+ shopView(i){S.modal={t:'shop',i:+i};},
+ buyTome(id){
+  const w=S.world,h=S.hero,l=h.skills[id]||0;if(l>=5)return;const pr=tomePrice(id,l);
+  if(w.gold<pr){note('Not enough gold.','e');return;}w.gold-=pr;h.skills[id]=l+1;note(`${SK[id].n} ${l?'upgraded to Lv '+(l+1):'learned'}.`,'g');
+ },
+ // guild
+ accept(i){
+  const h=S.hero,w=S.world;if(h.active.length>=3){note('You can hold at most 3 contracts.','e');return;}
+  const c=w.board[+i];if(!c)return;if(rankIdx(h.contracts)<c.rankReq){note('Your rank is too low.','e');return;}
+  w.board.splice(+i,1);h.active.push(c);
+ },
+ abandon(i){S.hero.active.splice(+i,1);},
+ complete(i){
+  const h=S.hero,w=S.world,c=h.active[+i];if(!c||!contractDone(c))return;
+  if(c.type==='gather')w.mats[c.target]-=c.n;
+  const before=rankIdx(h.contracts),rb=1+rankIdx(h.contracts)*.05;
+  const gold=Math.round(c.gold*rb),xp=Math.round(c.xp*catchMult());
+  w.gold+=gold;h.contracts++;h.pts+=2;h.active.splice(+i,1);
+  const z=ZONES[c.zi],it=genItem(z.max-ri(0,2),rollRarity(c.q===2?[0,10,60,30]:[10,55,28,7]));
+  const r=addItem(it);
+  S.cres=[`✅ Contract complete! +${gold}g, +${xp} XP, +2 stat points`,`🎁 ${rarName(it)}${r==='full'?' (pack full, sold)':''}`,...addXP(xp)];
+  if(rankIdx(h.contracts)>before){S.cres.push(`🏅 <b>Promoted to ${RANKS[rankIdx(h.contracts)].n} rank!</b> (+2 stamina, +5% contract gold, new hunting grounds)`);}
+  S.cres.push(`📈 Renown bonus: +${(Math.min(60,h.contracts*1.2)).toFixed(1)}% HP/attack/defense`);
+  note(`Contract done (${h.contracts} total).`,'g');
+ },
+ // tinker wagon
+ tinker(p,b){
+  const [mode,t]=p.split(':'),tier=+t,w=S.world;
+  const cost={rand:12,slot:20,grand:35}[mode];
+  const have=Object.keys(w.mats).filter(m=>MT[m]===tier).reduce((a,m)=>a+w.mats[m],0);
+  if(have<cost){note('Not enough materials.','e');return;}
+  if(mode==='slot'){S.modal={t:'slot',tier};return;}
+  ACT._tinker(mode,tier,null);
+ },
+ tslot(slot){const t=S.modal.tier;S.modal=null;ACT._tinker('slot',t,slot);},
+ _tinker(mode,tier,slot){
+  const w=S.world;if(w.inv.length>=INV_MAX){note('Your pack is full.','e');return;}
+  let need={rand:12,slot:20,grand:35}[mode];
+  Object.keys(w.mats).filter(m=>MT[m]===tier).forEach(m=>{const t=Math.min(need,w.mats[m]);w.mats[m]-=t;need-=t;if(!w.mats[m])delete w.mats[m];});
+  const z=ZONES[tier],il=ri(z.min,z.max);
+  const ws=mode==='grand'?[0,20,55,25]:[20,45,28,7];
+  const it=genItem(il,rollRarity(ws),slot);w.inv.push(it);
+  S.modal={t:'item',id:it.id,fresh:1};note(`The Tinker hands you ${it.name}.`,'y');
+ },
+ // menu
+ auto(){S.set.autosell=!S.set.autosell;},
+ retire(){S.modal={t:'confirm',a:'retireYes',q:'Retire this hero and pass the torch? You keep gold, gear and materials but the heir starts at level 1 without skills.'};},
+ retireYes(){S.modal=null;die('retirement');},
+ reset(){S.modal={t:'confirm',a:'resetYes',q:'Erase ALL progress, including the bloodline? This cannot be undone.'};},
+ resetYes(){try{localStorage.removeItem(SAVE_KEY);}catch(e){}S=null;},
+ heir(){makeHeir();},
+ export(){S.modal={t:'export'};},
+ import(){const v=$('#io').value.trim();try{const o=JSON.parse(decodeURIComponent(escape(atob(v))));if(!o.world||!o.hero)throw 0;S=o;S.modal=null;note('Save imported.','g');}catch(e){const m=$('#ioerr');if(m)m.textContent='That does not look like a valid save.';throw 'skip';}},
+ doimport(){S.modal={t:'import'};}
+};
+function h_clamp(){const h=S.hero;if(h)h.hp=Math.min(h.hp,P().maxhp);}
+
+/* ---------------- rendering ---------------- */
+const bar=(cur,max,cls)=>`<div class="bar ${cls}"><i style="width:${clamp(cur/max*100,0,100)}%"></i></div>`;
+const btn=(label,act,p,cls,dis,sub)=>`<button class="btn ${cls||''}" data-a="${act}" ${p!==undefined?`data-p="${p}"`:''} ${dis?'disabled':''}>${label}${sub?`<small>${sub}</small>`:''}</button>`;
+function logHtml(arr,n){return `<div class="log" id="log">${arr.slice(-n).map(l=>`<div class="${l.c}">${l.t}</div>`).join('')}</div>`;}
+function itemRow(it,extra){
+ const a=Object.keys(it.st).slice(0,4).map(k=>statLine(k,it.st[k])).join(' · ');
+ return `<div class="item" data-a="open" data-p="${it.id}"><div><div class="n">${SLOT_ICON[it.slot]} ${rarName(it)}</div><div class="s">Lv ${it.il} · ${a}</div></div><div class="s">${extra||''}</div></div>`;
+}
+
+const VIEWS={
+ start(){
+  return `<h1>⚔️ ${TOWN}: Bloodline</h1><p class="mut">You are weak. Barely able to lift a bucket. Train in town until you can face the beasts beyond the gate, earn your place in the ${GUILD}, and grow strong.</p>
+  <p class="mut">But heroes die. When you fall, your heir takes your gold and gear and walks your road again, faster this time, until they surpass you.</p>
+  <div class="card"><h3>Your name</h3><input type="text" id="in-name" maxlength="16" placeholder="Wanderer"><h3>Family name</h3><input type="text" id="in-fam" maxlength="16" placeholder="Ashford"></div>
+  ${btn('Begin your story','start',undefined,'pri c')}
+  <p class="mut sm c">Auto-saves on this device. Permadeath is real.</p>`;
+ },
+ town(){
+  const h=S.hero,w=S.world,hu=huntUnlocked();
+  let t=`<h1>🏘️ ${TOWN}</h1>`;
+  if(!hu)t+=`<p class="mut">You are too frail to leave the gates. Train your body until you're ready. <b>(${h.tc}/${w.gen>1?HEIR_TC:UNLOCK_TC} sessions)</b></p>`;
+  else t+=`<p class="mut">The gates stand open. Day <b>${h.day}</b>${ageLeft()<80?` · <span class="dn">${ageLeft()} days left to live</span>`:''}.</p>`;
+  t+=`<div class="grid">
+   ${btn('🏋️ Train','go','train','pri',false,`2⚡ · raise your stats`)}
+   ${btn('🗡️ Hunt','go','hunt','',!hu,hu?FIGHT_COST+'⚡ · fight outside':'Locked: finish training')}
+   ${btn('📜 '+GUILD,'go','guild','',!w.guild,w.guild?`Rank: ${RANKS[rankIdx(h.contracts)].n}`:`Locked (${w.kills}/${GUILD_KILLS} kills)`)}
+   ${btn('🛒 Market','go','shop','',false,'Potions & gear')}
+   ${btn('📚 Old Library','go','library','',false,'Buy skill tomes')}
+   ${btn('🚚 Tinker\'s Wagon','go','tinker','',!hu,hu?'Outside the gate: scrap → random loot':'Locked')}
+  </div>
+  <div style="margin-top:10px">${btn('🛏️ Sleep until morning','sleep',undefined,'good',false,'Restore HP & stamina · next day · refreshes shop/board')}</div>
+  <h2>Recent events</h2>${logHtml(S.log,6)}`;
+  return t;
+ },
+ train(){
+  const h=S.hero;
+  let t=`<h1>🏋️ Training Yard</h1><p class="mut">Each session costs 2⚡ and grants small stat gains plus a trickle of XP. Gains slow as you grow.${catchMult()>1?` <span class="up">Bloodline bonus ×${catchMult().toFixed(2)}</span>`:''}</p>`;
+  STATS.forEach(k=>{
+   const fr=h.st[k]-Math.floor(h.st[k]);
+   t+=`<div class="card"><div class="row2"><b>${STAT_NAME[k]}</b><span>${Math.floor(h.st[k])}</span></div>${bar(fr,1,'xp')}<div class="mut sm">${TRAIN[k][1]} ${STAT_DESC[k]}.</div>${btn(TRAIN[k][0],'train',k,'pri',h.sta<2)}</div>`;
+  });
+  t+=`<p class="mut">Sessions completed: ${h.tc}</p>${logHtml(S.log,3)}`;
+  return t;
+ },
+ hunt(){
+  const h=S.hero,r=rankIdx(h.contracts);
+  let t=`<h1>🗡️ Beyond the Gate</h1><p class="mut">Each fight costs ${FIGHT_COST}⚡ (bosses ${BOSS_COST}⚡). Enemies scale to near your level within a region's range. Rank unlocks new regions.</p>`;
+  ZONES.forEach((z,i)=>{
+   const lock=r<i;
+   t+=`<div class="card"><div class="row2"><b>${z.ic} ${z.n}</b><span class="tag">Lv ${z.min}–${z.max}</span></div>
+   <div class="mut sm">${lock?`Requires ${RANKS[i].n} rank`:'Open'}</div>
+   <div class="grid" style="margin-top:8px">${btn('Hunt','zone',i,'pri',lock||h.sta<FIGHT_COST,FIGHT_COST+'⚡')}${btn('Boss: '+z.boss.n,'boss',i,'bad',lock||h.sta<BOSS_COST,BOSS_COST+'⚡ · rare+ drop')}</div></div>`;
+  });
+  return t+btn('← Back to town','go','town','c');
+ },
+ enc(){
+  const e=S.enc.e,d=danger(e),h=S.hero;
+  return `<h1>${e.tier==='b'?'👑':e.tier==='e'?'⭐':'❓'} Encounter</h1>
+  <div class="card"><div class="row2"><b style="font-size:18px">${esc(e.name)}</b><span class="tag">Lv ${e.lvl}</span></div>
+  <p class="mut sm">${e.tier==='b'?'A boss.':e.tier==='e'?'An elite — tougher, but better loot.':'A common creature.'}</p>
+  <p>Danger: <b style="color:${d[1]}">${d[0]}</b> <span class="skull">${'💀'.repeat(d[2])}</span></p>
+  <p class="mut sm">Your HP: ${h.hp}/${P().maxhp} · Enemy HP ≈ ${e.hp}</p></div>
+  ${d[2]>=3?`<p class="dn sm">⚠ Death is permanent. Heal first or avoid.</p>`:''}
+  <div class="grid">${btn('⚔️ Fight','fight',undefined,'pri c',h.sta<(S.enc.boss?BOSS_COST:FIGHT_COST),`${S.enc.boss?BOSS_COST:FIGHT_COST}⚡`)}${btn('🏃 Avoid','avoid',undefined,'c')}</div>`;
+ },
+ combat(){
+  const c=S.cb,e=c.e,h=S.hero,p=P(),tk=e.pat[e.pi%e.pat.length],it=INTENT[tk];
+  let t=`<div class="card"><div class="row2"><b>${e.tier==='b'?'👑 ':e.tier==='e'?'⭐ ':''}${esc(e.name)}</b><span class="tag">Lv ${e.lvl}</span></div>
+  ${bar(e.hp,e.max,'ehp')}<div class="row2 sm mut"><span>${e.hp}/${e.max}</span><span>${e.poison?'☠ ':''}${e.stun?'💫 ':''}${e.buff?'🔥 ':''}</span></div>
+  <div class="sm" style="margin-top:4px">${it[1]} <span class="${tk==='h'||tk==='s'?'dn':'mut'}">Next: ${it[0]}</span></div></div>`;
+  t+=`<div class="card"><div class="row2"><b>${esc(h.name)}</b><span class="sm mut">Turn ${c.turn}</span></div>
+  ${bar(h.hp,p.maxhp,'hp')}<div class="row2 sm"><span>❤ ${h.hp}/${p.maxhp}</span><span class="mut">${c.hb.poison?'☠ ':''}${c.hb.atk?'📣 ':''}${c.hb.def?'🪨 ':''}${c.hb.stun?'💫 ':''}</span></div>
+  ${bar(c.focus,p.maxfocus,'fc')}<div class="sm mut">🔷 Focus ${c.focus}/${p.maxfocus}</div></div>`;
+  t+=logHtml(c.log,14);
+  t+='<div style="margin-top:10px">';
+  if(c.panel==='skill'){
+   const ks=Object.keys(h.skills);
+   t+=ks.length?ks.map(k=>btn(`${SK[k].n} <span class="tag">Lv ${h.skills[k]}</span>`,'skill',k,'',c.focus<SK[k].c,`🔷${SK[k].c} · ${SK[k].d(h.skills[k])}`)).join(''):'<p class="mut">You know no skills yet. Defeat monsters to find tomes, or buy them at the Old Library.</p>';
+   t+=btn('← Back','panel','','c');
+  }else if(c.panel==='item'){
+   const ps=Object.keys(POTS).filter(k=>S.world.pots[k]>0);
+   t+=ps.length?ps.map(k=>btn(`${POTS[k].n} ×${S.world.pots[k]}`,'pot',k,'good',false,`Heals ${Math.round(POTS[k].pct*100)}% max HP (min ${POTS[k].min})`)).join(''):'<p class="mut">No potions.</p>';
+   t+=btn('← Back','panel','','c');
+  }else{
+   t+=`<div class="grid">${btn('⚔️ Attack','atk',undefined,'pri c',false,'+1 🔷')}${btn('✨ Skills','panel','skill','c',false,'')}${btn('🛡️ Guard','guard',undefined,'c',false,'-55% dmg, +3 🔷')}${btn('🧪 Items','panel','item','c')}</div>
+   <div style="margin-top:8px">${btn(c.boss?'🚫 Cannot flee':'🏃 Flee','flee',undefined,'c',c.boss)}</div>`;
+  }
+  return t+'</div>';
+ },
+ result(){
+  const r=S.res,h=S.hero,can=h.sta>=(r.boss?BOSS_COST:FIGHT_COST);
+  return `<h1>🏆 Victory</h1><p class="mut">${esc(r.name)} (Lv ${r.lvl}) defeated.</p>
+  <div class="card">${r.lines.map(l=>`<p>${l}</p>`).join('')}</div>
+  <p class="sm mut">❤ ${h.hp}/${P().maxhp} · ⚡ ${h.sta}/${P().maxsta}</p>
+  <div class="grid">${btn('Hunt again','again',undefined,'pri c',!can,(r.boss?BOSS_COST:FIGHT_COST)+'⚡')}${btn('Return to town','go','town','c')}</div>`;
+ },
+ pack(){
+  const h=S.hero,w=S.world;
+  let t=`<h1>🎒 Pack</h1><p class="mut">💰 <b>${fmt(w.gold)}</b> gold · ${w.inv.length}/${INV_MAX} items · tap an item for options</p><h2>Equipped</h2>`;
+  SLOTS.forEach(s=>{const it=h.equip[s];t+=it?itemRow(it,'equipped'):`<div class="item" style="cursor:default;opacity:.6"><div class="n">${SLOT_ICON[s]} <span class="mut">Empty ${s}</span></div></div>`;});
+  const pk=Object.keys(POTS).filter(k=>w.pots[k]>0);
+  t+=`<h2>Potions</h2>`+(pk.length?pk.map(k=>btn(`${POTS[k].n} ×${w.pots[k]}`,'usePot',k,'good',h.hp>=P().maxhp,'Tap to drink')).join(''):'<p class="mut sm">None. Buy some at the Market.</p>');
+  const mk=Object.keys(w.mats);
+  t+=`<h2>Materials</h2>`+(mk.length?`<div class="card sm">${mk.sort((a,b)=>MT[a]-MT[b]).map(m=>`${esc(m)} ×${w.mats[m]}`).join(' · ')}</div>`:'<p class="mut sm">None yet.</p>');
+  t+=`<h2>Inventory</h2><div class="grid">${btn('Sell Commons','sellAll',0,'c')}${btn('Sell ≤ Uncommon','sellAll',1,'c')}</div>`;
+  const inv=w.inv.slice().sort((a,b)=>b.rar-a.rar||b.il-a.il);
+  t+=inv.length?inv.map(it=>itemRow(it,h.lvl<it.req?`<span class="dn">Req Lv ${it.req}</span>`:`${sellVal(it)}g`)).join(''):'<p class="mut sm">Empty.</p>';
+  return t;
+ },
+ hero(){
+  const h=S.hero,p=P(),w=S.world,g=gearTotals();
+  let t=`<h1>🧍 ${esc(h.name)} ${esc(h.fam)}</h1><p class="mut">Generation ${w.gen} · Level ${h.lvl} · Day ${h.day}/${LIFESPAN}</p>`;
+  t+=`<div class="card">${bar(h.xp,xpNeed(h.lvl),'xp')}<div class="sm mut">XP ${h.xp}/${xpNeed(h.lvl)}${catchMult()>1?` · <span class="up">Bloodline ×${catchMult().toFixed(2)}</span>`:''}</div></div>`;
+  t+=`<h2>Attributes ${h.pts?`<span class="tag" style="color:var(--acc)">${h.pts} points</span>`:''}</h2>`;
+  STATS.forEach(k=>{t+=`<div class="card row2"><div><b>${STAT_NAME[k]}</b> ${p.st[k]}${g[k]?` <span class="mut sm">(+${g[k]} gear)</span>`:''}<div class="mut sm">${STAT_DESC[k]}</div></div><div style="width:72px">${btn('+','alloc',k,'pri c',h.pts<1)}</div></div>`;});
+  t+=`<h2>Combat</h2><div class="card sm">❤ HP ${p.maxhp} · ⚔ ATK ${p.atk} · 🛡 DEF ${p.def}<br>🎯 Crit ${p.crit.toFixed(1)}% (×${(p.critdmg/100).toFixed(2)}) · 💨 Dodge ${p.dodge.toFixed(1)}%<br>🩸 Lifesteal ${p.lifesteal}% · 🌵 Thorns ${p.thorns}% · 🌿 Regen ${p.regen}/turn<br>💰 Gold +${p.goldf}% · 🎁 Loot +${p.dropf}% · ✨ XP +${p.xpf}%<br>⚡ Stamina ${h.sta}/${p.maxsta} · 🔷 Max Focus ${p.maxfocus}<br>🏅 Guild renown ×${p.ren.toFixed(3)}</div>`;
+  t+=`<h2>Skills</h2>`;
+  const ks=Object.keys(h.skills);
+  t+=ks.length?ks.map(k=>`<div class="card"><div class="row2"><b>${SK[k].n}</b><span class="tag">Lv ${h.skills[k]}/5</span></div><div class="sm mut">🔷${SK[k].c} · ${SK[k].d(h.skills[k])}</div></div>`).join(''):'<p class="mut sm">None. Skills drop from monsters or can be bought at the Old Library. They are lost when you die.</p>';
+  return t;
+ },
+ guild(){
+  const h=S.hero,w=S.world;
+  if(!w.guild)return `<h1>📜 ${GUILD}</h1><p class="mut">The guild hall is shut. Prove yourself against monsters first (${w.kills}/${GUILD_KILLS} kills).</p>`+btn('← Town','go','town','c');
+  const r=rankIdx(h.contracts),nx=RANKS[r+1];
+  let t=`<h1>📜 ${GUILD}</h1><p class="mut">Rank <b style="color:var(--acc)">${RANKS[r].n}</b> · ${h.contracts} contracts completed</p>`;
+  if(nx)t+=`<div class="card sm">Next rank: <b>${nx.n}</b> at ${nx.c} contracts${bar(h.contracts-RANKS[r].c,nx.c-RANKS[r].c,'xp')}</div>`;
+  t+=`<p class="sm mut">Each contract: +2 stat points, a guaranteed gear drop, and +1.2% to HP/attack/defense permanently (up to +60%). Ranks add stamina and open new regions.</p>`;
+  if(S.cres){t+=`<div class="card">${S.cres.map(l=>`<p>${l}</p>`).join('')}</div>`;S.cres=null;}
+  t+=`<h2>Active contracts (${h.active.length}/3)</h2>`;
+  t+=h.active.length?h.active.map((c,i)=>{const done=contractDone(c),pr=c.type==='gather'?Math.min(c.n,w.mats[c.target]||0):c.prog;
+   return `<div class="card"><b>${c.text}</b><div class="sm mut">${ZONES[c.zi].ic} ${ZONES[c.zi].n} · 💰${c.gold} · ✨${c.xp}</div>${bar(pr,c.n,'sta')}<div class="sm mut">${pr}/${c.n}</div><div class="grid">${btn('Turn in','complete',i,'good c',!done)}${btn('Abandon','abandon',i,'c')}</div></div>`;}).join(''):'<p class="mut sm">None.</p>';
+  t+=`<h2>Contract board</h2><p class="sm mut">Refreshes each morning.</p>`;
+  t+=w.board.map((c,i)=>{const lock=r<c.rankReq;return `<div class="card"><b>${c.text}</b><div class="sm mut">${ZONES[c.zi].ic} ${ZONES[c.zi].n} · 💰${c.gold} · ✨${c.xp} · ${c.q===2?'Rare+':'Uncommon+'} gear</div>${btn('Accept','accept',i,'pri c',lock||h.active.length>=3,lock?'Requires '+RANKS[c.rankReq].n:'')}</div>`;}).join('');
+  return t;
+ },
+ shop(){
+  const w=S.world;
+  let t=`<h1>🛒 Market</h1><p class="mut">💰 <b>${fmt(w.gold)}</b></p><h2>Potions</h2>`;
+  Object.keys(POTS).forEach(k=>{t+=btn(`${POTS[k].n} <span class="tag">own ${w.pots[k]}</span>`,'buyPot',k,'',w.gold<POTS[k].price,`${POTS[k].price}g · heals ${Math.round(POTS[k].pct*100)}%`);});
+  t+=`<h2>Today's gear</h2><p class="sm mut">Restocks each morning.</p>`;
+  t+=w.shop.length?w.shop.map((it,i)=>`<div class="item" data-a="shopView" data-p="${i}"><div><div class="n">${SLOT_ICON[it.slot]} ${rarName(it)}</div><div class="s">Lv ${it.il} · ${Object.keys(it.st).slice(0,3).map(k=>statLine(k,it.st[k])).join(' · ')}</div></div><div class="s" style="color:var(--acc)">${it.price}g</div></div>`).join(''):'<p class="mut sm">Sold out.</p>';
+  return t+'<div style="height:8px"></div>'+btn('← Back to town','go','town','c');
+ },
+ library(){
+  const w=S.world,h=S.hero,r=rankIdx(h.contracts);
+  let t=`<h1>📚 Old Library</h1><p class="mut">💰 <b>${fmt(w.gold)}</b> · Tomes teach or upgrade skills (max Lv 5). Skills are forgotten when you die. Higher tomes appear as your rank grows.</p>`;
+  Object.keys(SK).filter(k=>SK[k].t<=r+1).forEach(k=>{const l=h.skills[k]||0,pr=tomePrice(k,l);
+   t+=btn(`${SK[k].n} <span class="tag">${l?'Lv '+l:'unknown'}</span>`,'buyTome',k,'',l>=5||w.gold<pr,l>=5?'Mastered':`${pr}g → Lv ${l+1} · ${SK[k].d(l+1)}`);});
+  return t+'<div style="height:8px"></div>'+btn('← Back to town','go','town','c');
+ },
+ tinker(){
+  const w=S.world;
+  let t=`<h1>🚚 Tinker's Wagon</h1><p class="mut">A wandering scrapper parked outside the gate. Give materials — get a random piece of gear. No recipes, no choices (except the slot, for a premium). <span class="sm">(Not a town service; this may change later.)</span></p>`;
+  let any=false;
+  for(let tier=0;tier<6;tier++){
+   const have=Object.keys(w.mats).filter(m=>MT[m]===tier).reduce((a,m)=>a+w.mats[m],0);
+   if(!have&&tier>0)continue;any=true;
+   t+=`<div class="card"><b>${TIER_ADJ[tier]} materials</b> <span class="tag">${have} owned</span><div class="sm mut">Gear level ${ZONES[tier].min}–${ZONES[tier].max}</div>
+   <div class="grid" style="margin-top:8px">${btn('Random piece','tinker','rand:'+tier,'c',have<12,'12 mats')}${btn('Chosen slot','tinker','slot:'+tier,'c',have<20,'20 mats')}</div>
+   <div style="margin-top:8px">${btn('Grand gamble (Uncommon+ with a shot at Epic)','tinker','grand:'+tier,'pri c',have<35,'35 mats')}</div></div>`;
+  }
+  t+=`<p class="sm mut">Tip: salvage unwanted gear from the Pack to gain scrap that counts as materials of its tier.</p>`;
+  return t+btn('← Back to town','go','town','c');
+ },
+ menu(){
+  const w=S.world,h=S.hero;
+  let t=`<h1>⚙️ Menu</h1><h2>Bloodline</h2><div class="card sm">Generation <b>${w.gen}</b> · Best ancestor level <b>${w.bestLevel||h.lvl}</b><br>Heirs keep gold, gear, potions & materials. They lose levels, skills and most stats (a share of the bloodline's stats carries on), and gain boosted XP and training until they pass the best ancestor.</div>`;
+  t+=w.anc.length?w.anc.slice().reverse().map(a=>`<div class="card sm">⚰️ <b>${esc(a.name)}</b> (Gen ${a.gen}) · Lv ${a.lvl} · Day ${a.day} · ${a.contracts} contracts<br><span class="mut">${esc(a.cause)}</span></div>`).join(''):'<p class="mut sm">No fallen heroes yet.</p>';
+  t+=`<h2>Settings</h2>${btn('Auto-sell Common drops: '+(S.set.autosell?'ON':'OFF'),'auto')}<div style="height:8px"></div>`;
+  t+=`<div class="grid">${btn('Export save','export','','c')}${btn('Import save','doimport','','c')}</div><h2>Danger zone</h2>`;
+  t+=`${btn('Retire hero & pass the torch','retire','','bad')}<div style="height:8px"></div>${btn('Erase everything','reset','','bad')}`;
+  return t;
+ },
+ death(){
+  const d=S.death,w=S.world;
+  const items=w.inv.length+SLOTS.filter(s=>S.hero.equip[s]).length;
+  return `<h1>⚰️ ${esc(d.name)} ${esc(d.fam)} has fallen</h1><p class="dn">${esc(d.cause)}</p>
+  <div class="card sm">Level ${d.lvl} · Day ${d.day} · ${d.contracts} contracts · ${d.kills} kills</div>
+  <h2>What passes on</h2><div class="card sm">💰 ${fmt(w.gold)} gold<br>🎒 ${items} pieces of gear<br>🧶 Materials & potions<br>🏮 The guild remembers you (heir starts with ${Math.floor(d.contracts*.4)} contracts)<br>🩸 Bloodline stat bonus & catch-up XP until your heir reaches level ${Math.max(w.bestLevel,d.lvl)}</div>
+  <p class="mut sm">Lost: levels, skills, trained stats.</p>${btn('Continue the bloodline','heir',undefined,'pri c')}`;
+ }
+};
+
+function modalHtml(){
+ const m=S.modal;if(!m)return '';
+ let inner='';
+ if(m.t==='item'){
+  const f=findItem(m.id);if(!f){S.modal=null;return '';}
+  const it=f.it,cur=S.hero.equip[it.slot],d=score(it)-score(cur);
+  inner=`<h3 style="font-size:18px;margin:0">${SLOT_ICON[it.slot]} ${rarName(it)}</h3><div class="mut sm">${RAR[it.rar].n} ${it.slot} · Item Lv ${it.il} · Needs Lv ${it.req}</div>
+  <div class="card">${Object.keys(it.st).map(k=>`<div>${statLine(k,it.st[k])}</div>`).join('')}${it.sp?`<p style="color:var(--acc)">★ ${SPECIAL[it.sp]}</p>`:''}${it.lore?`<p class="mut sm"><i>${esc(it.lore)}</i></p>`:''}</div>
+  ${f.where==='inv'&&cur?`<p class="sm">vs. equipped: <b class="${d>=0?'up':'dn'}">${d>=0?'▲ +':'▼ '}${d}</b> rating</p>`:''}`;
+  inner+=f.where==='inv'?btn('Equip','equip',it.id,'pri c',S.hero.lvl<it.req,S.hero.lvl<it.req?'Requires level '+it.req:'')+'<div style="height:6px"></div>'+`<div class="grid">${btn('Sell '+sellVal(it)+'g','sell',it.id,'c')}${btn('Salvage','salvage',it.id,'c',false,'→ materials')}</div>`
+   :btn('Unequip','unequip',it.id,'c');
+ }else if(m.t==='shop'){
+  const it=S.world.shop[m.i];if(!it){S.modal=null;return '';}
+  const cur=S.hero.equip[it.slot],d=score(it)-score(cur);
+  inner=`<h3 style="font-size:18px;margin:0">${SLOT_ICON[it.slot]} ${rarName(it)}</h3><div class="mut sm">${RAR[it.rar].n} ${it.slot} · Item Lv ${it.il} · Needs Lv ${it.req}</div>
+  <div class="card">${Object.keys(it.st).map(k=>`<div>${statLine(k,it.st[k])}</div>`).join('')}</div>
+  ${cur?`<p class="sm">vs. equipped: <b class="${d>=0?'up':'dn'}">${d>=0?'▲ +':'▼ '}${d}</b></p>`:''}${btn('Buy for '+it.price+'g','buyGear',m.i,'pri c',S.world.gold<it.price)}`;
+ }else if(m.t==='slot'){
+  inner=`<h3 style="margin:0 0 8px">Choose a slot</h3><div class="grid">${SLOTS.map(s=>btn(SLOT_ICON[s]+' '+s[0].toUpperCase()+s.slice(1),'tslot',s,'c')).join('')}</div>`;
+ }else if(m.t==='confirm'){
+  inner=`<p>${m.q}</p><div class="grid">${btn('Yes','confirmYes',m.a,'bad c')}${btn('Cancel','close','','c')}</div>`;
+ }else if(m.t==='export'){
+  let s='';try{s=btoa(unescape(encodeURIComponent(JSON.stringify(S))));}catch(e){}
+  inner=`<h3 style="margin:0 0 6px">Export save</h3><p class="sm mut">Copy this text somewhere safe.</p><textarea readonly onclick="this.select()">${s}</textarea>`;
+ }else if(m.t==='import'){
+  inner=`<h3 style="margin:0 0 6px">Import save</h3><textarea id="io" placeholder="Paste save text here"></textarea><p class="dn sm" id="ioerr"></p>${btn('Import','import','','pri c')}`;
+ }
+ return `<div class="mod" data-a="closeBg"><div id="sheet">${inner}<div style="height:8px"></div>${m.t==='item'||m.t==='shop'||m.t==='slot'||m.t==='export'||m.t==='import'?btn('Close','close','','c'):''}</div></div>`;
+}
+ACT.confirmYes=a=>ACT[a]();
+ACT.closeBg=(p,b)=>{};
+
+const NAV=[['town','🏘️','Town',['town','train','hunt','enc','result','shop','library','tinker']],['hero','🧍','Hero',['hero']],['pack','🎒','Pack',['pack']],['guild','📜','Guild',['guild']],['menu','⚙️','Menu',['menu']]];
+function render(){
+ if(typeof document==='undefined')return;
+ const view=$('#view'),nav=$('#nav'),top=$('#top');
+ if(!S){view.innerHTML=VIEWS.start();nav.style.display='none';top.style.display='none';$('#modal').innerHTML='';return;}
+ const scr=S.screen,inGame=!['combat','death'].includes(scr);
+ if(S.cb&&scr!=='combat')S.screen='combat';
+ if(scr==='enc'&&!S.enc)S.screen='hunt';
+ if(scr==='result'&&!S.res)S.screen='town';
+ const sc=S.screen,h=S.hero,p=P();
+ top.style.display=sc==='death'?'none':'block';
+ top.innerHTML=`<div class="row"><span><b>${esc(h.name)}</b> Lv ${h.lvl}</span><span>💰 <b>${fmt(S.world.gold)}</b></span><span>⚡ <b>${h.sta}/${p.maxsta}</b></span><span>Day <b>${h.day}</b></span></div>${bar(h.hp,p.maxhp,'hp')}<div class="row"><span>❤ ${h.hp}/${p.maxhp}</span><span>XP ${h.xp}/${xpNeed(h.lvl)}</span></div>`;
+ view.innerHTML=VIEWS[sc]();
+ const showNav=!['combat','death','enc'].includes(sc);
+ nav.style.display=showNav?'flex':'none';
+ nav.innerHTML=NAV.map(n=>`<button class="${n[3].includes(sc)?'on':''}" data-a="go" data-p="${n[0]}"><span>${n[1]}</span>${n[2]}${n[0]==='hero'&&h.pts?`<i class="dot">${h.pts}</i>`:''}</button>`).join('');
+ $('#modal').innerHTML=modalHtml();
+ const lg=$('#log');if(lg)lg.scrollTop=lg.scrollHeight;
+ if(S.lastScreen!==sc){window.scrollTo(0,0);S.lastScreen=sc;}
+}
+
+function main(){
+ S=load();
+ if(S&&S.world&&S.hero){S.modal=null;} else S=null;
+ document.addEventListener('click',e=>{
+  const mod=e.target.closest('.mod');
+  if(mod&&!e.target.closest('#sheet')){S.modal=null;render();return;}
+  const b=e.target.closest('[data-a]');if(!b||b.disabled)return;
+  const a=b.dataset.a,p=b.dataset.p;
+  if(a==='closeBg')return;
+  try{
+   if(a==='start'){ACT.start();}
+   else if(!S){return;}
+   else if(a==='resetYes'){ACT.resetYes();render();return;}
+   else{const f=ACT[a];if(!f)return;f(p,b);}
+  }catch(err){if(err!=='skip')console.error(err);render();return;}
+  if(S)save();render();
+ });
+ render();
+}
+if(typeof document!=='undefined'&&typeof window!=='undefined'&&!window.__TQ_TEST){main();}
+if(typeof window!=='undefined')window.TQ={get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
+</script>
+</body>
+</html>
