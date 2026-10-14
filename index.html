@@ -51,6 +51,33 @@ input[type=text],textarea{width:100%;background:#0b0e14;border:1px solid var(--l
 textarea{height:110px;font-size:12px}
 .up{color:var(--good)}.dn{color:var(--bad)}
 .skull{letter-spacing:2px}
+
+#sleepfx{position:fixed;inset:0;z-index:50;overflow:hidden;background:#0b1030;animation:fxout .5s ease 3.9s forwards}
+#sleepfx>*{position:absolute;pointer-events:none}
+#sleepfx .sky{inset:0;opacity:0}
+#sleepfx .day{background:linear-gradient(#5fb0ff,#bfe3ff);animation:skyday 4.4s linear forwards;opacity:1}
+#sleepfx .dusk{background:linear-gradient(#2b1a5a,#ff7a3c 70%,#ffd27a);animation:skydusk 4.4s linear forwards}
+#sleepfx .night{background:linear-gradient(#050818,#101a4a);animation:skynight 4.4s linear forwards}
+#sleepfx .dawn{background:linear-gradient(#3a3f8f,#ff9b6a 75%,#ffe3a1);animation:skydawn 4.4s linear forwards}
+#sleepfx .stars{inset:0;background-image:radial-gradient(2px 2px at 12% 18%,#fff,transparent),radial-gradient(1.5px 1.5px at 30% 35%,#fff,transparent),radial-gradient(2px 2px at 55% 12%,#fff,transparent),radial-gradient(1.5px 1.5px at 72% 28%,#fff,transparent),radial-gradient(2px 2px at 88% 15%,#fff,transparent),radial-gradient(1.5px 1.5px at 20% 52%,#fff,transparent),radial-gradient(1.5px 1.5px at 80% 48%,#fff,transparent),radial-gradient(2px 2px at 45% 42%,#fff,transparent);opacity:0;animation:starsfx 4.4s linear forwards}
+#sleepfx .sun{left:50%;width:84px;height:84px;margin-left:-42px;border-radius:50%;background:radial-gradient(circle,#fff6c9 30%,#ffc94a 70%);box-shadow:0 0 60px 20px rgba(255,190,70,.6);animation:sunfx 4.4s ease-in-out forwards}
+#sleepfx .moon{left:68%;top:20%;width:46px;height:46px;border-radius:50%;background:#f2f0e6;box-shadow:inset -12px -4px 0 0 #cfcab8,0 0 30px 8px rgba(220,230,255,.35);opacity:0;animation:moonfx 4.4s linear forwards}
+#sleepfx .hills{left:-10%;right:-10%;bottom:-2%;height:30%;background:#0a0d18;border-radius:50% 50% 0 0/100% 100% 0 0;box-shadow:0 0 0 100vh #0a0d18 inset;z-index:2}
+#sleepfx .town{left:0;right:0;bottom:calc(30% - 6px);text-align:center;font-size:30px;letter-spacing:6px;z-index:2;opacity:.9;filter:grayscale(1) brightness(.2)}
+#sleepfx .stxt{left:0;right:0;top:12%;text-align:center;z-index:3;color:#fff;font-size:20px;font-weight:600;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+#sleepfx .stxt span{position:absolute;left:0;right:0;opacity:0}
+#sleepfx .t1{animation:txt1 4.4s linear forwards}#sleepfx .t2{animation:txt2 4.4s linear forwards}
+@keyframes skyday{0%{opacity:1}30%{opacity:0}100%{opacity:0}}
+@keyframes skydusk{0%{opacity:0}15%{opacity:1}42%{opacity:1}55%{opacity:0}100%{opacity:0}}
+@keyframes skynight{0%,30%{opacity:0}48%{opacity:1}62%{opacity:1}75%{opacity:0}100%{opacity:0}}
+@keyframes skydawn{0%,62%{opacity:0}78%{opacity:1}100%{opacity:1}}
+@keyframes starsfx{0%,30%{opacity:0}48%{opacity:1}62%{opacity:1}78%{opacity:0}100%{opacity:0}}
+@keyframes sunfx{0%{top:14%;filter:none}38%{top:66%;filter:hue-rotate(-20deg) saturate(1.4)}50%{top:90%}62%{top:90%}95%{top:42%}100%{top:36%}}
+@keyframes moonfx{0%,35%{opacity:0;transform:translateY(30px)}50%,62%{opacity:1;transform:none}72%,100%{opacity:0}}
+@keyframes txt1{0%,5%{opacity:0}15%,40%{opacity:1}52%,100%{opacity:0}}
+@keyframes txt2{0%,68%{opacity:0}80%,100%{opacity:1}}
+@keyframes fxout{to{opacity:0}}
+@media (prefers-reduced-motion:reduce){#sleepfx,#sleepfx *{animation-duration:1.2s!important;animation-delay:0s!important}}
 </style>
 </head>
 <body>
@@ -321,9 +348,12 @@ function makeEnemy(zi,boss){
  const z=ZONES[zi],h=S.hero;
  const last=zi===ZONES.length-1,zmax=last?9999:z.max;
  let lvl=boss?(last?Math.max(z.max,h.lvl+1):z.max):clamp(h.lvl+ri(-1,2),z.min,zmax);
- const tpl=boss?z.boss:pick(z.mon),el=!boss&&h.lvl>=3&&Math.random()<.12,tier=boss?'b':el?'e':'n';
+ const early=!boss&&zi===0&&h.kills<4;
+ let tpl=boss?z.boss:pick(z.mon);
+ if(early){lvl=1;tpl=h.kills===0?z.mon[1]:pick([z.mon[0],z.mon[1]]);}
+ const el=!boss&&h.lvl>=3&&Math.random()<.12,tier=boss?'b':el?'e':'n';
  if(el)lvl=Math.min(lvl+1,zmax+1);
- const hm={n:1,e:1.9,b:3.6}[tier],am={n:1,e:1.3,b:1.5}[tier];
+ const hm={n:1,e:1.9,b:3.6}[tier]*(early?.55:1),am={n:1,e:1.3,b:1.5}[tier]*(early?.5:1);
  const base=14+13*lvl+.6*lvl*lvl;
  const hp=Math.round(base*tpl.hp*hm);
  return{name:(el?pick(['Alpha','Ravenous','Ancient','Frenzied'])+' ':'')+tpl.n,base:tpl.n,lvl,tier,zi,
@@ -512,6 +542,18 @@ function sleepDay(){
 }
 function huntUnlocked(){return S.hero.tc>=(S.world.gen>1?HEIR_TC:UNLOCK_TC);}
 
+
+function playSleep(died){
+ if(typeof document==='undefined')return;
+ const old=document.getElementById('sleepfx');if(old)old.remove();
+ const el=document.createElement('div');el.id='sleepfx';
+ const day=S&&S.hero?S.hero.day:'';
+ el.innerHTML='<div class="sky day"></div><div class="sky dusk"></div><div class="sky night"></div><div class="sky dawn"></div><div class="stars"></div><div class="sun"></div><div class="moon"></div><div class="town">🏠🏘️🏠</div><div class="hills"></div><div class="stxt"><span class="t1">The sun sets over '+TOWN+'…</span><span class="t2">'+(died?'Your long life comes to an end…':'Day '+day+' — you wake rested')+'</span></div>';
+ const done=()=>{if(el.parentNode)el.remove();};
+ el.addEventListener('click',done);
+ document.body.appendChild(el);
+ setTimeout(done,4500);
+}
 /* ---------------- actions ---------------- */
 const ACT={
  start(){
@@ -534,7 +576,7 @@ const ACT={
   x.forEach(t=>note(t,'y'));
   if(h.tc===(S.world.gen>1?HEIR_TC:UNLOCK_TC))note('You finally feel strong enough to leave the gates and face the weakest creatures outside.','y');
  },
- sleep(){sleepDay();},
+ sleep(){sleepDay();playSleep(S.screen==='death');},
  zone(zi){
   const h=S.hero;zi=+zi;if(h.sta<FIGHT_COST){note('Too tired to hunt. Sleep first.','e');S.screen='town';return;}
   S.enc={zi,boss:false,e:makeEnemy(zi,false)};S.screen='enc';
@@ -701,7 +743,7 @@ const VIEWS={
   const e=S.enc.e,d=danger(e),h=S.hero;
   return `<h1>${e.tier==='b'?'👑':e.tier==='e'?'⭐':'❓'} Encounter</h1>
   <div class="card"><div class="row2"><b style="font-size:18px">${esc(e.name)}</b><span class="tag">Lv ${e.lvl}</span></div>
-  <p class="mut sm">${e.tier==='b'?'A boss.':e.tier==='e'?'An elite — tougher, but better loot.':'A common creature.'}</p>
+  <p class="mut sm">${S.hero.kills<4&&S.enc.zi===0?'Something small and harmless-looking. A good first fight.':e.tier==='b'?'A boss.':e.tier==='e'?'An elite — tougher, but better loot.':'A common creature.'}</p>
   <p>Danger: <b style="color:${d[1]}">${d[0]}</b> <span class="skull">${'💀'.repeat(d[2])}</span></p>
   <p class="mut sm">Your HP: ${h.hp}/${P().maxhp} · Enemy HP ≈ ${e.hp}</p></div>
   ${d[2]>=3?`<p class="dn sm">⚠ Death is permanent. Heal first or avoid.</p>`:''}
