@@ -119,7 +119,8 @@ function wroll(ws){let t=ws.reduce((a,b)=>a+b,0),r=Math.random()*t;for(let i=0;i
 
 /* ---------------- static data ---------------- */
 const GUILD='Lanternwatch Guild', TOWN='Hollowmere';
-const FIGHT_COST=1, BOSS_COST=3, LIFESPAN=600, INV_MAX=40, UNLOCK_TC=10, HEIR_TC=3, GUILD_KILLS=25;
+const DPY=120;
+const FIGHT_COST=1, BOSS_COST=3, INV_MAX=40, UNLOCK_TC=10, HEIR_TC=3, GUILD_KILLS=25;
 const SLOTS=['weapon','helm','armor','boots','ring','amulet'];
 const SLOT_ICON={weapon:'⚔️',helm:'🪖',armor:'🛡️',boots:'👢',ring:'💍',amulet:'📿'};
 const RAR=[{n:'Common',c:'#b8c0cc'},{n:'Uncommon',c:'#5fd38d'},{n:'Rare',c:'#4aa3ff'},{n:'Epic',c:'#c077ff'},{n:'Legendary',c:'#ffb02e'}];
@@ -241,7 +242,7 @@ function newWorld(){return{gold:0,inv:[],mats:{},pots:{hp1:0,hp2:0,hp3:0},gen:1,
 function newHero(name,fam,gen){
  const w=S.world,fl=(w.map&&w.map.flags)||{},f=gen>1?Math.min(.5,.1*(gen-1)+.02*Object.keys(fl).filter(k=>k.startsWith('echo')).length+(fl.ancestors?.05:0)):0,st={};
  STATS.forEach(k=>st[k]=3+Math.floor((w.legacy[k]||0)*f));
- return{name,fam,gen,lvl:1,xp:0,st,pts:0,hp:1,day:1,sta:1,tc:0,kills:0,contracts:0,equip:{},skills:{},active:[],q:{},qd:{},fl:{},fx:[],dgc:{},dgsave:{},pz:0,party:[],rel:[],su:{},sx:{},talked:{},guest:null};
+ return{name,fam,gen,lvl:1,xp:0,st,pts:0,hp:1,day:1,sta:1,tc:0,kills:0,contracts:0,equip:{},skills:{},active:[],q:{},qd:{},fl:{},fx:[],dgc:{},dgsave:{},pz:0,party:[],rel:[],su:{},sx:{},talked:{},guest:null,age0:ri(16,19),endAge:ri(64,74)};
 }
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}}
 function load(){try{const t=localStorage.getItem(SAVE_KEY);return t?JSON.parse(t):null;}catch(e){return null;}}
@@ -292,7 +293,7 @@ function catchMult(){
 }
 const xpNeed=l=>Math.round(24*Math.pow(l,1.5));
 function mit(def,lvl){return clamp(def/(def+30+8*lvl),0,.8);}
-function ageLeft(){return LIFESPAN-S.hero.day;}
+function ageLeft(){const h=S.hero;return ((h.endAge||68)-(h.age0||18))*DPY-(h.day-1);}
 
 /* ---------------- items ---------------- */
 function itemFromBases(slot,il,bs,m){const st={};for(const k in bs)st[k]=baseStat(k,il,bs[k]*m);return st;}
@@ -311,7 +312,7 @@ function genItem(il,rar,slot){
  used.forEach(k=>{const a=AF[k];let v=a.f(il)*rnd(.8,1.2)*m;v=a.pct?Math.round(v*10)/10:Math.max(1,Math.round(v));st[k]=Math.round(((st[k]||0)+v)*10)/10;});
  const pre=n>=1?pick(AF[used[0]].pre):'',suf=n>=2?pick(AF[used[1]].suf):'';
  const name=[pre,TIER_ADJ[t],bn,suf].filter(Boolean).join(' ')+(n>=3?' ✦':'');
- return{id:uid(),slot,name,il,tier:t,rar,req:Math.max(1,il-2),st,val:Math.round((8+il*3.5)*VAL_MULT[rar])};
+ return{id:uid(),slot,base:bn,name,il,tier:t,rar,req:Math.max(1,il-2),st,val:Math.round((8+il*3.5)*VAL_MULT[rar])};
 }
 function genLegend(d){
  const st=itemFromBases(d.slot,d.il,d.b,1.4);
@@ -434,7 +435,6 @@ function makeHeir(){
 /* ---------------- day cycle ---------------- */
 function sleepDay(){
  const h=S.hero;h.day++;
- if(h.day>LIFESPAN){die('old age');return;}
  h.fx=[];const p=P();h.hp=p.maxhp;h.sta=p.maxsta+(wf('baker')?2:0);
  if(S.world.guild){
   refreshBoard();
@@ -442,7 +442,6 @@ function sleepDay(){
  refreshShop();rollWeather();estateDaily();refreshBounties();
  const tips=['A traveller whispers of a ring that burns only once.','The baker says the Whisperwood is getting louder.','Children chant the names of dead heroes.','Someone swears the old mill glows at night.','Your muscles ache. A good sign.'];
  note(`🌙 Day ${h.day}. You wake rested. ${pick(tips)}`);
- if(h.day>LIFESPAN-60&&h.day%10===0)note(`You feel your years. About ${LIFESPAN-h.day} days remain.`,'y');
 }
 function huntUnlocked(){return S.hero.tc>=(S.world.gen>1?HEIR_TC:UNLOCK_TC);}
 
@@ -2742,7 +2741,7 @@ const HINTS=[
  {id:'orders',scr:['combat'],when:()=>!!(S.cb&&S.cb.party.length),t:'Companions act on their own. Tap an Order to fire their special right now.'},
  {id:'pack',scr:['enc','combat'],when:()=>{const e=S.enc?S.enc.e:(S.cb&&S.cb.e);return !!(e&&e.pack);},t:'A pack deals more damage at full strength and gets weaker as you thin it out.'},
  {id:'guild',scr:['town'],when:()=>S.world.guild,t:'The guild has noticed you. Contracts give permanent bonuses and open new regions, and the bounty board posts targeted hunts.'},
- {id:'fam',scr:['hunt'],when:()=>S.hero.kills>=5,t:'Every kill teaches you the region. Keep hunting. Dungeons and wanderers turn up as your familiarity grows.'},
+ {id:'fam',scr:['hunt'],when:()=>S.hero.kills>=5,t:'Every kill teaches you the region. Keep at it, and a familiar place has a way of showing you more.'},
  {id:'meet',scr:['town'],when:()=>tavernIds().some(canApproach),t:'Someone at the Tavern has noticed you. Companions are earned through conversation, work and trust, never gold.'},
  {id:'path',scr:['town','hero','result'],when:()=>S.hero.lvl>=10&&!S.hero.path,t:'You are experienced enough to choose a path. Open the Hero tab.'},
  {id:'estate',scr:['town'],when:()=>S.world.estate&&S.world.estate.deed,t:'The town has granted your family land. Your Estate grows with time and with the people you help, and your whole bloodline keeps it.'},
@@ -3078,7 +3077,7 @@ const VIEWS={
   const h=S.hero,w=S.world,hu=huntUnlocked();
   let t=`<h1>🏘️ ${TOWN}</h1>`;
   if(!hu)t+=`<p class="mut">You are too frail to leave the gates. Train your body until you're ready. <b>(${h.tc}/${w.gen>1?HEIR_TC:UNLOCK_TC} sessions)</b></p>`;
-  else t+=`<p class="mut">The gates stand open. Day <b>${h.day}</b>${ageLeft()<80?` · <span class="dn">${ageLeft()} days left to live</span>`:''}.</p>`;
+  else t+=`<p class="mut">The gates stand open. Year <b>${Math.floor((h.day-1)/DPY)+1}</b>, ${SEASONS[season()][0]} · age <b>${heroAge()}</b>${ageLeft()<DPY*4?` · <span class="dn">you feel your years</span>`:''}.</p>`;
   t+=`<div class="grid">
    ${btn('🏋️ Train','go','train','pri',false,`2⚡ · raise your stats`)}
    ${btn('🗡️ Hunt','go','hunt','',!hu,hu?FIGHT_COST+'⚡ · fight outside':'Locked: finish training')}
@@ -3160,7 +3159,7 @@ const VIEWS={
   const pk=Object.keys(POTS).filter(k=>w.pots[k]>0);
   t+=`<h2>Potions</h2>`+(pk.length?pk.map(k=>btn(`${POTS[k].n} ×${w.pots[k]}`,'usePot',k,'good',h.hp>=P().maxhp,'Tap to drink')).join(''):'<p class="mut sm">None. Buy some at the Market.</p>');
   const mk=Object.keys(w.mats);
-  t+=`<h2>Materials</h2>`+(mk.length?`<div class="card sm">${mk.sort((a,b)=>MT[a]-MT[b]).map(m=>`${esc(m)} ×${w.mats[m]}`).join(' · ')}</div>`:'<p class="mut sm">None yet.</p>');
+  t+=`<h2>Materials</h2>`+(mk.length?`<div class="card sm">${mk.sort((a,b)=>MT[a]-MT[b]).map(m=>`<div style="margin:3px 0"><b>${esc(m)}</b> ×${w.mats[m]}${MATQ[m]?`<div class="mut"><i>${MATQ[m]}</i></div>`:''}</div>`).join('')}</div>`:'<p class="mut sm">None yet.</p>');
   t+=`<h2>Inventory</h2><div class="grid">${btn('Sell Commons','sellAll',0,'c')}${btn('Sell ≤ Uncommon','sellAll',1,'c')}</div>`;
   const inv=w.inv.slice().sort((a,b)=>b.rar-a.rar||b.il-a.il);
   t+=inv.length?inv.map(it=>itemRow(it,h.lvl<it.req?`<span class="dn">Req Lv ${it.req}</span>`:`${sellVal(it)}g`)).join(''):'<p class="mut sm">Empty.</p>';
@@ -3168,7 +3167,7 @@ const VIEWS={
  },
  hero(){
   const h=S.hero,p=P(),w=S.world,g=gearTotals();
-  let t=`<h1>🧍 ${esc(h.name)} ${esc(h.fam)}</h1><p class="mut">Generation ${w.gen} · Level ${h.lvl} · Day ${h.day}/${LIFESPAN}</p>`;
+  let t=`<h1>🧍 ${esc(h.name)} ${esc(h.fam)}</h1><p class="mut">Generation ${w.gen} · Level ${h.lvl} · Age ${heroAge()} · Day ${h.day}</p>`;
   t+=`<div class="card">${bar(h.xp,xpNeed(h.lvl),'xp')}<div class="sm mut">XP ${h.xp}/${xpNeed(h.lvl)}${catchMult()>1?` · <span class="up">Bloodline ×${catchMult().toFixed(2)}</span>`:''}</div></div>`;
   t+=`<h2>Attributes ${h.pts?`<span class="tag" style="color:var(--acc)">${h.pts} points</span>`:''}</h2>`;
   STATS.forEach(k=>{t+=`<div class="card row2"><div><b>${STAT_NAME[k]}</b> ${p.st[k]}${g[k]?` <span class="mut sm">(+${g[k]} gear)</span>`:''}<div class="mut sm">${STAT_DESC[k]}</div></div><div style="width:72px">${btn('+','alloc',k,'pri c',h.pts<1)}</div></div>`;});
@@ -3248,6 +3247,7 @@ function modalHtml(){
   const f=findItem(m.id);if(!f){S.modal=null;return '';}
   const it=f.it,cur=S.hero.equip[it.slot],d=score(it)-score(cur);
   inner=`<h3 style="font-size:18px;margin:0">${SLOT_ICON[it.slot]} ${rarName(it)}</h3><div class="mut sm">${RAR[it.rar].n} ${it.slot} · Item Lv ${it.il} · Needs Lv ${it.req}</div>
+  <p class="mut sm" style="margin:4px 0"><i>“${itemQuip(it)}”</i></p>
   <div class="card">${Object.keys(it.st).map(k=>`<div>${statLine(k,it.st[k])}</div>`).join('')}${it.sp?`<p style="color:var(--acc)">★ ${SPECIAL[it.sp]}</p>`:''}${it.lore?`<p class="mut sm"><i>${esc(it.lore)}</i></p>`:''}</div>
   ${f.where==='inv'&&cur?`<p class="sm">vs. equipped: <b class="${d>=0?'up':'dn'}">${d>=0?'▲ +':'▼ '}${d}</b> rating</p>`:''}`;
   inner+=f.where==='inv'?btn('Equip','equip',it.id,'pri c',S.hero.lvl<it.req,S.hero.lvl<it.req?'Requires level '+it.req:'')+'<div style="height:6px"></div>'+`<div class="grid">${btn('Sell '+sellVal(it)+'g','sell',it.id,'c')}${btn('Salvage','salvage',it.id,'c',false,'→ materials')}</div>`
@@ -3256,6 +3256,7 @@ function modalHtml(){
   const it=S.world.shop[m.i];if(!it){S.modal=null;return '';}
   const cur=S.hero.equip[it.slot],d=score(it)-score(cur);
   inner=`<h3 style="font-size:18px;margin:0">${SLOT_ICON[it.slot]} ${rarName(it)}</h3><div class="mut sm">${RAR[it.rar].n} ${it.slot} · Item Lv ${it.il} · Needs Lv ${it.req}</div>
+  <p class="mut sm" style="margin:4px 0"><i>“${itemQuip(it)}”</i></p>
   <div class="card">${Object.keys(it.st).map(k=>`<div>${statLine(k,it.st[k])}</div>`).join('')}</div>
   ${cur?`<p class="sm">vs. equipped: <b class="${d>=0?'up':'dn'}">${d>=0?'▲ +':'▼ '}${d}</b></p>`:''}${btn('Buy for '+it.price+'g','buyGear',m.i,'pri c',S.world.gold<it.price)}`;
  }else if(m.t==='slot'){
@@ -3291,19 +3292,19 @@ VIEWS.town=function(){
  let t=`<h1>🏘️ ${TOWN}</h1>`;
  if(S.dg)t+=`<div class="card" style="border-color:var(--acc)">You are still inside <b>${DG[S.dg.id].n}</b>.${btn('Return to the dungeon','go','dungeon','pri c')}</div>`;
  if(!hu)t+=`<p class="mut">You are too frail to leave the gates. Train your body until you're ready. <b>(${h.tc}/${w.gen>1?HEIR_TC:UNLOCK_TC} sessions)</b></p>`;
- else t+=`<p class="mut">The gates stand open. Day <b>${h.day}</b>${ageLeft()<80?` · <span class="dn">${ageLeft()} days left to live</span>`:''}.</p>`;
- const newQ=hu?townQuests().filter(qAvail).length:0;
+ else t+=`<p class="mut">The gates stand open. Year <b>${Math.floor((h.day-1)/DPY)+1}</b>, ${SEASONS[season()][0]} · age <b>${heroAge()}</b>${ageLeft()<DPY*4?` · <span class="dn">you feel your years</span>`:''}.</p>`;
+ const newQ=hu?townQuests().filter(q=>qAvail(q)&&K().n[q.id]).length:0;
  t+=`<div class="grid">
   ${btn('🏋️ Train','go','train','pri',false,'2⚡ · raise your stats')}
   ${btn('🗡️ Hunt & Explore','go','hunt','',!hu,hu?'Regions, dungeons, secrets':'Locked: finish training')}
-  ${btn('💬 Town Square','go','square','',!hu,hu?(q||newQ?`❗ ${q+newQ} need you`:'Neighbors & quests'):'Locked')}
-  ${btn('📜 '+GUILD,'go','guild','',!w.guild,w.guild?`Rank: ${RANKS[rankIdx(h.contracts)].n}`:`Locked (${w.kills}/${GUILD_KILLS} kills)`)}
+  ${hu?btn('💬 Town Square','go','square','',false,q||newQ?`❗ ${q+newQ} need you`:'Who is about?'):''}
+  ${w.guild?btn('📜 '+GUILD,'go','guild','',false,`Rank: ${RANKS[rankIdx(h.contracts)].n}`):''}
   ${btn('🛒 Market','go','shop','',false,'Potions & gear')}
   ${btn('📚 Old Library','go','library','',false,'Skill tomes')}
-  ${btn('🍺 Tavern','go','tavern','',!hu,'Rumors & gossip')}
-  ${btn('🚚 Tinker\'s Wagon','go','tinker','',!hu,hu?'Scrap → random loot':'Locked')}
+  ${hu?btn('🍺 Tavern','go','tavern','',false,'Food, drink, gossip'):''}
+  ${hu?btn('🚚 Tinker\'s Wagon','go','tinker','',false,'Scrap → random loot'):''}
   ${w.anc.length?btn('⚰️ Family Crypt','go','crypt','',!hu,'Face your ancestors'):''}
-  ${hu?btn('🏡 Estate','go','estate','',false,S.world.estate.deed?HOME[estLv('home')].n+(S.world.estate.vault.gold||S.world.estate.vault.items.length?' · goods waiting':''):'Earn a place of your own'):''}
+  ${hu&&S.world.estate.deed?btn('🏡 Estate','go','estate','',false,S.world.estate.deed?HOME[estLv('home')].n+(S.world.estate.vault.gold||S.world.estate.vault.items.length?' · goods waiting':''):'Earn a place of your own'):''}
   ${abyssOpen()&&hu?(S.dl?btn('🌀 Abyss Stair','go','delve','pri',false,'Resume your descent'):btn('🌀 Abyss Stair','delveStart',undefined,'',h.sta<2||!!S.dg,`2⚡ · endless · best floor ${w.delve.best||0}`)):''}
  </div>
  <div style="margin-top:10px">${btn('🛏️ Sleep until morning','sleep',undefined,'good',!!S.dg,S.dg?'Leave the dungeon first':'Restore HP & stamina · next day · refreshes shop/board')}</div>
@@ -3326,15 +3327,16 @@ VIEWS.crypt=function(){
 };
 VIEWS.hunt=function(){
  const h=S.hero,w=S.world,r=rankIdx(h.contracts);
- let t=`<h1>🗡️ Beyond the Gate</h1><p class="mut">Hunting (${FIGHT_COST}⚡) is the heart of the game: find a monster, kill it. Every kill teaches you the region. As your familiarity grows, dungeons and wanderers turn up, odd things happen on the hunt, and scouting (1⚡) unlocks at 20%. Rank opens new regions.</p>`;
+ let t=`<h1>🗡️ Beyond the Gate</h1><p class="mut">Find a monster, fight it. Each fight costs ${FIGHT_COST}⚡. The more you fight in a place, the better you know it, and places tend to reward people who know them.</p>`;
  if(S.dg)t+=`<div class="card" style="border-color:var(--acc)">You are inside <b>${DG[S.dg.id].n}</b>.${btn('Return to the dungeon','go','dungeon','pri c')}</div>`;
  ZONES.forEach((z,i)=>{
+  if(!knowZ(i))return;
   const lock=r<i,ex=Math.floor(w.map.explore[i]);
   t+=`<div class="card"><div class="row2"><b>${z.ic} ${z.n}</b><span class="tag">Lv ${z.min}–${z.max}</span></div>`;
   if(lock){t+=`<div class="mut sm">Requires ${RANKS[i].n} rank</div></div>`;return;}
   t+=`<div class="mut sm">Familiarity ${ex}% ${ex<20?'· scouting unlocks at 20%':''}</div>${bar(ex,100,'sta')}
   <div class="grid" style="margin-top:6px">${btn('Hunt','zone',i,'pri',h.sta<FIGHT_COST||!!S.dg,FIGHT_COST+'⚡')}${btn('🧭 Scout','explore',i,'',h.sta<1||!!S.dg||ex<20,ex<20?'at 20% familiarity':'1⚡ · events & secrets')}</div>
-  <div style="margin-top:6px">${btn('Boss: '+z.boss.n,'boss',i,'bad',h.sta<BOSS_COST||!!S.dg,BOSS_COST+'⚡ · rare+ drop')}</div><div style="margin-top:6px">${btn('⛺ Camp until morning','camp','z'+i,'c',!!S.dg,'rest here · next day')}</div>`;
+  ${knowB(i)?`<div style="margin-top:6px">${btn(knowBN(i)?'Boss: '+z.boss.n:'Something large lairs here','boss',i,'bad',h.sta<BOSS_COST||!!S.dg,BOSS_COST+'⚡ · rare+ drop')}</div>`:''}<div style="margin-top:6px">${btn('⛺ Camp until morning','camp','z'+i,'c',!!S.dg,'rest here · next day')}</div>`;
   const dgs=LANDMARKS[i].map(l=>l.id).concat(DUNGEONS.filter(d=>d.hidden&&d.zi===i).map(d=>d.id)).filter(id=>w.map.found[id]);
   if(dgs.length){t+='<h3>Dungeons</h3>';dgs.forEach(id=>{const D=DG[id],cl=w.map.cleared[id]||0;
    t+=`<div class="item" style="cursor:default"><div><div class="n">${D.ic} ${D.n}</div><div class="s">Lv ${D.lvl}+ · ${D.sz[0]*D.sz[1]} rooms · ${cl?`cleared ×${cl}`:'unexplored'}${h.dgsave[id]?' · <b>in progress</b>':''}</div></div><div style="width:110px">${btn(h.dgsave[id]?'Resume':'Enter','dgEnter',id,'pri c',!!S.dg||(!h.dgsave[id]&&h.sta<3),h.dgsave[id]?'':'3⚡')}</div></div><div style="margin:4px 0 8px">${btn('⛺ Camp at the entrance','camp','d'+id,'c',!!S.dg)}</div>`;});}
@@ -3469,13 +3471,14 @@ VIEWS.journal=function(){
  let t=`<h1>📖 Journal</h1><div class="grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:8px">${tabs.map(x=>btn(x[1],'jtab',x[0],tab===x[0]?'pri c':'c')).join('')}</div>`;
  if(tab==='quests'){
   const act=Object.keys(h.q);
-  t+=`<p class="mut sm">Active: ${act.length} · Completed: ${Object.keys(h.qd).length}/${QLIST.length}</p>`;
+  t+=`<p class="mut sm">Active: ${act.length} · Completed: ${Object.keys(h.qd).length}</p>`;
   t+=act.length?act.map(id=>questCard(QS[id])).join(''):'<p class="mut">No active quests. Visit the Town Square, or explore the wilds to meet wanderers.</p>';
  }else if(tab==='places'){
   ZONES.forEach((z,i)=>{
+   if(!knowZ(i))return;
    const ex=Math.floor(w.map.explore[i]);
    const ids=LANDMARKS[i].map(l=>l.id).concat(DUNGEONS.filter(d=>d.hidden&&d.zi===i).map(d=>d.id));
-   t+=`<div class="card"><div class="row2"><b>${z.ic} ${z.n}</b><span class="tag">${ex}%</span></div>${bar(ex,100,'sta')}${ids.map(id=>{const D=DG[id],f=w.map.found[id];return `<div class="sm" style="margin-top:4px">${f?`${D.ic} <b>${D.n}</b> · Lv ${D.lvl}+ · ${(w.map.cleared[id]||0)?'cleared ×'+w.map.cleared[id]:'unexplored'}`:'<span class="mut">❔ Undiscovered location</span>'}</div>`;}).join('')}</div>`;
+   t+=`<div class="card"><div class="row2"><b>${z.ic} ${z.n}</b><span class="tag">${ex}%</span></div>${bar(ex,100,'sta')}${ids.map(id=>{const D=DG[id],f=w.map.found[id];return `<div class="sm" style="margin-top:4px">${f?`${D.ic} <b>${D.n}</b> · Lv ${D.lvl}+ · ${(w.map.cleared[id]||0)?'cleared ×'+w.map.cleared[id]:'unexplored'}`:''}</div>`;}).join('')}</div>`;
   });
   if(w.anc.length)t+=`<div class="card sm">⚰️ <b>Crypt of Heirs</b> · ${w.anc.filter(a=>w.map.flags['echo'+a.gen]).length}/${w.anc.length} echoes at rest</div>`;
  }else if(tab==='best'){
@@ -3544,7 +3547,7 @@ function render(){
  const showNav=!['combat','death','enc','bgpick'].includes(sc);
  nav.style.display=showNav?'flex':'none';
  const qm=questMark();
- nav.innerHTML=NAV.map(n=>`<button class="${n[3].includes(sc)?'on':''}" data-a="go" data-p="${n[0]}"><span>${n[1]}</span>${n[2]}${n[0]==='hero'&&h.pts?`<i class="dot">${h.pts}</i>`:''}${n[0]==='journal'&&qm?`<i class="dot">${qm}</i>`:''}</button>`).join('');
+ nav.innerHTML=NAV.filter(n=>n[0]!=='guild'||S.world.guild).map(n=>`<button class="${n[3].includes(sc)?'on':''}" data-a="go" data-p="${n[0]}"><span>${n[1]}</span>${n[2]}${n[0]==='hero'&&h.pts?`<i class="dot">${h.pts}</i>`:''}${n[0]==='journal'&&qm?`<i class="dot">${qm}</i>`:''}</button>`).join('');
  $('#modal').innerHTML=modalHtml();
  const lg=$('#log');if(lg)lg.scrollTop=lg.scrollHeight;
  if(S.lastScreen!==sc){window.scrollTo(0,0);S.lastScreen=sc;}
@@ -3684,7 +3687,7 @@ VIEWS.tavern=function(){
  if(st.length)t+=`<h2>A stranger catches your eye</h2>`+st.map(id=>`<div class="card"><div class="sm mut">Someone at the bar has been watching you. A ${COMP[id].role.toLowerCase()}, by the look of them.</div>${btn('Go over and say hello','approach',id,'pri c')}</div>`).join('');
  const met=castIds().filter(id=>w.meet[id]&&!w.comp[id]);
  t+=`<h2>Faces you know</h2>`+(met.length?met.map(metCard).join(''):'<p class="mut sm">No one yet. Keep hunting. People notice a capable adventurer, and some wait in dungeons or the wilds.</p>');
- t+=`<h2>Rumors</h2>${btn('Buy a round for rumors','rumor',undefined,'c',w.gold<cost,`${cost}g · may reveal a dungeon`)}`;
+ t+=`<h2>Rumors</h2>${btn('👂 Listen in','listen',undefined,'c',h.lstDay===h.day,h.lstDay===h.day?'you have heard enough today':'free · once a day')}<div style="height:8px"></div>${btn('Buy a round for the house','rumor',undefined,'c',w.gold<cost,`${cost}g · loosens tongues`)}`;
  return t+'<div style="height:8px"></div>'+btn('← Back to town','go','town','c');
 };
 VIEWS.convo=function(){
@@ -4151,7 +4154,212 @@ VIEWS.hero=function(){const t=_heroEss();if((S.htab||'stats')!=='stats')return t
 HINTS.push({id:'ess',scr:['town','hero','guild'],when:()=>S.world.guild&&essOf().length<essSlots(),t:'An aspect is ready to kindle in you. Open the Hero tab and choose one. Each grants a skill and shapes your build.'});
 HINTS.push({id:'chore',scr:['town'],when:()=>S.world.gen===1&&!S.hero.qd.firstchores,t:'You own nothing yet. Mira the Baker has honest work for anyone willing, in the Town Square. It does not involve fighting.'});
 
-if(typeof window!=='undefined')window.TQ={absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
+/* =====================================================================
+   PASS 5 — a world that keeps its secrets (you only know what you were told),
+   and things that have something to say for themselves
+   ===================================================================== */
+function K(){
+ const w=S.world,h=S.hero;
+ if(!w.know){
+  // old saves: treat whatever the player has already lived through as known
+  const r=rankIdx(h.contracts),k={z:{0:1},b:{},bn:{},n:{}};
+  for(let i=0;i<6;i++){if(i<=r||(w.map.explore[i]||0)>0)k.z[i]=1;if((w.map.explore[i]||0)>=40)k.b[i]=1;if(w.best&&w.best[ZONES[i].boss.n]){k.b[i]=1;k.bn[i]=1;}}
+  Object.keys(h.qd||{}).concat(Object.keys(h.q||{})).forEach(id=>{k.n[id]=1;});
+  Object.keys(w.qdone||{}).forEach(id=>{k.n[id]=1;});
+  w.know=k;
+ }
+ return w.know;
+}
+function knowZ(i){return i===0||!!K().z[i];}
+function knowB(i){return !!K().b[i]||(S.world.map.explore[i]||0)>=40;}
+function knowBN(i){return !!K().bn[i]||!!(S.world.best&&S.world.best[ZONES[i].boss.n]);}
+const ZFLAV=[
+ '',
+ '"The trees mutter. Not words, exactly. More like opinions."',
+ '"Cheap rent, terrible neighbors."',
+ '"Hot, high, and full of things that bite."',
+ '"Everything there is cold, including the people."',
+ '"Folks go in with a plan and come out with opinions about geometry."'
+];
+const BFLAV=['"Big. Probably rude."','"Nobody has asked it to leave and lived."','"It has a name, and it does not like it said aloud."','"Eats adventurers. Probably chews."','"Everyone who saw it gives a different answer. Everyone who saw it is also lying."'];
+function tipPool(){
+ const w=S.world,h=S.hero,r=rankIdx(h.contracts),L=[];
+ for(let i=1;i<=Math.min(5,r+1);i++)if(!knowZ(i))L.push(['z',i]);
+ for(let i=0;i<=5;i++)if(knowZ(i)&&i<=r+1&&!(knowB(i)&&knowBN(i)))L.push(['b',i]);
+ DUNGEONS.filter(d=>!d.dyn&&!d.hidden&&!w.map.found[d.id]&&knowZ(d.zi)&&d.zi<=Math.min(5,r+1)).forEach(d=>L.push(['d',d.id]));
+ return L;
+}
+function giveTip(){
+ const L=tipPool();if(!L.length)return null;
+ const [k,v]=pick(L),w=S.world,kn=K();
+ if(k==='z'){kn.z[v]=1;return `🗺️ A drover mentions <b>${ZONES[v].n}</b>. ${ZFLAV[v]} You make a mental note of where it is.`;}
+ if(k==='b'){kn.b[v]=1;kn.bn[v]=1;return `🐾 Someone swears that <b>${ZONES[v].boss.n}</b> lairs in ${ZONES[v].n}. ${pick(BFLAV)}`;}
+ const d=DG[v];w.map.found[v]=1;return `🕳️ A drunk whispers about <b>${d.n}</b>. "${esc(d.desc)}" You mark it on your map.`;
+}
+const AMB=[
+ 'A man argues with a goose. The goose is winning.',
+ 'Two children are selling "genuine monster teeth". They are, at best, a dog\'s.',
+ 'Someone is loudly explaining the best way to hold a sword. They are holding it backwards.',
+ 'A woman swears the baker\'s bread has gotten smaller. The baker swears so has she.',
+ 'A pigeon steals a pie out of a guardsman\'s hand. Nobody speaks of it.',
+ 'An old man insists he used to be an adventurer. His knees insist he used to be younger.',
+ 'The town crier announces tomorrow\'s news today, to get ahead of it.',
+ 'A merchant sells "lucky" rocks. They are, to be fair, still rocks.',
+ 'Two guards debate whether a duck counts as a monster. It is taking notes.',
+ 'A bard plays the same three notes with great confidence.',
+ 'Someone is tipping their hat at a statue. The statue does not seem to mind.',
+ 'A cart horse looks at you with the weary expression of someone who has seen things.',
+ 'A boy asks if you are a real adventurer. His mother asks if you are a real bath.',
+ 'Somebody lost a boot in the fountain. It has been there for years. It has regulars.',
+ 'A fishmonger shouts the price, then whispers the truth about the fish.'
+];
+Object.assign(ACT,{
+ mingle(){
+  const h=S.hero,k=K();
+  if(h.mingleDay===h.day){S.mingle=['You have already worked the crowd today. Everyone has heard enough of you.'];return;}
+  h.mingleDay=h.day;
+  const un=townQuests().filter(q=>!k.n[q.id]&&qAvail(q));
+  if(un.length&&Math.random()<.75){const q=pick(un);k.n[q.id]=1;S.mingle=[`${esc(q.npc)} spots you across the square and waves you over, looking like someone with a problem and no better ideas.`];}
+  else S.mingle=[pick(AMB),pick(AMB)].filter((x,i,a)=>a.indexOf(x)===i);
+ },
+ listen(){
+  const h=S.hero;
+  if(h.lstDay===h.day){S.rumor='You have already eavesdropped enough today. The regulars are getting suspicious.';return;}
+  h.lstDay=h.day;
+  const t=Math.random()<.3?giveTip():null;
+  S.rumor=t||pick(AMB);
+ },
+ rumor(){
+  const h=S.hero,w=S.world,cost=Math.round(15+h.lvl*4);
+  if(w.gold<cost){note('Not enough gold for rumors.','e');return;}
+  w.gold-=cost;
+  const t=giveTip();
+  S.rumor=(t||pick(['The barkeep says nothing, but at length.','"Your family has done this before," the barkeep says, without looking up.','Nobody knows anything new. They are very sure about it, though.']))+` <span class="mut">(−${cost}g)</span>`;
+ }
+});
+const _talkK=ACT.talk;
+ACT.talk=function(id){K().n[id]=1;_talkK(id);};
+const _qTalkChooseK=qTalkChoose;
+qTalkChoose=function(i){
+ const had=S.hero.qd[S.talk.id];
+ _qTalkChooseK(i);
+ if(!had&&S.hero.qd[S.talk.id]&&Math.random()<.5){const t=giveTip();if(t&&S.talk.lines)S.talk.lines.push(t);}
+};
+const _questCardK=questCard;
+questCard=function(q){
+ const h=S.hero;
+ if(!h.q[q.id]&&qAvail(q)&&!K().n[q.id]&&!(q.req&&q.req.first)){
+  if(q.w==='town')return '';
+  return `<div class="card"><div class="row2"><b>A stranger by the road</b><span class="tag" style="color:var(--acc)">❗</span></div><div class="mut sm">Someone looks like they want a word.</div>${btn('💬 Talk','talk',q.id,'pri c')}</div>`;
+ }
+ return _questCardK(q);
+};
+VIEWS.square=function(){
+ const h=S.hero,k=K();
+ const cards=townQuests().filter(q=>k.n[q.id]||h.q[q.id]).map(questCard).join('');
+ const m=S.mingle;S.mingle=null;
+ return `<h1>💬 Town Square</h1><p class="mut">A fountain, a lot of pigeons, and the sound of other people's problems. Nobody here knows what you can do yet. Talk around and see who needs a hand.</p>${m?`<div class="card">${m.map(l=>`<p>${l}</p>`).join('')}</div>`:''}${btn('👀 Look around','mingle',undefined,'pri c',h.mingleDay===h.day,h.mingleDay===h.day?'come back tomorrow':'free · once a day')}<div style="height:8px"></div>${cards}${btn('← Back to town','go','town','c')}`;
+};
+const _guildK=VIEWS.guild;
+VIEWS.guild=function(){
+ const w=S.world,kn=K();
+ (w.board||[]).forEach(c=>{if(c.zi>0)kn.z[c.zi]=1;if(c.type==='boss'){kn.b[c.zi]=1;kn.bn[c.zi]=1;}});
+ return _guildK();
+};
+/* ----- years, not days ----- */
+function heroAge(){const h=S.hero;return (h.age0||18)+Math.floor((h.day-1)/DPY);}
+const endAge=()=>S.hero.endAge||68;
+const yearOf=()=>Math.floor((S.hero.day-1)/DPY)+1;
+const _sleepDayK=sleepDay;
+sleepDay=function(){
+ const h=S.hero,nd=h.day+1,na=(h.age0||18)+Math.floor((nd-1)/DPY);
+ if(na>=endAge()){h.day=nd;die('old age');return;}
+ _sleepDayK();
+ if(S.screen!=='death'&&(h.day-1)%DPY===0)note(`🎂 A new year dawns over ${TOWN}. You are ${heroAge()}.${heroAge()>=endAge()-8?' You feel your years.':''}`,'y');
+};
+/* ----- little speeches from the things you pick up ----- */
+const MATQ={
+ 'Slime Gel':'Technically a jelly. Do not put it on toast.',
+ 'Rat Pelt':'Smells of regret and sewer. The rat did not consent.',
+ 'Boar Tusk':'The boar took this personally. So did you.',
+ 'Wolf Fang':'Still pointy. Good news for crafters, bad news for the wolf.',
+ 'Silkthread':'Spun by something with too many legs. Very strong, very smug.',
+ 'Heartwood Splinter':'A splinter. In your finger, somehow, already.',
+ 'Bone Dust':'Somebody\'s great-great-grandfather. Sneeze responsibly.',
+ 'Grave Iron':'Rusty, cold, and judging your life choices.',
+ 'Ectoplasm':'Ghost goo. It mostly washes out.',
+ 'Cinder Shard':'Hot to the touch. Pockets disagree.',
+ 'Drake Scale':'Shiny, heavy, and very smug about it.',
+ 'Obsidian Chip':'Sharp enough to cut a deal. Or a thumb.',
+ 'Frost Crystal':'Cold enough to ruin your day and chill your ale.',
+ 'Yeti Fur':'Warm, shaggy, and faintly offended.',
+ 'Glacier Core':'A very old ice cube. Please do not lick it.',
+ 'Void Shard':'Look at it too long and it starts having opinions.',
+ 'Gloom Essence':'Concentrated bad mood in a jar.',
+ 'Rift Ore':'Rock from nowhere. Nowhere would like it back.'
+};
+const ITQ={
+ Sword:['Pointy end goes toward the problem.','Has opinions about being swung.'],
+ Axe:['For when subtlety has been tried and failed.','Splits logs and arguments.'],
+ Mace:['A very persuasive stick.','Argues with helmets.'],
+ Dagger:['Small, sharp, and slightly sneaky.','Great for letters, bread, and regrets.'],
+ Spear:['Keeps trouble at arm\'s length. Plus a bit.','For people who like personal space.'],
+ Staff:['Mostly a walking stick. Sometimes a threat.','Makes you look wise from a distance.'],
+ Bow:['Violence, but from over there.','String, stick, and good intentions.'],
+ Cap:['Technically headgear. Optimistically armor.','Keeps the rain off and the dignity on.'],
+ Helm:['Makes your ears ring, but in a protective way.','Has been hit before. Does not hold it against you.'],
+ Hood:['Mysterious, mostly because of the hood.','Hides your face and some of your shame.'],
+ Coif:['Chain mail for your head. Itches with confidence.','Smells faintly of someone else\'s week.'],
+ Circlet:['Fancy enough to impress goblins.','Tiny crown, enormous ego.'],
+ Tunic:['Cloth. Hopeful cloth.','Has seen worse days and a few stains.'],
+ Mail:['Thousands of tiny rings, all of them heavy.','Jingles when you sneak. You do not sneak.'],
+ Plate:['A very expensive way to be a turtle.','Make sure to sit down before you put it on.'],
+ Robe:['Comfy, mystical, and drafty.','Looks wise. Fits like a tent.'],
+ Jerkin:['A vest with a past.','Leather that has had enough.'],
+ Sandals:['Bold choice for a monster hunt.','Your toes did not ask for this.'],
+ Boots:['They fit. Mostly.','Made for walking. And, apparently, stomping.'],
+ Greaves:['Metal shins. Very clanky, very proud.','Makes every step an announcement.'],
+ Treads:['Soft soles for people who owe someone money.','You will hear nothing. Which is the point.'],
+ Band:['A simple ring. Pretends to be fancy.','Round, shiny, and not magic. Probably.'],
+ Signet:['Stamps wax and egos.','Says "I own things" in tiny letters.'],
+ Loop:['A loop of metal. Good for fingers.','Does little, with confidence.'],
+ Seal:['Official. Somewhat.','Somebody paid for this stamp.'],
+ Ring:['Precious, in the loose sense of the word.','Do not, under any circumstances, throw it into a volcano.'],
+ Charm:['Probably lucky. Possibly a button.','A small thing that believes in itself.'],
+ Pendant:['Hangs there, looking significant.','Swings when you fight. Distracts everyone, you included.'],
+ Talisman:['Humming slightly. Do not ask why.','Warm to the touch, cold to questions.'],
+ Locket:['Contains a portrait of someone who is not you.','Opens to reveal lint and mystery.'],
+ Amulet:['Glows when it feels like it.','Sits on your chest and judges you quietly.']
+};
+const SLOTQ={weapon:['A weapon. Use responsibly.'],helm:['Fits on a head, which is the main thing.'],armor:['Goes on your body. Mostly stays there.'],boots:['Your feet will thank you. Eventually.'],ring:['Fits a finger, if you are lucky.'],amulet:['Hangs around your neck, thinking.']};
+const RARQ=['','Nothing special, and it knows.','Carries itself with quiet pride.','Someone enchanted this. Probably on purpose.'];
+function itemQuip(it){
+ const pool=(it.base&&ITQ[it.base])||SLOTQ[it.slot]||['An object.'];
+ let q=pool[it.id%pool.length];
+ if(it.rar>=1&&it.rar<=3&&it.id%3===0)q+=' '+RARQ[it.rar];
+ return q;
+}
+function newMatLines(){
+ const w=S.world;w.seenMat=w.seenMat||{};const L=[];
+ for(const m in w.mats){if(w.mats[m]>0&&!w.seenMat[m]){w.seenMat[m]=1;if(MATQ[m])L.push(`<span class="mut">📝 ${esc(m)}: <i>${MATQ[m]}</i></span>`);}}
+ return L;
+}
+const _addItemK=addItem;
+addItem=function(it){const r=_addItemK(it);(window.__pend=window.__pend||[]).push(it);return r;};
+function flushQuips(){
+ const L=(window.__pend||[]).filter(it=>it&&it.slot&&!it.lore).map(it=>`<span class="mut"><i>“${itemQuip(it)}”</i></span>`);
+ window.__pend=[];return L.concat(newMatLines());
+}
+const _victoryQ=victory;
+victory=function(){window.__pend=[];_victoryQ();if(S.res&&S.res.lines)S.res.lines.push(...flushQuips());};
+const _chestLootQ=chestLoot;
+chestLoot=function(...a){window.__pend=[];const L=_chestLootQ(...a);return L.concat(flushQuips());};
+const _applyOutQ=applyOut;
+applyOut=function(o,zi,qid){window.__pend=[];const out=_applyOutQ(o,zi,qid);return out.concat(flushQuips());};
+const _renderQ=render;
+render=function(){_renderQ();window.__pend=[];};
+
+if(typeof window!=='undefined')window.TQ={K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>
 </html>

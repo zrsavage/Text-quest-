@@ -63,3 +63,10 @@ The game now opens on a title screen: **Begin a New Story**, **Continue** (shows
 ## Sleeping where you are
 
 The sleep animation now shows a dark silhouette of wherever you rest: the town's rooftops, the meadow, the woods, the catacombs, the ashen cliffs, the frost or the rift, or a dungeon's entrance with torches. Away from town you also see a tent and campfire. You can camp from any region card or dungeon entrance in the Hunt screen ("Camp until morning"). The new-story background tiles also no longer reload on every tap.
+
+## A world that keeps its secrets
+
+- **You only know what you have been told.** A new hero sees one place outside the gate, no bosses, no guild, no estate, and no list of townsfolk. Other regions, boss lairs and boss names are learned from people: **Listen in** (free, once a day) or **buy a round** at the tavern, the **guild contract board** once you have found the guild, favours done for neighbours, and by simply spending time in a region (a lair reveals itself around 40% familiarity, though not its name).
+- **The Town Square** is a place to look around, not a list. Once a day you can work the crowd, and someone with a problem may wave you over. Wanderers on the road are strangers until you talk to them.
+- **Years, not days.** Life is measured in age. A year is 120 days (four 30-day seasons), heroes start between 16 and 19, and old age takes each one somewhere between 64 and 74. Combat is still the main killer.
+- **Things have something to say.** Materials come with a short quip the first time you find them (and in the Pack), and every item type has its own one-liners on its detail sheet and in drop results.
