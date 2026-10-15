@@ -569,7 +569,7 @@ const ACT={
  },
  shopView(i){S.modal={t:'shop',i:+i};},
  buyTome(id){
-  const w=S.world,h=S.hero,l=h.skills[id]||0;if(l>=SKMAX)return;const pr=tomePrice(id,l);
+  const w=S.world,h=S.hero,l=h.skills[id]||0;if(l>=SKMAX)return;if(skCapped(l)){note('That skill needs a breakthrough first (Hero tab).','e');return;}const pr=tomePrice(id,l);
   if(w.gold<pr){note('Not enough gold.','e');return;}w.gold-=pr;h.skills[id]=l+1;note(`${SK[id].n} ${l?'upgraded to Lv '+(l+1):'learned'}.`,'g');
  },
  // guild
@@ -1180,7 +1180,7 @@ function addFx(id){const h=S.hero;h.fx=h.fx.filter(f=>f.id!==id);h.fx.push({id,l
 function fxTick(){const h=S.hero;h.fx.forEach(f=>f.left--);h.fx=h.fx.filter(f=>f.left>0);}
 const bestBonus=n=>{const b=S.world.best[n];return b?Math.min(.25,Math.floor(b.k/10)*.01):0;};
 function learnTome(zi){
- const h=S.hero,pool=Object.keys(SK).filter(k=>SK[k].t<=Math.max(zi,0)+1&&(h.skills[k]||0)<SKMAX);
+ const h=S.hero,pool=Object.keys(SK).filter(k=>SK[k].t<=Math.max(zi,0)+1&&(h.skills[k]||0)<SKMAX&&!skCapped(h.skills[k]||0));
  if(!pool.length)return null;const k=pick(pool);h.skills[k]=(h.skills[k]||0)+1;
  return `📖 <b>${SK[k].n}</b> ${h.skills[k]===1?'learned!':'upgraded to Lv '+h.skills[k]+'!'}`;
 }
@@ -2047,7 +2047,7 @@ function strike(mult,o){
  say(`${o.label||'You hit'} ${esc(e.name)} for <b>${d}</b>${crit?' 💥 CRIT':''}${ls?` (+${ls} HP)`:''}`);
  return d;
 }
-const skillCost=id=>Math.max(1,SK[id].c-(rel('mirror')?1:0));
+const skillCost=id=>Math.max(1,SK[id].c-(rel('mirror')?1:0)-(skRank((S.hero.skills||{})[id]||0)>=1?1:0));
 function castSkill(id,free){
  const c=S.cb,h=S.hero,p=P(),e=c.e,l=h.skills[id],s=SK[id];
  if(!free){if(c.focus<skillCost(id)){say('Not enough Focus!','e');return false;}c.focus-=skillCost(id);}
@@ -2711,7 +2711,8 @@ const PATHS={
 const PATH_LVL=[10,20,30];
 const pathTier=n=>{const h=S&&S.hero;return !!(h&&h.path&&h.lvl>=PATH_LVL[n-1]);};
 const discipline=()=>{const h=S.hero,P_=PATHS[h.path];return P_?P_.aff.reduce((a,k)=>a+(h.skills[k]||0),0):0;};
-const skillPathMult=id=>{const h=S.hero;if(!h.path||h.path==='support'||!pathTier(1))return 1;return PATHS[h.path].aff.includes(id)?1+Math.min(.4,discipline()*.01):1;};
+const skillPathMult=id=>skillPathMult0(id)*rankDmg(id);
+const skillPathMult0=id=>{const h=S.hero;if(!h.path||h.path==='support'||!pathTier(1))return 1;return PATHS[h.path].aff.includes(id)?1+Math.min(.4,discipline()*.01):1;};
 const mendBonus=()=>{const h=S.hero;return h.path==='support'&&pathTier(1)?Math.min(.4,discipline()*.012):0;};
 const dotX=()=>(S.hero.path==='arcane'&&pathTier(3))?1.5:1;
 const guardMult=()=>(S.hero.path==='support'&&pathTier(3))?.3:.45;
@@ -3209,9 +3210,9 @@ const VIEWS={
  },
  library(){
   const w=S.world,h=S.hero,r=rankIdx(h.contracts);
-  let t=`<h1>📚 Old Library</h1><p class="mut">💰 <b>${fmt(w.gold)}</b> · Tomes teach or upgrade skills. Skills also level by use, (max Lv 10). Skills are forgotten when you die. Higher tomes appear as your rank grows.</p>`;
+  let t=`<h1>📚 Old Library</h1><p class="mut">💰 <b>${fmt(w.gold)}</b> · Tomes teach new skills and sharpen them within a rank. Skills also grow by use, faster against tough opponents, and every second level needs a breakthrough (Hero tab). Skills are forgotten when you die. Higher tomes appear as your rank grows.</p>`;
   Object.keys(SK).filter(k=>SK[k].t<=r+1).forEach(k=>{const l=h.skills[k]||0,pr=tomePrice(k,l);
-   t+=btn(`${SK[k].n} <span class="tag">${l?'Lv '+l:'unknown'}</span>`,'buyTome',k,'',l>=SKMAX||w.gold<pr,l>=SKMAX?'Mastered':`${pr}g → Lv ${l+1} · ${SK[k].d(l+1)}`);});
+   t+=btn(`${SK[k].n} <span class="tag">${l?'Lv '+l:'unknown'}</span>`,'buyTome',k,'',l>=SKMAX||skCapped(l)||w.gold<pr,l>=SKMAX?'Mastered':skCapped(l)?'Rank limit. Needs a breakthrough (Hero tab)':`${pr}g → Lv ${l+1} · ${SK[k].d(l+1)}`);});
   return t+'<div style="height:8px"></div>'+btn('← Back to town','go','town','c');
  },
  tinker(){
@@ -3516,7 +3517,7 @@ VIEWS.hero=function(){
 Object.assign(ACT,{
  dgPot(id){const p=P(),w=S.world,po=POTS[id];if(!w.pots[id]||S.hero.hp>=p.maxhp)return;w.pots[id]--;const n=healHero(Math.max(po.min,Math.round(p.maxhp*po.pct)));dgSay(`🧪 ${po.n}: +${n} HP.`);},
  dgEscape(){S.modal={t:'confirm',a:'dgEscapeYes',q:'Flee the dungeon? You lose all progress in it and 10% of your gold.'};},
- dgEscapeYes(){const w=S.world;S.modal=null;w.gold-=Math.round(w.gold*.1);delete S.hero.dgsave[S.dg.id];S.dg=null;S.screen='hunt';note('You fled the dungeon, shaken.','e');}
+ dgEscapeYes(){const w=S.world;S.modal=null;if(!S.dg)return;w.gold-=Math.round(w.gold*.1);delete S.hero.dgsave[S.dg.id];S.dg=null;S.screen='hunt';note('You fled the dungeon, shaken.','e');}
 });
 const SKMAX=10;
 const skNeed=l=>Math.round(5*Math.pow(l,1.5));
@@ -6504,6 +6505,84 @@ VIEWS.town=function(){
 };
 HINTS.push({id:'walk',scr:['town'],when:()=>S.world.gen===1&&S.hero.tc>=4&&!Object.keys(S.hero.oddDone||{}).length&&!S.hero.odd,t:'Keep an eye out. Walking around town sometimes turns up odd jobs for people who have nothing better to do.'});
 
+/* =====================================================================
+   Skills grow like a climber does: you get better by using them, harder
+   fights teach more, and each rank needs a real breakthrough to cross.
+   ===================================================================== */
+const SKRANK=['Iron','Bronze','Silver','Gold','Diamond'],SKRC=['#9aa3b5','#c58a4a','#cfd6e4','#f0c94a','#7fe0ff'];
+const skRank=l=>l<=0?-1:Math.min(4,Math.floor((l-1)/2));
+const skCapped=l=>l>=2&&l<SKMAX&&l%2===0;
+const rankDmg=id=>{const r=skRank((S.hero.skills||{})[id]||0);return(r>=2?1.15:1)*(r>=4?1.15:1);};
+const skEdge=e=>{try{return({1:.6,2:1,3:1.35,4:1.7}[danger(e)[2]]||1);}catch(x){return 1;}};
+const SKPERK=['Iron: the basics.','Bronze: costs 1 less Focus.','Silver: +15% damage.','Gold: a 20% chance to refund half the Focus.','Diamond: +15% more damage, and the refund chance rises to 30%.'];
+function skillUse(id){
+ const h=S.hero;h.su=h.su||{};h.sx=h.sx||{};h.skReady=h.skReady||{};
+ h.su[id]=(h.su[id]||0)+1;
+ const ks=Object.keys(h.skills),mean=ks.reduce((a,k)=>a+(h.su[k]||0),0)/Math.max(1,ks.length);
+ const even=clamp((mean+1)/(h.su[id]),.25,2),weight=Math.sqrt(SK[id].c/3),edge=S.cb&&S.cb.e?skEdge(S.cb.e):1;
+ h.sx[id]=(h.sx[id]||0)+even*weight*edge*(1+bgv('mastery')+.05*estLv('train','academy'));
+ const l=h.skills[id],need=skNeed(l);let msg=null;
+ if(l<SKMAX&&h.sx[id]>=need){
+  if(skCapped(l)){h.sx[id]=need;if(!h.skReady[id]){h.skReady[id]=1;msg=`⚡ <b>${SK[id].n}</b> has reached the limit of its rank. It is ready for a breakthrough (Hero tab).`;}}
+  else{h.sx[id]-=need;h.skills[id]=l+1;msg=`📈 <b>${SK[id].n}</b> improves through use: Lv ${l+1}!`;}
+ }
+ const r=skRank(h.skills[id]);
+ if(S.cb&&r>=3&&Math.random()<(r>=4?.3:.2)){const rf=Math.ceil(skillCost(id)/2);S.cb.focus+=rf;msg=(msg?msg+' ':'')+`✨ ${SK[id].n} flows easily. +${rf} Focus back.`;}
+ return msg;
+}
+function addSkillXp(id,xp){
+ const h=S.hero;h.sx=h.sx||{};h.skReady=h.skReady||{};h.sx[id]=(h.sx[id]||0)+xp;const l=h.skills[id],need=skNeed(l);
+ if(l<SKMAX&&h.sx[id]>=need){
+  if(skCapped(l)){h.sx[id]=need;if(!h.skReady[id]){h.skReady[id]=1;return `⚡ ${SK[id].n} is ready for a breakthrough.`;}return null;}
+  h.sx[id]-=need;h.skills[id]=l+1;return `📈 ${SK[id].n} reaches Lv ${l+1}!`;
+ }
+ return null;
+}
+const brkCosts=l=>{const r=skRank(l),n=(r+1)*(r+1);return{w1:12*n,w2:40*n,g:400*n,grade:r>=3?3:r>=2?2:1};};
+function brkVestige(grade){const bag=S.hero.corebag||[];let bi=-1;bag.forEach((c,i)=>{if(c.g>=grade&&(bi<0||c.g<bag[bi].g))bi=i;});return bi;}
+Object.assign(ACT,{
+ breakSk(p){
+  const [id,how]=p.split(':'),h=S.hero,w=S.world,l=h.skills[id]||0;
+  if(!skCapped(l)||!(h.sx&&h.sx[id]>=skNeed(l)))return;
+  const c=brkCosts(l);
+  if(how==='v'){const bi=brkVestige(c.grade);if(bi<0||(w.spirit||0)<c.w1)return;w.spirit-=c.w1;const v=h.corebag.splice(bi,1)[0];note(`🔹 You break a ${cap1(v.f)} vestige and let its power pour into ${SK[id].n}.`);}
+  else if(how==='w'){if((w.spirit||0)<c.w2)return;w.spirit-=c.w2;}
+  else if(how==='g'){if(w.gold<c.g)return;w.gold-=c.g;note('A retired master puts you through the hardest lesson of your life. You are a little taller afterward.');}
+  else return;
+  h.skills[id]=l+1;h.sx[id]=0;if(h.skReady)h.skReady[id]=0;
+  const r=skRank(l+1);
+  note(`🌟 <b>${SK[id].n} breaks through to ${SKRANK[r]}!</b> ${SKPERK[r]}`,'y');
+  try{sfx('level');}catch(e){}
+ }
+});
+function skillsHtml(){
+ const h=S.hero,w=S.world,ks=Object.keys(h.skills);
+ let t=`<h2>Skills</h2><p class="mut sm">Skills grow by use, and they grow faster against opponents that really test you. Every second level is the top of a rank. To cross into the next one you need a <b>breakthrough</b>. Higher ranks carry real perks.</p>`;
+ if(!ks.length)return t+'<p class="mut sm">You have no skills yet. Find tomes, kindle an aspect, or study at the Old Library.</p>';
+ t+=ks.map(k=>{
+  const l=h.skills[k],r=skRank(l),need=skNeed(l),sx=(h.sx&&h.sx[k])||0,cap=skCapped(l),ready=cap&&sx>=need;
+  let s=`<div class="card"><div class="row2"><b>${SK[k].n}</b><span class="tag" style="color:${SKRC[r]}">${SKRANK[r]} · Lv ${l}/${SKMAX}</span></div><div class="sm mut">🔷${skillCost(k)} · ${SK[k].d(l)}</div>`;
+  if(l<SKMAX)s+=bar(Math.min(sx,need),need,'xp')+`<div class="sm mut">Used ${(h.su&&h.su[k])||0}× · ${cap?(ready?'<b class="up">ready to break through</b>':'at the top of its rank, keep using it'):'mastery '+Math.floor(sx)+'/'+need}</div>`;
+  else s+='<div class="sm up">Diamond mastery. There is nowhere higher.</div>';
+  s+=`<div class="mut sm">${SKPERK[r]}</div>`;
+  if(ready){
+   const c=brkCosts(l),bi=brkVestige(c.grade),wk=w.spirit||0;
+   s+=`<div class="card sm" style="margin-top:6px"><b>Breakthrough to ${SKRANK[r+1]}</b><div class="mut">Pick one way to do it.</div>
+   ${btn('A vestige and wicks','breakSk',k+':v','c',bi<0||wk<c.w1,`${c.w1} 🕯️ + a grade ${c.grade}+ vestige${bi<0?' (none held)':''}`)}
+   ${btn('Wicks alone','breakSk',k+':w','c',wk<c.w2,`${c.w2} 🕯️ (you have ${wk})`)}
+   ${btn('A master\'s lessons','breakSk',k+':g','c',w.gold<c.g,fmt(c.g)+'g')}</div>`;
+  }
+  return s+'</div>';
+ }).join('');
+ return t;
+}
+const _heroSk=VIEWS.hero;
+VIEWS.hero=function(){
+ let t=_heroSk();
+ if((S.htab||'stats')!=='stats')return t;
+ return t.replace(/<h2>Skills<\/h2>[\s\S]*?(?=<h2>|$)/,skillsHtml());
+};
+
 /* ----- a slow start: bodies heal over days, not overnight, until you are properly seasoned ----- */
 const nightRecovery=()=>{const L=S.hero.lvl;return L>=8?1:Math.min(1,.38+.09*(L-1));};
 const _sleepDayRec=sleepDay;
@@ -6543,7 +6622,7 @@ VIEWS.train=function(){
  const card=`<div class="card" style="border-color:var(--acc)"><div class="row2"><b>🥖 Haul Mira's flour sacks</b><span class="tag" style="color:var(--acc)">odd job</span></div><div class="mut sm">Mira the Baker needs three loads carried from the cart to the cellar. It counts as training for Strength and Vitality, and she will pay in what she has.</div>${bar(n,3,'sta')}<div class="mut sm">${n}/3 loads</div>${n>=3?btn('💬 Report to Mira','talk','firstchores','good c'):btn('Haul a load','haul',undefined,'pri c',h.sta<2,'2⚡')}</div>`;
  return s.replace(/(<\/p>)/,'$1'+card);
 };
-if(typeof window!=='undefined')window.TQ={reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
+if(typeof window!=='undefined')window.TQ={skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>
 </html>

@@ -97,3 +97,7 @@ The first rat is now a real fight: it has far more health than before and bites 
 The first errand now lives at the top of the Training Yard until it is done: "Haul Mira's flour sacks" is a button that counts as a training session (Strength and Vitality gains plus XP, 2 stamina) and starts the quest on its own. Three loads, then a card to report back to Mira. A few early monsters were also softened, and elites now wait until level 5.
 
 **Odd jobs around town:** a free "Walk around town" button (once a day) on the Town screen sometimes turns up an odd job: sweeping, hauling, delivering a note, minding a stall overnight, and so on. The first walk always finds one. Jobs pay small, easy starter loot (a basic piece of gear, coins, a potion, a material, or a bit of training) and stop turning up once you are level 12 or higher.
+
+## Skill ranks and breakthroughs
+
+Skills now climb in ranks: **Iron** (Lv 1-2), **Bronze** (3-4), **Silver** (5-6), **Gold** (7-8) and **Diamond** (9-10). Use grows a skill, and fighting opponents that really test you (Risky or Deadly) teaches much faster than easy fights. At the top of a rank (Lv 2, 4, 6, 8) a skill stops growing and waits for a **breakthrough**, which you buy with a vestige plus wicks, a larger amount of wicks alone, or a master's lessons for gold. Tomes still teach new skills and sharpen them within a rank. Rank perks: Bronze costs 1 less Focus, Silver +15% damage, Gold a 20% chance to refund half the Focus, Diamond +15% more damage and a 30% refund chance.
