@@ -141,3 +141,7 @@ Hero tab → Skills log. Abilities improve by use (success teaches more than fai
 ## Monster portraits and reward pop-ups
 - 78 monster portraits (every zone monster and boss) were generated with Hugging Face's Z-Image Turbo, 16 per sprite sheet, then cropped to 96px WebP (`mon/`) and embedded in `index.html` as `MONPIC`. Elites get a gold frame, bosses a red one. Monsters without a portrait (habitat monsters) still use the drawn icons. To add more: generate a 4x4 sheet, slice it, and add entries to `MONPIC`.
 - Notice Board and odd-job rewards now pop up in the middle of the screen and fade after about 2.5 seconds (tap to dismiss). The inline result card remains.
+
+## Swap list and more portraits
+- Tapping something you wear now lists every item in your pack for that slot, with green up / red down arrows for each stat gained or lost, a rating change, and an Equip button.
+- 16 more portraits (highroad, sea, two mine monsters). Remaining without portraits: mine/frontier/rough/far monsters and the dungeon bosses (see `/tmp/ml2.js` approach: list names in HAB templates and DG bosses not in `MONPIC`).
