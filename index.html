@@ -1754,7 +1754,7 @@ Object.assign(ACT,{
  tback(){S.talk=null;S.screen=S.talkBack||'square';},
  jtab(t){S.jtab=t;},
  rumor(){
-  const h=S.hero,w=S.world,cost=Math.round(15+h.lvl*4);
+  const h=S.hero,w=S.world,cost=rumorCost();
   if(w.gold<cost){note('Not enough gold for rumors.','e');return;}
   w.gold-=cost;const r=rankIdx(h.contracts);
   const hid=DUNGEONS.filter(d=>!d.dyn&&!d.hidden&&!w.map.found[d.id]&&d.zi<=Math.min(5,r+1));
@@ -3340,7 +3340,7 @@ VIEWS.square=function(){
  return `<h1>💬 Town Square</h1><p class="mut">Neighbors with problems, and rumors of larger ones. Each quest can change the town for good.</p>${cards||'<p class="mut">No one needs you right now. Check back as you grow stronger.</p>'}${btn('← Back to town','go','town','c')}`;
 };
 VIEWS.tavern=function(){
- const h=S.hero,cost=Math.round(15+h.lvl*4);
+ const h=S.hero,cost=rumorCost();
  return `<h1>🍺 The Gilded Mug</h1><p class="mut">Smoke, rumor, and mediocre stew. Gossip costs a round of drinks.</p>${S.rumor?`<div class="card">${S.rumor}</div>`:''}${btn('Buy a round for rumors','rumor',undefined,'pri',S.world.gold<cost,`${cost}g · may reveal a dungeon`)}<div style="height:8px"></div>${btn('← Back to town','go','town','c')}`;
 };
 VIEWS.crypt=function(){
@@ -3646,11 +3646,11 @@ VIEWS.relics=function(){
 const _heroStats=VIEWS.hero;
 VIEWS.hero=function(){
  const tab=S.htab||'stats';
- const tabs=[['stats','🧍 Stats'],['party','👥 Party'],['relics','🔮 Relics']];
- return `<div class="grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:8px">${tabs.map(x=>btn(x[1],'htab',x[0],tab===x[0]?'pri c':'c')).join('')}</div>`+(tab==='party'?`<h1>👥 Party</h1>`+VIEWS.party():tab==='relics'?`<h1>🔮 Relics</h1>`+VIEWS.relics():_heroStats());
+ const tabs=[['stats','🧍 Stats'],['party','👥 Party'],['relics','🔮 Relics'],['log','Skills log']];
+ return `<div class="grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:8px">${tabs.map(x=>btn(x[1],'htab',x[0],tab===x[0]?'pri c':'c')).join('')}</div>`+(tab==='party'?`<h1>👥 Party</h1>`+VIEWS.party():tab==='relics'?`<h1>🔮 Relics</h1>`+VIEWS.relics():tab==='log'?slogHtml():_heroStats());
 };
 VIEWS.tavern=function(){
- const h=S.hero,w=S.world,cost=Math.round(15+h.lvl*4),hc=Math.round(120+h.lvl*35);
+ const h=S.hero,w=S.world,cost=rumorCost(),hc=Math.round(120+h.lvl*35);
  let t=`<h1>🍺 The Gilded Mug</h1><p class="mut">Smoke, rumor, and mediocre stew. Gossip costs a round of drinks. Sellswords drink here too.</p>${S.rumor?`<div class="card">${S.rumor}</div>`:''}${btn('Buy a round for rumors','rumor',undefined,'pri',w.gold<cost,`${cost}g · may reveal a dungeon`)}`;
  if(S.hireLines){t+=`<div class="card">${S.hireLines.map(l=>`<p>${l}</p>`).join('')}</div>`;S.hireLines=null;}
  t+=`<h2>Sellswords for hire</h2>`;
@@ -3703,7 +3703,7 @@ function metCard(id){
  return t+'</div>';
 }
 VIEWS.tavern=function(){
- const h=S.hero,w=S.world,cost=Math.round(15+h.lvl*4);
+ const h=S.hero,w=S.world,cost=rumorCost();
  let t=`<h1>🍺 The Gilded Mug</h1><p class="mut">Smoke, rumor, and mediocre stew. People worth fighting beside don't sign up for gold. They have to <b>trust</b> you: talk to them (once a day each), work a few fights together, and pass their personal test.</p>${S.rumor?`<div class="card">${S.rumor}</div>`:''}`;
  if(S.hireLines){t+=`<div class="card">${S.hireLines.map(l=>`<p>${l}</p>`).join('')}</div>`;S.hireLines=null;}
  const st=tavernIds().filter(canApproach);
@@ -4253,7 +4253,7 @@ Object.assign(ACT,{
   S.rumor=t||pick(AMB);
  },
  rumor(){
-  const h=S.hero,w=S.world,cost=Math.round(15+h.lvl*4);
+  const h=S.hero,w=S.world,cost=rumorCost();
   if(w.gold<cost){note('Not enough gold for rumors.','e');return;}
   w.gold-=cost;
   const t=giveTip();
@@ -4936,7 +4936,7 @@ Object.assign(ACT,{
  tripPay(){const tr=S.trip,w=S.world;if(!tr||!tr.pend||tr.pend.k!=='toll')return;const a=Math.min(w.gold,tr.pend.amt);w.gold-=a;tr.pend=null;tr.lines=[`💸 You hand over ${a}g. "Pleasure," says the man. It was not.`];addRep(tr.from,0);},
  tripBluff(){
   const tr=S.trip,h=S.hero,p=P();if(!tr||!tr.pend||tr.pend.k!=='toll')return;
-  const ch=clamp(.25+p.int*.006+p.st.agi*.004,.2,.7);
+  const ch=clamp(.25+p.int*.006+p.st.agi*.004+lsLvl('bluff')*.008,.2,.8);
   tr.pend=null;
   if(Math.random()<ch){tr.lines=['😎 You explain, loudly and with great detail, that the toll was paid by someone else. They are not sure who. They let you go, confused.'];}
   else{const e=makeEnemyHab(routeHab(),false);tr.lines=['😬 They did not buy it.'];tr.stage='night';startCombat(e,false,{type:'loc',free:true,ret:'trip'});}
@@ -5195,7 +5195,7 @@ VIEWS.estate=function(){if(!atHome())return `<h1>🏡 Estate</h1><p class="mut">
 const _tavernM2=VIEWS.tavern;
 VIEWS.tavern=function(){
  const id=where();if(id===HT)return _tavernM2();
- const h=S.hero,w=S.world,cost=Math.round(15+h.lvl*4);
+ const h=S.hero,w=S.world,cost=rumorCost();
  return `<h1>🍺 ${TOWNS[id].n} Tavern</h1><p class="mut">Smoke, noise, and the local version of mediocre stew. You do not know anyone here yet, but that never stopped a tavern.</p>${S.rumor?`<div class="card">${S.rumor}</div>`:''}
  <h2>Rumors</h2>${btn('👂 Listen in','listen',undefined,'c',h.lstDay===h.day,h.lstDay===h.day?'you have heard enough today':'free · once a day')}<div style="height:8px"></div>${btn('Buy a round for the house','rumor',undefined,'c',w.gold<cost,`${cost}g · loosens tongues`)}<div style="height:8px"></div>${btn('← Back','go','town','c')}`;
 };
@@ -5584,7 +5584,7 @@ Object.assign(ACT,{
  rFight(){if(!S.rpend)return;S.rpend=null;const e=makeEnemyHab('rough',false);startCombat(e,false,{type:'loc',free:true,ret:'rough',rep:'Back to the street'});},
  rBluff(){
   const p=P();if(!S.rpend)return;S.rpend=null;
-  if(Math.random()<clamp(.25+p.int*.006+p.st.agi*.004,.2,.7)){S.rres=['😎 You mention a very important person who would be upset. The name sounds real. They back off.'];}
+  if(Math.random()<clamp(.25+p.int*.006+p.st.agi*.004+lsLvl('bluff')*.008,.2,.8)){S.rres=['😎 You mention a very important person who would be upset. The name sounds real. They back off.'];}
   else{const e=makeEnemyHab('rough',false);S.rres=['😬 They do not believe you. They have a lot of friends.'];startCombat(e,false,{type:'loc',free:true,ret:'rough',rep:'Back to the street'});}
  }
 });
@@ -6936,10 +6936,10 @@ const BASEMIN={Plate:30,Greaves:22,Mail:14,Helm:10};
 }
 
 // ---------- haggling and a proper sell screen ----------
-const hagMax=()=>3+Math.floor(((S.hero||{}).hagw||0)/5);
+const hagMax=()=>3+Math.floor(lsLvl('haggle')/4);
 const hagLeft=()=>{const h=S.hero;return h.hag&&h.hag.d===h.day?Math.max(0,hagMax()-h.hag.n):hagMax();};
 const hprice=it=>(it.hgd===S.hero.day&&it.hg)?it.hg:sellVal(it);
-const hagChance=()=>{const p=P(),h=S.hero;return clamp(.38+p.int*.006+p.st.agi*.004+(h.hagw||0)*.006,.3,.85);};
+const hagChance=()=>{const p=P(),h=S.hero;return clamp(.38+p.int*.006+p.st.agi*.004+lsLvl('haggle')*.012,.3,.9);};
 function hagDo(id){
  const f=findItem(id);if(!f||f.where!=='inv')return;
  const g=hprice(f.it);S.world.gold+=g;ACT._rm(f);S.hagMsg=`Sold ${esc(f.it.name)} for ${g}g.`;
@@ -6952,11 +6952,11 @@ Object.assign(ACT,{
   if(hagLeft()<1){S.hagMsg='The merchant has had enough bargaining for one day.';return;}
   h.hag={d:h.day,n:(h.hag&&h.hag.d===h.day?h.hag.n:0)+1};it.hgd=h.day;
   if(Math.random()<hagChance()){
-   it.hg=Math.max(sellVal(it)+1,Math.round(it.val*(.55+Math.random()*.12)));h.hagw=(h.hagw||0)+1;
+   it.hg=Math.max(sellVal(it)+1,Math.round(it.val*(.55+Math.random()*.12+lsLvl('haggle')*.004)));
    S.hagMsg=`The merchant sighs and agrees to ${it.hg}g for ${esc(it.name)}.`;
-   if(h.hagw%5===0)S.hagMsg+=' You are getting a feel for how merchants think. You can bargain more often each day.';
+   lsUse('haggle',true);
   }else{
-   it.hg=Math.max(1,Math.round(it.val*.38));S.hagMsg=`"Not for that." The merchant drops the offer on ${esc(it.name)} to ${it.hg}g.`;
+   it.hg=Math.max(1,Math.round(it.val*.38));S.hagMsg=`"Not for that." The merchant drops the offer on ${esc(it.name)} to ${it.hg}g.`;lsUse('haggle',false);
   }
  },
  hsell(id){
@@ -6981,7 +6981,7 @@ VIEWS.sell=function(){
  const w=S.world,h=S.hero,inv=w.inv.slice().sort((a,b)=>hprice(b)-hprice(a));
  const tot=inv.filter(i=>!i.lock).reduce((a,i)=>a+hprice(i),0);
  let t=`<h1>Sell goods</h1><p class="mut sm">The merchant in ${esc(TOWNS[where()].n)} pays about 45% of an item's worth. You can bargain for more: each try may raise the price, or sour the offer on that item. Bargaining improves with Intellect, Agility and practice.</p>`;
- t+=`<div class="card sm"><div class="row2"><span>Bargaining chances today</span><b>${hagLeft()}/${hagMax()}</b></div><div class="row2"><span>Odds of a better price</span><b>${Math.round(hagChance()*100)}%</b></div><div class="row2"><span>Everything unlocked, sold now</span><b>${fmt(tot)}g</b></div></div>`;
+ t+=`<div class="card sm"><div class="row2"><span>Haggling level</span><b>${lsLvl('haggle')}</b></div><div class="row2"><span>Bargaining chances today</span><b>${hagLeft()}/${hagMax()}</b></div><div class="row2"><span>Odds of a better price</span><b>${Math.round(hagChance()*100)}%</b></div><div class="row2"><span>Everything unlocked, sold now</span><b>${fmt(tot)}g</b></div></div>`;
  if(S.hagMsg)t+=`<div class="card" style="border-color:var(--acc)">${S.hagMsg}</div>`;
  t+=`<div class="grid">${btn('Sell what is worse than worn','sellWorse',undefined,'c')}${btn('Sell Commons','sellAll',0,'c')}</div><div style="height:6px"></div>`;
  if(!inv.length)t+='<p class="mut sm">Your pack is empty.</p>';
@@ -7103,6 +7103,61 @@ function cpic(id,sz){
  return `<svg class="cpic" width="${sz}" height="${sz}" viewBox="0 0 64 64" role="img" aria-label="${esc(D.n||'Companion')}">${g}</svg>`;
 }
 
+/* =====================================================================
+   PASS T — the skills log: abilities you get better at by doing them
+   ===================================================================== */
+const LS_MAX=15,lsNeed=l=>5+3*l;
+const LSK={
+ haggle:{n:'Haggling',d:'Getting a better price out of a merchant.',eff:l=>`+${(l*1.2).toFixed(1)}% odds of a better price · ${3+Math.floor(l/4)} tries a day · offers up to +${(l*.4).toFixed(1)}% of an item's worth better`},
+ carouse:{n:'Carousing',d:'Buying a round and loosening the right tongues.',eff:l=>`${Math.round(Math.min(.95,.55+.035*l)*100)}% chance a round gets someone talking · rounds cost ${Math.min(30,3*l)}% less · ${l*4}% chance of a second rumour`},
+ bluff:{n:'Bluffing',d:'Talking your way past tolls and trouble.',eff:l=>`+${(l*.8).toFixed(1)}% to every bluff`}
+};
+function lsRec(id){
+ const h=S&&S.hero;if(!h)return null;h.ls=h.ls||{};
+ if(id==='haggle'&&h.hagw&&!h.ls.haggle)h.ls.haggle={x:h.hagw*3,u:h.hagw,s:h.hagw};
+ return h.ls[id]||null;
+}
+function lsProg(id){const r=lsRec(id);if(!r)return{l:0,x:0,need:lsNeed(0)};let x=r.x,l=0;while(l<LS_MAX&&x>=lsNeed(l)){x-=lsNeed(l);l++;}return{l,x:l>=LS_MAX?0:x,need:lsNeed(l)};}
+const lsLvl=id=>lsProg(id).l;
+function lsUse(id,ok,x){
+ const h=S.hero;if(!h||!LSK[id])return;
+ let r=lsRec(id);
+ if(!r){r=h.ls[id]={x:0,u:0,s:0};note(`New skill: ${LSK[id].n}. You can track it in the Hero tab, under Skills log.`,'y');}
+ const b=lsLvl(id);r.u++;if(ok)r.s++;r.x+=(x!=null?x:ok?3:1);
+ const a=lsLvl(id);if(a>b)note(`${LSK[id].n} improves to level ${a}.`,'g');
+}
+const carChance=()=>clamp(.55+.035*lsLvl('carouse'),.55,.95);
+const rumorCost=()=>Math.round((15+S.hero.lvl*4)*(1-Math.min(.3,.03*lsLvl('carouse'))));
+Object.assign(ACT,{
+ rumor(){
+  const w=S.world,cost=rumorCost();
+  if(w.gold<cost){note('Not enough gold for rumors.','e');return;}
+  w.gold-=cost;const ok=Math.random()<carChance();let t=null;
+  if(ok){t=giveTip();if(t&&Math.random()<lsLvl('carouse')*.04){const t2=giveTip();if(t2)t+='<br>'+t2;}}
+  S.rumor=(t||(ok?'Plenty of talk, none of it new.':pick(['The round goes down well. The conversation goes nowhere.','Everyone thanks you and says very little.','A lot of nodding. Nobody knows anything.'])))+` <span class="mut">(−${cost}g)</span>`;
+  lsUse('carouse',ok);
+ }
+});
+{
+ const _l=ACT.listen;
+ ACT.listen=function(){const h=S.hero,done=h.lstDay===h.day;_l.call(this);if(!done)lsUse('carouse',/<b>/.test(S.rumor||''),/<b>/.test(S.rumor||'')?2:1);};
+ const _tb=ACT.tripBluff;
+ ACT.tripBluff=function(){const tr=S.trip;if(!tr||!tr.pend||tr.pend.k!=='toll')return;_tb.call(this);const t2=S.trip;lsUse('bluff',!!(t2&&t2.lines&&/^😎/.test(t2.lines[0]||'')));};
+ const _rb=ACT.rBluff;
+ ACT.rBluff=function(){if(!S.rpend)return;_rb.call(this);lsUse('bluff',!!(S.rres&&/^😎/.test(S.rres[0]||'')));};
+}
+function slogHtml(){
+ const h=S.hero,ids=Object.keys(LSK).filter(id=>lsRec(id));
+ let t=`<h1>Skills log</h1><p class="mut sm">You get better at things by doing them. Each success teaches more than a failure. New skills appear here the first time you try something.</p>`;
+ if(!ids.length&&!(T().tx>0))t+='<div class="card sm mut">Nothing yet. Bargain with a merchant, buy a round at the tavern, or talk your way out of trouble.</div>';
+ ids.forEach(id=>{
+  const D=LSK[id],r=lsRec(id),p=lsProg(id),rate=r.u?Math.round(r.s/r.u*100):0;
+  t+=`<div class="card"><div class="row2"><b>${D.n}</b><span class="tag">Level ${p.l}/${LS_MAX}</span></div><div class="mut sm">${D.d}</div>${bar(p.l>=LS_MAX?1:p.x,p.l>=LS_MAX?1:p.need,'xp')}<div class="row2 sm mut"><span>${p.l>=LS_MAX?'Mastered':p.x+'/'+p.need+' to next level'}</span><span>${r.s} of ${r.u} succeeded (${rate}%)</span></div><div class="sm" style="margin-top:6px"><span class="mut">Now:</span> ${D.eff(p.l)}</div>${p.l<LS_MAX?`<div class="sm"><span class="mut">Next:</span> ${D.eff(p.l+1)}</div>`:''}</div>`;
+ });
+ if(T().tx>0){const l=tradeLv();t+=`<div class="card"><div class="row2"><b>Trading</b><span class="tag">Level ${l}/7</span></div><div class="mut sm">Buying low and selling high, town to town.</div><div class="sm" style="margin-top:6px"><span class="mut">Now:</span> ${Math.round(spreadF()*1000)/10}% price spread · ${cargoCap()} cargo space</div></div>`;}
+ return t;
+}
+
 /* ----- a slow start: bodies heal over days, not overnight, until you are properly seasoned ----- */
 const nightRecovery=()=>{const L=S.hero.lvl;return L>=8?1:Math.min(1,.38+.09*(L-1));};
 const _sleepDayRec=sleepDay;
@@ -7143,7 +7198,7 @@ VIEWS.train=function(){
  return s.replace(/(<\/p>)/,'$1'+card);
 };
 if(typeof document!=='undefined'&&typeof window!=='undefined'&&!window.__TQ_TEST){try{render();}catch(e){}}
-if(typeof window!=='undefined')window.TQ={ROUGH,cpic,hasFocus,hprice,nextStep,foldHtml,upDiff,reportText,tele,loadBackup,skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
+if(typeof window!=='undefined')window.TQ={lsUse,lsLvl,lsRec,slogHtml,ROUGH,cpic,hasFocus,hprice,nextStep,foldHtml,upDiff,reportText,tele,loadBackup,skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>
 </html>

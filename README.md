@@ -124,3 +124,6 @@ Emoji decoration is off by default. The game now shows plain text labels (Gold, 
 - Services have fuller descriptions on the Town screen.
 - Every town has a hidden gambling den in its rough quarter; find it by wandering.
 - Companions have drawn portraits. Conversations are now spoken questions with spoken answers. NPC chatter and street scenes rewritten.
+
+## Skills log
+Hero tab → Skills log. Abilities improve by use (success teaches more than failure) and appear the first time you try them: **Haggling** (sell goods: odds, tries per day, better offers), **Carousing** (buying a round: cheaper, more reliable, sometimes a second rumour; Listen in counts too), **Bluffing** (tolls and rough quarters). Trading is shown read-only. New skills register in `LSK` and call `lsUse(id, success)`.
