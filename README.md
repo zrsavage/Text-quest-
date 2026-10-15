@@ -47,3 +47,10 @@ Companions are **procedurally generated**: each generation gets a fresh cast of 
 - **Nothing but honest work:** the first thing a new hero can own comes from an errand with no fighting. Mira the Baker needs flour sacks hauled (three Training Yard sessions), then pays in a tunic and boots, or a kitchen knife and a loaf. Only the first generation gets this.
 - **Essences:** joining the guild awakens a first essence (more at Bronze and Gold rank). You are offered three random ones. Each grants a skill and a scaling bonus, and certain pairs form a **confluence** with extra bonuses.
 - **Monster cores:** once you have an essence, kills can leave cores (elites and bosses far more often). Cores deepen an essence's attunement, capped by guild rank. Heirs awaken their own essences.
+
+### Spirit coins, cores and powers (reworked)
+
+- **Spirit coins** drop from monsters once you have an essence (far more from elites and bosses). They deepen essence attunement and can reroll the essences offered at an awakening.
+- **Cores** are specific to a monster family (beast, undead, frost, fire, golem, spider, and so on) and grade with the monster's tier. Absorbing one teaches that family's **power**. A duplicate core strengthens it. Rank limits how many powers you can hold.
+- **Resonance:** every power lists the essences it works with. If you hold one, the power is 1.75x stronger, and the core screen tells you when a core suits your build.
+- **Bloodline memory:** the best level of every power an ancestor mastered is remembered. From the second generation on, an heir can reawaken a few of them (more over generations) for spirit coins, one level weaker. Essences, skills and levels are not inherited.
