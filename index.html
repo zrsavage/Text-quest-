@@ -16,7 +16,7 @@
 html,body{margin:0;background:var(--bg);color:var(--tx);font:1rem/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;touch-action:manipulation}
 body{-webkit-user-select:none;user-select:none}
 input,textarea{-webkit-user-select:text;user-select:text}
-html,body,button,input,textarea{font-family:var(--ff,MedievalSharp,fantasy,serif)}
+html,body,button,input,textarea{font-family:var(--ff,"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif)}
 h1,h2,h3,.foldh{font-family:var(--fh,var(--ff,inherit))}
 #app{max-width:640px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column}
 #top{position:sticky;top:0;z-index:5;background:#121620;border-bottom:1px solid var(--line);padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top))}
@@ -7594,9 +7594,9 @@ FEATS.push({ord:6,show:t=>!!S.world.guild&&S.hero.contracts>=1,btn:t=>btn('Hirin
 
 /* ---------- font styles ---------- */
 const FACES=[
- ['med','Medieval','MedievalSharp,fantasy,serif','',1],
  ['sys','Plain (system)','system-ui,-apple-system,"Segoe UI",Roboto,sans-serif','',1],
  ['atk','Easy to read','"Atkinson Hyperlegible",system-ui,sans-serif','',1],
+ ['med','Medieval','MedievalSharp,fantasy,serif','',1],
  ['chron','Chronicle','"IM Fell English",Palatino,"Book Antiqua",serif','"Pirata One","IM Fell English",serif',1.12],
  ['cur','Cursive','"Dancing Script","Snell Roundhand","Apple Chancery",cursive','',1.18],
  ['hand','Handwritten','"Patrick Hand","Bradley Hand","Segoe Print",cursive','',1.14],
@@ -7605,13 +7605,13 @@ const FACES=[
 ];
 function applyFace(){
  if(typeof document==='undefined')return;
- const f=FACES.find(x=>x[0]===(PRE.face||'med'))||FACES[0];
+ const f=FACES.find(x=>x[0]===(PRE.face||'atk'))||FACES[0];
  document.documentElement.style.setProperty('--ff',f[2]);document.documentElement.style.setProperty('--fh',f[3]||f[2]);
 }
 ACT.face=function(k){PRE.face=k;prefSave();applyFace();applyFont();};
 TA.tface=function(k){PRE.face=k;prefSave();applyFace();applyFont();};
-{const _af=applyFont;applyFont=function(){_af();try{const f=FACES.find(x=>x[0]===(PRE.face||'med'));if(f&&f[4]&&f[4]!==1){const d=document.documentElement;d.style.fontSize=(parseFloat(d.style.fontSize)*f[4]).toFixed(2)+'px';}}catch(e){}};}
-const faceBtns=(act)=>`<h3 style="margin-top:14px">Font style</h3><div class="grid" style="grid-template-columns:repeat(2,1fr)">${FACES.map(f=>`<button class="btn c ${(PRE.face||'med')===f[0]?'pri':''}" data-a="${act}" data-p="${f[0]}" style="font-family:${f[2].replace(/"/g,"'")}">${f[1]}</button>`).join('')}</div>`;
+{const _af=applyFont;applyFont=function(){_af();try{const f=FACES.find(x=>x[0]===(PRE.face||'atk'));if(f&&f[4]&&f[4]!==1){const d=document.documentElement;d.style.fontSize=(parseFloat(d.style.fontSize)*f[4]).toFixed(2)+'px';}}catch(e){}};}
+const faceBtns=(act)=>`<h3 style="margin-top:14px">Font style</h3><div class="grid" style="grid-template-columns:repeat(2,1fr)">${FACES.map(f=>`<button class="btn c ${(PRE.face||'atk')===f[0]?'pri':''}" data-a="${act}" data-p="${f[0]}" style="font-family:${f[2].replace(/"/g,"'")}">${f[1]}</button>`).join('')}</div>`;
 {
  const _s=settingsHtml;
  settingsHtml=function(){return _s()+faceBtns('face');};
