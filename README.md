@@ -163,4 +163,4 @@ Buttons, cards and list rows are now about 20% smaller by default. Menu > Settin
 - Quest chats and companion conversations also pop up. Town service descriptions are shorter.
 
 ## Font styles
-Menu > Settings (and the title screen settings) now has a Font style picker: Default, Easy to read (Atkinson Hyperlegible), Storybook (Lora), Old book (Crimson Pro), Rounded (Nunito), Typewriter (JetBrains Mono). Fonts load from Google Fonts and fall back to system fonts offline.
+Menu > Settings (and title screen settings) has a Font style picker: Default, Easy to read (Atkinson Hyperlegible), Chronicle (IM Fell English with Pirata One headings), Medieval (MedievalSharp), Handwritten (Patrick Hand), Typewriter (Special Elite), Terminal (VT323). Each style has a size scale. Fonts load from Google Fonts and fall back to system fonts offline.
