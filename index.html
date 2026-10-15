@@ -227,7 +227,7 @@ function newWorld(){return{gold:0,inv:[],mats:{},pots:{hp1:0,hp2:0,hp3:0},gen:1,
 function newHero(name,fam,gen){
  const w=S.world,fl=(w.map&&w.map.flags)||{},f=gen>1?Math.min(.5,.1*(gen-1)+.02*Object.keys(fl).filter(k=>k.startsWith('echo')).length+(fl.ancestors?.05:0)):0,st={};
  STATS.forEach(k=>st[k]=3+Math.floor((w.legacy[k]||0)*f));
- return{name,fam,gen,lvl:1,xp:0,st,pts:0,hp:1,day:1,sta:1,tc:0,kills:0,contracts:0,equip:{},skills:{},active:[],q:{},qd:{},fl:{},fx:[],dgc:{},dgsave:{},pz:0,party:[],rel:[],su:{},sx:{}};
+ return{name,fam,gen,lvl:1,xp:0,st,pts:0,hp:1,day:1,sta:1,tc:0,kills:0,contracts:0,equip:{},skills:{},active:[],q:{},qd:{},fl:{},fx:[],dgc:{},dgsave:{},pz:0,party:[],rel:[],su:{},sx:{},talked:{},guest:null};
 }
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}}
 function load(){try{const t=localStorage.getItem(SAVE_KEY);return t?JSON.parse(t):null;}catch(e){return null;}}
@@ -1106,8 +1106,8 @@ function ensureState(){
  const w=S.world,h=S.hero;
  w.map=w.map||{};w.map.explore=w.map.explore||[0,0,0,0,0,0];w.map.found=w.map.found||{};
  w.map.lore=w.map.lore||{};w.map.cleared=w.map.cleared||{};w.map.flags=w.map.flags||{};
- w.best=w.best||{};w.comp=w.comp||{};w.relics=w.relics||{};w.delve=w.delve||{best:0,who:''};
- h.party=h.party||[];h.rel=h.rel||[];h.su=h.su||{};h.sx=h.sx||{};S.set=S.set||{autosell:false};if(S.set.diff==null)S.set.diff=1;S.easy=S.easy||0;if(S.dl===undefined)S.dl=null;S.htab=S.htab||'stats';
+ w.best=w.best||{};w.comp=w.comp||{};w.meet=w.meet||{};w.relics=w.relics||{};w.delve=w.delve||{best:0,who:''};
+ h.party=h.party||[];h.rel=h.rel||[];h.talked=h.talked||{};if(h.guest===undefined)h.guest=null;h.su=h.su||{};h.sx=h.sx||{};S.set=S.set||{autosell:false};if(S.set.diff==null)S.set.diff=1;S.easy=S.easy||0;if(S.dl===undefined)S.dl=null;S.htab=S.htab||'stats';
  h.q=h.q||{};h.qd=h.qd||{};h.fl=h.fl||{};h.fx=h.fx||[];h.dgc=h.dgc||{};h.dgsave=h.dgsave||{};h.pz=h.pz||0;
  if(S.dg===undefined)S.dg=null;if(S.pz===undefined)S.pz=null;if(S.ev===undefined)S.ev=null;if(S.talk===undefined)S.talk=null;
  if(S.pz&&S.pz.d&&S.pz.d.show)S.pz.d.show=false;
@@ -1179,11 +1179,11 @@ const stepDone=id=>{const p=stepProg(id);return p[0]>=p[1];};
 function qEvent(type,d){
  const h=S.hero;
  for(const id in h.q){const st=qStep(id),qs=h.q[id];
-  if(type==='kill'&&st.k==='kill'&&(st.zi==null||st.zi===d.zi)&&(!st.name||st.name===d.base)&&(!st.tier||st.tier===d.tier))qs.p++;
-  if(type==='boss'&&st.k==='boss'&&st.zi===d.zi)qs.p++;
-  if(type==='clear'&&st.k==='clear'&&st.dg===d.id)qs.p++;
-  if(type==='puzzle'&&st.k==='puzzle')qs.p++;
-  if(type==='room'&&st.k==='room'&&st.t===d.t)qs.p++;
+  if(type==='kill'&&st.k==='kill'&&wOk(st)&&(st.zi==null||st.zi===d.zi)&&(!st.name||st.name===d.base)&&(!st.tier||st.tier===d.tier))qs.p++;
+  if(type==='boss'&&st.k==='boss'&&wOk(st)&&st.zi===d.zi)qs.p++;
+  if(type==='clear'&&st.k==='clear'&&wOk(st)&&st.dg===d.id)qs.p++;
+  if(type==='puzzle'&&st.k==='puzzle'&&wOk(st))qs.p++;
+  if(type==='room'&&st.k==='room'&&wOk(st)&&st.t===d.t)qs.p++;
  }
 }
 function qTalkChoose(i){
@@ -1198,6 +1198,8 @@ function qTalkChoose(i){
  const next=ch.go!=null?ch.go:qs.s+1;
  if(next>=q.steps.length){
   delete h.q[t.id];h.qd[t.id]=1;
+  if(h.guest&&h.guest.trial&&'t_'+h.guest.id===t.id)h.guest=null;
+  if(S.talkRetry===t.id){delete h.qd[t.id];S.talkRetry=null;}
   lines.push(`✅ <b>Quest complete: ${q.t}</b>`);
   note(`Quest complete: ${q.t}`,'g');
  }else{qs.s=next;qs.p=0;lines.push(`📜 <b>Next:</b> ${q.steps[next].j}`);}
@@ -1279,7 +1281,7 @@ function genDungeon(D){
  mand.forEach(t=>{const r=pool.pop();if(r)r.t=t;});
  const wts=[['fight',30],['treasure',12],['trap',12],['puzzle',12],['shrine',5],['rest',5],['lore',6],['npc',6],['empty',8]];if(N>=12)wts.push(['elite',5]);
  pool.forEach(r=>{r.t=wts[wroll(wts.map(x=>x[1]))][0];});
- if(D.ally&&S.world.comp&&!S.world.comp[D.ally]){const nr=rooms.filter(r=>r.t==='npc'),cand=nr.length?nr:rooms.filter(r=>r.t==='fight');if(cand.length){const r=pick(cand);r.t='npc';r.ally=D.ally;}}
+ if(D.ally&&S.world.comp&&!S.world.comp[D.ally]&&!S.world.meet[D.ally]){const nr=rooms.filter(r=>r.t==='npc'),cand=nr.length?nr:rooms.filter(r=>r.t==='fight');if(cand.length){const r=pick(cand);r.t='npc';r.ally=D.ally;}}
  rooms.forEach(r=>{
   if(r.t==='empty'&&r.dist>0)r.d=1;
   if(r.t==='treasure'||r.t==='vault'){r.tr=Math.random()<.35;r.mm=r.t==='treasure'&&Math.random()<.07;}
@@ -1386,6 +1388,7 @@ function victory(){
  w.gold+=gold;lines.push(`💰 +${gold} gold`);lines.push(`✨ +${xp} XP`);
  lines.push(...addXP(xp));
  lines.push(...partyReward(xp));
+ lines.push(...guestFight(c));
  h.kills++;w.kills++;
  if((ctx.type==='hunt'||ctx.type==='ev')&&!e.dg)lines.push(...regionProgress(e));
  const z=ZONES[e.zi],ch=({n:.16,e:.6,b:1}[e.tier])*(1+p.dropf/100)*(ctx.type==='dg'?1.3:1)*dr();
@@ -1641,7 +1644,7 @@ Object.assign(ACT,{
  },
  dgNpc(){
   const dg=S.dg,r=dgRoom(),D=getD(dg.id);if(r.d)return;
-  S.ev={zi:D.zi,kind:'ev',def:(r.ally&&!S.world.comp[r.ally])?allyEventDef(r.ally):DGE[r.ne],res:null,dgroom:r.i};S.screen='explore';
+  S.ev={zi:D.zi,kind:'ev',def:(r.ally&&!S.world.comp[r.ally]&&!S.world.meet[r.ally])?allyEventDef(r.ally):DGE[r.ne],res:null,dgroom:r.i};S.screen='explore';
  },
  dgPz(){const dg=S.dg,r=dgRoom(),D=getD(dg.id);if(r.d)return;startPuzzle(r.pz,D,r.i);},
  dgSearch(){
@@ -1668,7 +1671,7 @@ Object.assign(ACT,{
  pzQuit(){S.pz=null;S.screen='dungeon';},
  // quests
  talk(id){S.talkBack=S.screen;S.talk={id,mode:S.hero.q[id]?'step':'offer',lines:null};S.screen='talk';},
- tacc(){const t=S.talk;startQuest(t.id);t.mode='accepted';},
+ tacc(){const t=S.talk;startQuest(t.id);t.mode='accepted';if(t.id.startsWith('t_'))S.hero.guest={id:t.id.slice(2),need:99,fights:0,score:0,trial:true};},
  tch(i){qTalkChoose(+i);},
  tback(){S.talk=null;S.screen=S.talkBack||'square';},
  jtab(t){S.jtab=t;},
@@ -1822,6 +1825,8 @@ function buildParty(){
   const max=Math.round((30+L*8)*D.hp*(rel('oak')?1.4:1));
   out.push({id,lvl:L,hp:max,max,atk:Math.round((2+L*1.2)*D.atk),def:Math.round((1+L*.7)*D.def),cd:0,down:false,rage:0});
  });
+ const g=h.guest;
+ if(g&&COMP[g.id]&&!out.some(u=>u.id===g.id)){const D=COMP[g.id],L=Math.max(1,h.lvl-1),max=Math.round((30+L*8)*D.hp);out.push({id:g.id,lvl:L,hp:max,max,atk:Math.round((2+L*1.2)*D.atk),def:Math.round((1+L*.7)*D.def),cd:0,down:false,rage:0,guest:true});}
  return out;
 }
 function allyUnit(id){return S.cb.party.find(u=>u.id===id);}
@@ -1849,7 +1854,7 @@ function comboMult(e,tags,crit){
  if(!tags.includes('bleed')&&tags.includes('phys')&&e.bleed>0)m*=1.1;
  if(sy.tagx)tags.forEach(t=>{if(sy.tagx[t])m*=1+sy.tagx[t];});
  if(rel('emberheart')&&tags.includes('fire'))m*=1.1;
- msgs.forEach(x=>say(x,'y'));
+ msgs.forEach(x=>say(x,'y'));if(msgs.length&&S.cb&&S.cb.st)S.cb.st.combo++;
  return m;
 }
 const firstName=D=>D.n.split(' ')[0];
@@ -1880,7 +1885,7 @@ function companionAct(u){
    case 'mortis':useSpec=!(c.thrall&&c.thrall.t>0);break;
   }
  }
- if(useSpec){u.cd=cdVal(u);
+ if(useSpec){u.cd=cdVal(u);c.st.spec[u.id]=(c.st.spec[u.id]||0)+1;
   say(`${D.ic} <b>${f}: ${D.spec[0]}!</b>`,'y');
   switch(u.id){
    case 'brom':c.pb.wall=2;c.pb.taunt=2;break;
@@ -1946,7 +1951,7 @@ function strike(mult,o){
  o=o||{};const p=P(),c=S.cb,e=c.e,h=S.hero,sy=synFx();
  let b=(o.magic?(p.int*2.6+p.atk*.35):p.atk)*mult*rnd(.9,1.1)*(1+c.hb.atk)*(1+bestBonus(e.base))*(c.hb.weak>0?.75:1)*(c.pb.dmg>0?1.3:1)*(rel('banner')?1.1:1)*(rel('prism')?1.15:1);
  const crit=!o.nocrit&&Math.random()*100<p.crit;
- if(crit){b*=p.critdmg/100;if(rel('gambler'))c.focus=Math.min(p.maxfocus,c.focus+2);}
+ if(crit){if(c.st)c.st.crit++;b*=p.critdmg/100;if(rel('gambler'))c.focus=Math.min(p.maxfocus,c.focus+2);}
  b*=comboMult(e,o.tags||(o.magic?['magic']:['phys']),crit);
  const d=Math.max(1,Math.round(b*(1-mit(e.def,h.lvl)*(1-(o.pierce||0)))));
  e.hp=Math.max(0,e.hp-d);
@@ -2010,7 +2015,7 @@ function enemyTurn(){
   d=Math.max(1,Math.round(d));u.hp-=d;
   say(`${esc(e.name)} ${tk==='h'?'smashes':'hits'} ${D.ic} ${firstName(D)} for <b>${d}</b>.`,'e');
   if(tk==='d'){const n=Math.round(d*.6);e.hp=Math.min(e.max,e.hp+n);}
-  if(u.hp<=0){u.hp=0;u.down=true;say(`💔 ${D.n} is down!`,'e');}
+  if(u.hp<=0){u.hp=0;u.down=true;c.st.down[u.id]=1;say(`💔 ${D.n} is down!`,'e');}
  }
 }
 function checkDeath(){
@@ -2044,16 +2049,16 @@ function playerAct(type,arg){
  const h=S.hero,p=P(),e=c.e;
  c.guard=false;
  if(c.hb.stun>0){c.hb.stun=0;say('💫 You are stunned and cannot act!','e');return afterPlayer();}
- if(type==='atk'){strike(1);c.focus=Math.min(p.maxfocus,c.focus+1);}
- else if(type==='guard'){c.guard=true;c.focus=Math.min(p.maxfocus,c.focus+3);say('🛡️ You brace yourself.');}
+ if(type==='atk'){strike(1);c.st.atk++;c.focus=Math.min(p.maxfocus,c.focus+1);}
+ else if(type==='guard'){c.guard=true;c.st.guard++;c.focus=Math.min(p.maxfocus,c.focus+3);say('🛡️ You brace yourself.');}
  else if(type==='skill'){
-  if(!castSkill(arg))return;
+  if(!castSkill(arg))return;c.st.skill++;if(SKT[arg]&&SKT[arg].includes('fire'))c.st.fire++;if(arg==='mend')c.st.heal++;
   if(rel('echo')&&e.hp>0&&['power','flurry','bash','venom','fire','bite','exec','meteor'].includes(arg)&&Math.random()<.35){say('🔁 <b>Echo Stone!</b> The skill fires again.','y');castSkill(arg,true);}
  }
  else if(type==='pot'){
   const w=S.world,po=POTS[arg];if(!w.pots[arg])return;
   if(h.hp>=p.maxhp){say('You are already at full health.');return;}
-  const free=rel('philo')&&Math.random()<.25;if(!free)w.pots[arg]--;
+  const free=rel('philo')&&Math.random()<.25;if(!free)w.pots[arg]--;c.st.heal++;
   const n=healHero(Math.round(Math.max(po.min,p.maxhp*po.pct)*(1+partyPass('potion')+(rel('philo')?.6:0))));
   say(`🧪 ${po.n}: +${n} HP${free?' (not consumed!)':''}.`,'g');
  }
@@ -2071,7 +2076,7 @@ function startCombat(e,boss,ctx){
  ['burn','bd','chill','mark','bleed','bld','pn'].forEach(k=>{if(e[k]==null)e[k]=0;});
  const party=buildParty();
  if(party.length&&!e.scaled){e.scaled=1;e.hp=e.max=Math.round(e.max*(1+.14*party.length));}
- S.cb={e,boss,ctx:ctx||{type:'hunt'},log:[],turn:1,focus:Math.floor(p.maxfocus/2),panel:null,hb:{atk:0,atkT:0,def:0,defT:0,poison:0,pd:0,stun:0,weak:0},pb:{dmg:0,wall:0,taunt:0,regen:null,barrier:0},party,q:{},thrall:null,lb:false,hp0:h.hp,over:false};
+ S.cb={e,boss,ctx:ctx||{type:'hunt'},log:[],turn:1,focus:Math.floor(p.maxfocus/2),panel:null,hb:{atk:0,atkT:0,def:0,defT:0,poison:0,pd:0,stun:0,weak:0},pb:{dmg:0,wall:0,taunt:0,regen:null,barrier:0},party,q:{},thrall:null,lb:false,hp0:h.hp,st:{atk:0,guard:0,skill:0,crit:0,fire:0,heal:0,combo:0,spec:{},down:{}},over:false};
  say(`${e.tier==='b'?'👑':e.tier==='e'?'⭐':'⚔️'} ${esc(e.name)} (Lv ${e.lvl}) appears!`,'y');
  if(party.length)say(`Your party: ${party.map(u=>COMP[u.id].ic+' '+firstName(COMP[u.id])).join(', ')}`);
  if(e.intro)say(`<i>${e.intro}</i>`);
@@ -2083,13 +2088,16 @@ function partyDanger(hd,ed){const n=S.hero.party?S.hero.party.length:0;return[hd
 function allyEventDef(id){
  const D=COMP[id];
  return{id:'ally_'+id,t:D.intro,ch:[
-  {l:`Free them and invite them along`,o:{t:`${D.n} grins. "I thought you'd never ask."`,comp:id,xp:.4}},
+  {l:`Free them and invite them along`,o:{t:`${D.n} grins. "Thanks for the rescue. Buy me a drink at the Gilded Mug sometime, and we will see if we get along."`,meet:id,xp:.4}},
   {l:'Leave them for now',o:{t:'You can always come back. If the dungeon lets you.'}}]};
 }
 const _applyOut=applyOut;
 applyOut=function(o,zi,qid){
  const out=_applyOut(o,zi,qid);
  if(o.comp)out.push(...recruit(o.comp));
+ if(o.meet)out.push(...meetComp(o.meet,6));
+ if(o.pass){const m=S.world.meet[o.pass];if(m){m.test=1;out.push(`🤝 <b>${COMP[o.pass].n} trusts you.</b> (trust ${trustOf(o.pass)}/100)`);}}
+ if(o.fail){const m=S.world.meet[o.fail];if(m){m.cool=S.hero.day+3;m.chat=Math.max(0,m.chat-5);out.push(`💔 ${COMP[o.fail].n} is not convinced. Try again in a few days.`);S.talkRetry='t_'+o.fail;}}
  if(o.relic)out.push(...addRelic(o.relic));
  if(o.bond)out.push(...bondUp(o.bond));
  return out;
@@ -2105,8 +2113,8 @@ PQ('c_rime','rime',"Rime's breath fogs the air. \"I do not remember who froze me
 PQ('c_venn','venn',"Venn rubs his hands. \"The perfect elixir needs Ectoplasm. Three of them. I will name it after you. Possibly after myself.\"",[{k:'gather',m:'Ectoplasm',n:3,j:'Bring 3 Ectoplasm to Venn.',tk:T_('Venn holds up a glowing flask. "Do not drink this."',CH('Drink it anyway','You feel... remarkable.',{bond:'venn',fx:'bless',xp:.8}),CH('Bottle it for later','He hands you a batch.',{bond:'venn',pot:'hp3'}))}]);
 PQ('c_gorm','gorm',"Gorm cracks his knuckles. \"I want a duel with something worthy. That old oak in Whisperwood. Kill Grandmother Oak.\"",[{k:'boss',zi:1,j:'Defeat Grandmother Oak with Gorm.',tk:T_('Gorm roars with laughter. "A worthy foe!"',CH('Laugh with him','He claps you on the shoulder.',{bond:'gorm',xp:1,pts:1}),CH('Share the spoils','He takes the lesser share.',{bond:'gorm',item:2}))}]);
 PQ('c_nyx','nyx',"Nyx's voice comes from the shadow. \"I leave contracts unfinished. A puzzle-locked vault holds my final one. Solve three puzzles, and I will be free.\"",[{k:'puzzle',n:3,j:'Solve 3 puzzles with Nyx.',tk:T_('Nyx reads a name, and burns the paper.',CH('Ask no questions','She exhales. "Thank you."',{bond:'nyx',xp:1,pts:1}),CH('Ask who it was','She tells you. It is a long, bad story.',{bond:'nyx',item:2}))}]);
-QS.valeria.steps[0].tk.ch.push(CH('Ask to take her novice, Lyssa, along','Lyssa smiles, shy but determined.',{comp:'lyssa',xp:.6}));
-QS.hob.steps[0].tk.ch.push(CH('Take Cogsworth, his clockwork helper','Cogsworth whirs and salutes.',{comp:'cogsworth',xp:.6}));
+QS.valeria.steps[0].tk.ch.push(CH('Ask about her novice, Lyssa','Lyssa peeks out from behind a bookshelf, shy but curious. "Maybe I will see you at the tavern?"',{meet:'lyssa',xp:.6}));
+QS.hob.steps[0].tk.ch.push(CH('Meet Cogsworth, his clockwork helper','Cogsworth whirs and salutes. "GREETINGS. I WILL BE AT THE TAVERN."',{meet:'cogsworth',xp:.6}));
 QLIST.splice(0,QLIST.length,...Object.keys(QS));
 const _qAvail=qAvail;
 qAvail=function(q){
@@ -2142,11 +2150,6 @@ Object.assign(ACT,{
  padd(id){const h=S.hero;if(!S.world.comp[id]||h.party.includes(id))return;if(h.party.length>=maxParty()){note('Your party is full.','e');return;}h.party.push(id);},
  prem(id){const h=S.hero;h.party=h.party.filter(x=>x!==id);},
  order(id){const c=S.cb;if(!c)return;const u=allyUnit(id);if(!u||u.down||u.cd>0)return;c.q[id]=!c.q[id];},
- hire(id){
-  const w=S.world,cost=Math.round(120+S.hero.lvl*35);
-  if(w.comp[id])return;if(w.gold<cost){note('Not enough gold.','e');return;}
-  w.gold-=cost;S.hireLines=recruit(id);
- },
  relicEq(id){const h=S.hero;if(!S.world.relics[id]||h.rel.includes(id))return;if(h.rel.length>=2){note('Both relic slots are full. Unequip one first.','e');return;}h.rel.push(id);h_clamp();},
  relicUn(id){const h=S.hero;h.rel=h.rel.filter(x=>x!==id);h_clamp();},
  htab(t){S.htab=t;},
@@ -2158,6 +2161,137 @@ Object.assign(ACT,{
  delveFight(){const dl=S.dl;if(!dl||!dl.e)return;const e=dl.e;startCombat(e,e.tier==='b',{type:'delve',free:true});},
  delveRetreat(){const dl=S.dl;if(dl){note(`You climb out of the Abyss after floor ${dl.f-1}. Best ever: floor ${S.world.delve.best}.`,'y');}S.dl=null;S.screen='town';},
  delveNext(){const dl=S.dl;dl.e=delveEnemy(dl.f);S.screen='delve';}
+});
+
+/* =====================================================================
+   EXPANSION F — EARNING TRUST (replaces hiring)
+   ===================================================================== */
+const TRAITS={honor:'Honor',duty:'Duty',mercy:'Mercy',glory:'Glory',greed:'Greed',cunning:'Cunning',caution:'Caution',wrath:'Wrath',knowledge:'Knowledge',nature:'Nature'};
+const SCEN=[null,
+ {t:'A hungry child begs at the tavern door.',ch:[['Buy them a hot meal','mercy'],['Tell them to earn it','duty'],['Slip them a tip on easy marks','cunning'],['Walk on by','caution']]},
+ {t:'Someone at the bar is boasting about slaying a dragon.',ch:[['Call them a liar and offer a duel','wrath'],['Ask for every detail','knowledge'],['Buy them a drink and cheer them on','glory'],['Lift their purse while they talk','greed']]},
+ {t:'You find a full purse on the road.',ch:[['Track down the owner','honor'],['Keep it','greed'],['Leave it. It could be bait','caution'],['Use it to grease a guard\'s palm','cunning']]},
+ {t:'A wounded wolf blocks the path.',ch:[['Bandage it and let it go','mercy'],['End it quickly','wrath'],['Study how it was hurt','knowledge'],['Slip around it quietly','nature']]},
+ {t:'"What matters most in a fight?"',ch:[['Winning, whatever it takes','wrath'],['Protecting the people beside you','duty'],['Doing it with style','glory'],['Living to fight again','caution']]},
+ {t:'You find a book of forbidden lore.',ch:[['Read every page','knowledge'],['Sell it to the highest bidder','greed'],['Burn it. Some things must not be known','duty'],['Hide it somewhere safe','caution']]},
+ {t:'A rival offers you a deal behind the guild\'s back.',ch:[['Take it. Gold is gold','greed'],['Report it at once','duty'],['Play along to learn their game','cunning'],['Refuse openly, even if it costs you','honor']]},
+ {t:'A defeated enemy lays down their weapon and surrenders.',ch:[['Spare them','mercy'],['Finish it','wrath'],['Demand a ransom','greed'],['Question them first','cunning']]},
+ {t:'A crowd is cheering your name in the square.',ch:[['Soak it up','glory'],['Slip away before it turns','caution'],['Credit your friends','honor'],['Charge for autographs','greed']]},
+ {t:'A forest is being cleared for a new road.',ch:[['Stand in the way','nature'],['Take the lumber contract','greed'],['Say a quiet prayer for the trees','mercy'],['Ask how the road will help the town','knowledge']]},
+ {t:'The shortcut home runs through a graveyard at night.',ch:[['Stride right through','glory'],['Pay your respects first','mercy'],['Take the long way','caution'],['Dig for grave goods','greed']]},
+ {t:'"So. Why do you fight?"',ch:[['To protect people','duty'],['For gold','greed'],['For glory and a good story','glory'],['To find answers','knowledge']]}
+];
+// like/dis = traits; sc = three personal conversations; re = good/ok/bad reaction; quirk = [stat, min, line]
+const COMPX={
+ brom:{like:['duty','honor'],dis:['glory'],meetReq:{kills:8},sc:[5,3,9],open:'Brom nurses an ale and watches the door like it owes him money. "You look like someone who might finish what they start."',re:['"That is the answer I hoped for."','"Hm. Fair enough."','"...I see. We may not see eye to eye."'],quirk:['guard',1,'You braced before the hit. Good. Protect what matters.']},
+ kael:{like:['cunning','greed'],dis:['duty'],meetReq:{kills:20},sc:[7,3,11],open:'A knife spins across a knuckle. "Relax. I only steal from people who deserve it. Mostly."',re:['"Ha! Now you are speaking my language."','"Eh. Sure."','"Oh. You are one of THOSE."'],quirk:['crit',1,'That crit! Right between the ribs. Beautiful.']},
+ orla:{like:['glory','knowledge'],dis:['caution'],meetReq:{lvl:8},sc:[2,9,6],open:'A horn blares, slightly out of tune. "A listener! Stay a while, I only have forty-three verses."',re:['"Oh, that will make a good chorus!"','"Mm. I will work that in somewhere."','"...You do not like music, do you?"'],quirk:['skill',3,'All those flourishes! Wonderful. I will write about it.']},
+ gorm:{like:['wrath','honor'],dis:['caution'],meetReq:{kills:30},sc:[8,5,2],open:'"You! You look like someone who hits things for a living. EXCELLENT."',re:['"HA! Yes!"','"Fair. Fair."','"Pah. Cowards talk like that."'],quirk:['atk',3,'Straight, honest swings. I like that in a partner.']},
+ lyssa:{like:['mercy','caution'],dis:['wrath'],sc:[4,1,8],open:'"S-sorry. I am still new at this. Are you the one Sister Valeria mentioned?"',re:['"Oh. That is... kind."','"I see. Thank you for telling me."','"...Oh. I was hoping you would say something else."'],quirk:['heal',1,'You tended wounds in the thick of it. Thank you.']},
+ ember:{like:['knowledge','glory'],dis:['caution'],sc:[6,2,9],open:'"Careful, the cage is still hot. Hi. Thanks. Hi."',re:['"Yes! Exactly!"','"Huh. Interesting."','"Boring. No offense."'],quirk:['fire',1,'Fire! You get it.']},
+ rime:{like:['caution','knowledge'],dis:['glory'],sc:[11,6,12],open:'"I have been cold for a very long time. You are... warm. Strange."',re:['"That is wise."','"Perhaps."','"Foolish."'],quirk:['combo',1,'A clean combination. Efficient.']},
+ venn:{like:['knowledge','greed'],dis:['duty'],sc:[6,3,12],open:'"Do not touch that. Or that. Or... actually that is just soup."',re:['"Now we are getting somewhere!"','"Noted. Probably."','"Ugh. Moralists."'],quirk:['heal',1,'Resourceful use of consumables. SCIENCE.']},
+ nyx:{like:['cunning','caution'],dis:['glory'],sc:[7,8,9],open:'"You walk too loudly. But you kept your word to the dark. That is something."',re:['"Good."','"Hm."','"Loud. As expected."'],quirk:['crit',1,'Quick. Quiet. Lethal. Good.']},
+ seraph:{like:['duty','mercy'],dis:['greed'],sc:[8,4,12],open:'"I have waited in this chapel for my oath to end. Perhaps you are the one who ends it."',re:['"That is a worthy answer."','"I will consider it."','"That is... not how I was raised."'],quirk:['guard',1,'You shield the weak. That is all I ask.']},
+ thorn:{like:['nature','mercy'],dis:['greed'],sc:[10,4,1],open:'"The vines told me you were coming. They like you. They do not like everyone."',re:['"The forest approves."','"Mm."','"The forest does not approve."'],quirk:['heal',1,'You mended what was broken. The forest approves.']},
+ mortis:{like:['knowledge','cunning'],dis:['duty'],sc:[6,11,12],open:'"Fascinating. You are rude. Fortunately, so am I."',re:['"Delightful."','"Interesting enough."','"Tedious."'],quirk:['skill',2,'Technique. Pleasing.']},
+ zephyr:{like:['glory','nature'],dis:['caution'],sc:[2,9,10],open:'"Rats! I hate rats. Oh. You got me out. You are my favourite person right now."',re:['"Ha! I like you."','"Okay!"','"Boo. Where is your sense of adventure?"'],quirk:['skill',2,'Nice moves! You keep them guessing.']},
+ cogsworth:{like:['duty','knowledge'],dis:['wrath'],sc:[12,6,5],open:'"BZZT. Greetings. I am Cogsworth. I am... learning."',re:['"COMPATIBLE. WARM FEELING DETECTED."','"NOTED."','"ERROR. DISAPPROVAL."'],quirk:['combo',1,'COMBINATION DETECTED. EFFICIENCY +12%.']}
+};
+Object.assign(COMP.brom,{from:'Tavern regular (appears after 8 kills), then earn his trust'});
+Object.assign(COMP.kael,{from:'Tavern (appears after 20 kills), then earn his trust'});
+Object.assign(COMP.orla,{from:'Tavern (appears at Lv 8), then earn her trust'});
+Object.assign(COMP.gorm,{from:'Tavern (appears after 30 kills), then earn his trust'});
+['lyssa','cogsworth'].forEach(k=>COMP[k].from+=', then earn their trust');
+Object.keys(ALLY_OF).forEach(d=>{const id=ALLY_OF[d];COMP[id].from+=', then earn their trust';});
+
+const trustOf=id=>{const m=S.world.meet[id];return m?Math.min(100,m.chat+m.job+(m.test?25:0)):0;};
+function meetComp(id,chat){
+ const w=S.world;if(w.comp[id]||w.meet[id])return[];
+ w.meet[id]={chat:chat||0,job:0,test:0,sc:0,cool:0,jobs:0,spoke:0};note(`You met ${COMP[id].n}.`,'y');
+ return [`👋 You meet <b>${COMP[id].ic} ${COMP[id].n}</b> (${COMP[id].role}). They will be at the Gilded Mug. Talk, work together, and see if you gel.`];
+}
+function canApproach(id){
+ const h=S.hero,w=S.world,r=COMPX[id].meetReq;
+ if(w.comp[id]||w.meet[id]||!r)return false;
+ return (!r.kills||h.kills>=r.kills)&&(!r.lvl||h.lvl>=r.lvl);
+}
+function trialReady(id){const m=S.world.meet[id],h=S.hero;return !!m&&!m.test&&m.chat+m.job>=20&&h.day>=m.cool&&!h.q['t_'+id];}
+function canInvite(id){const m=S.world.meet[id];return !!m&&m.test&&trustOf(id)>=55&&!S.world.comp[id];}
+const wOk=st=>!st.with||(S.hero.guest&&S.hero.guest.id===st.with)||S.hero.party.includes(st.with);
+
+/* ---- trials: personal tests, run with the companion alongside ---- */
+const TRIAL=(id,line,step,good,bad)=>{const st=Object.assign({},step);st.tk=T_(step.tk,good[0],good[1],bad);Q('t_'+id,{t:`${COMP[id].n}'s Trial`,npc:COMP[id].n,w:'town',req:{trial:id},offer:T_(line),steps:[st]});};
+TRIAL('brom',`Brom folds his arms. "Talk is cheap. Let me see you fight beside me. Bring down three of the big ones, and keep your head."`,{k:'kill',n:3,tier:'e',with:'brom',j:'Defeat 3 elite monsters with Brom beside you.',tk:'Brom lowers his shield. "You held the line. That means more than winning."'},
+ [CH('"You held it for me."','He nods slowly. "Aye."',{pass:'brom'}),CH('Say nothing. Hand him a drink.','He grunts, pleased.',{pass:'brom'})],CH('"I did most of the work."','His jaw tightens. "Funny. I remember it differently."',{fail:'brom'}));
+TRIAL('kael',`Kael grins. "Prove you can think like a thief. Open three chests in dungeons with me. I will watch how you handle the traps."`,{k:'room',t:'treasure',n:3,with:'kael',j:'Open 3 dungeon chests with Kael.',tk:'Kael tosses a coin and catches it. "Not bad. Not bad at all."'},
+ [CH('"Split it fifty-fifty."','He laughs. "Fair!"',{pass:'kael'}),CH('"Cut me in later. Quietly."','"Now you are thinking."',{pass:'kael'})],CH('"Everything goes to the guild."','"The guild? Pfft. Not for me."',{fail:'kael'}));
+TRIAL('orla',`Orla beams. "A song needs a hero. Defeat eight monsters with me watching, and make it LOOK good."`,{k:'kill',n:8,with:'orla',j:'Defeat 8 monsters with Orla watching.',tk:'Orla scribbles furiously. "Oh, this will make a verse!"'},
+ [CH('"Put me in the chorus."','"Oh, you are in the title!"',{pass:'orla'}),CH('"Make the others look good too."','She laughs. "Even better!"',{pass:'orla'})],CH('"Songs are a waste of time."','Her horn droops. "Oh."',{fail:'orla'}));
+TRIAL('gorm',`Gorm slams the table. "Defeat two elites with me beside you. Fight like you mean it. Then we drink."`,{k:'kill',n:2,tier:'e',with:'gorm',j:'Defeat 2 elite monsters alongside Gorm.',tk:'Gorm roars with laughter. "That! That is how you fight!"'},
+ [CH('"Next round is on you."','"HA!"',{pass:'gorm'}),CH('Arm-wrestle him for it.','He accepts, and loses, delighted.',{pass:'gorm'})],CH('"We should rest."','He scowls. "Pah."',{fail:'gorm'}));
+TRIAL('lyssa',`Lyssa twists her sleeve. "I want to be sure I will not slow you down. Take me out, and let us defeat six monsters in the Whisperwood together."`,{k:'kill',n:6,zi:1,with:'lyssa',j:'Defeat 6 monsters in the Whisperwood with Lyssa.',tk:'Lyssa lets out a shaky breath. "I think... I did alright?"'},
+ [CH('"You did wonderfully."','She glows.',{pass:'lyssa'}),CH('"You kept us standing."','She smiles. "Thank you."',{pass:'lyssa'})],CH('"You need to be braver."','She flinches. "I... I know."',{fail:'lyssa'}));
+TRIAL('ember',`Ember tosses a spark in her palm. "Show me something worth burning. Defeat five monsters with me. I will take notes."`,{k:'kill',n:5,with:'ember',j:'Defeat 5 monsters with Ember.',tk:'Ember grins, smudged and delighted. "Okay. That was fun."'},
+ [CH('"Teach me that trick."','"Ooh, yes!"',{pass:'ember'}),CH('"Do not set the guild on fire."','She laughs.',{pass:'ember'})],CH('"Fire is too dangerous."','She goes quiet. "Right."',{fail:'ember'}));
+TRIAL('rime',`Rime's voice is soft. "I will test you in silence. Defeat six monsters with me, and let me watch how you plan."`,{k:'kill',n:6,with:'rime',j:'Defeat 6 monsters with Rime.',tk:'Rime nods once. "You think before you strike. Good."'},
+ [CH('"We planned well together."','A faint smile.',{pass:'rime'}),CH('Offer your cloak against the cold.','She hesitates, and accepts.',{pass:'rime'})],CH('"You hold back too much."','Frost creeps across the table. "Perhaps."',{fail:'rime'}));
+TRIAL('venn',`Venn rubs his hands. "A test! Solve two puzzles in dungeons with me. I want to see how your mind works."`,{k:'puzzle',n:2,with:'venn',j:'Solve 2 dungeon puzzles with Venn.',tk:'Venn claps. "Brilliant! You think like a scientist!"'},
+ [CH('"We make a good team."','He beams.',{pass:'venn'}),CH('"You pointed out the trick."','"I did, didn\'t I!"',{pass:'venn'})],CH('"Just guess if it takes too long."','He winces. "Guess? GUESS?"',{fail:'venn'}));
+TRIAL('nyx',`Nyx speaks from a corner of shadow. "Defeat two elites with me. Quietly. If you survive, I will think about trusting you."`,{k:'kill',n:2,tier:'e',with:'nyx',j:'Defeat 2 elites with Nyx.',tk:'Nyx steps out of the dark. "Adequate."'},
+ [CH('"Thanks for the knife in the dark."','"Hm."',{pass:'nyx'}),CH('Nod. Say nothing.','"Good."',{pass:'nyx'})],CH('"Next time, be louder."','"No."',{fail:'nyx'}));
+TRIAL('seraph',`Seraph kneels. "I will test your oath. Defeat six monsters in the Sunken Catacombs with me, for the dead's sake."`,{k:'kill',n:6,zi:2,with:'seraph',j:'Defeat 6 monsters in the Sunken Catacombs with Seraph.',tk:'Seraph rises. "The dead rest easier."'},
+ [CH('"For the ones who cannot fight."','"Well said."',{pass:'seraph'}),CH('Bow your head with him.','"Thank you."',{pass:'seraph'})],CH('"It is just a job."','He studies you. "I see."',{fail:'seraph'}));
+TRIAL('thorn',`Thorn strokes a vine. "Walk with me, and defeat six creatures in the Whisperwood. Kill only what you must."`,{k:'kill',n:6,zi:1,with:'thorn',j:'Defeat 6 monsters in the Whisperwood with Thorn.',tk:'Thorn exhales. "The forest forgives you."'},
+ [CH('"We took only what we needed."','"Yes."',{pass:'thorn'}),CH('Plant a seed where a creature fell.','She smiles.',{pass:'thorn'})],CH('"I liked the trophies."','She frowns. "Oh."',{fail:'thorn'}));
+TRIAL('mortis',`Mortis steeples his fingers. "A test of wits. Solve two puzzles with me in the dungeons. Try not to embarrass us."`,{k:'puzzle',n:2,with:'mortis',j:'Solve 2 dungeon puzzles with Mortis.',tk:'Mortis smiles thinly. "Competent. I may keep you."'},
+ [CH('"Your idea. My hands."','"Delightful."',{pass:'mortis'}),CH('"Let us make it a contest."','He raises an eyebrow, amused.',{pass:'mortis'})],CH('"Puzzles are beneath me."','"Then why are you here?"',{fail:'mortis'}));
+TRIAL('zephyr',`Zephyr shoulders her bow. "Come hunting with me! Take down six monsters in the meadow. Let us see if you can keep up."`,{k:'kill',n:6,zi:0,with:'zephyr',j:'Defeat 6 monsters in Dewfield Meadow with Zephyr.',tk:'Zephyr whoops. "That was FUN!"'},
+ [CH('"Race you to the next one."','"You are on!"',{pass:'zephyr'}),CH('"You are an incredible shot."','She beams.',{pass:'zephyr'})],CH('"Let us take it slow."','"Slow? SLOW?"',{fail:'zephyr'}));
+TRIAL('cogsworth',`Cogsworth whirs. "ASSESSMENT: solve two puzzles together. PURPOSE: calibrate teamwork. BZZT."`,{k:'puzzle',n:2,with:'cogsworth',j:'Solve 2 dungeon puzzles with Cogsworth.',tk:'Cogsworth chimes. "ASSESSMENT COMPLETE. COMPATIBILITY: HIGH."'},
+ [CH('"Thank you, Cogsworth."','"GRATITUDE ACCEPTED."',{pass:'cogsworth'}),CH('"We make a good team."','"AFFIRMATIVE."',{pass:'cogsworth'})],CH('"Just stay out of the way."','"ERROR. FEELINGS HURT."',{fail:'cogsworth'}));
+QLIST.splice(0,QLIST.length,...Object.keys(QS));
+
+/* ---- temporary work: a guest for a few fights ---- */
+function guestFight(c){
+ const h=S.hero,g=h.guest;if(!g||g.trial)return[];
+ const D=COMP[g.id],X=COMPX[g.id],u=c.party.find(x=>x.id===g.id),lines=[];
+ let sc=2;
+ if(u){if(u.down)sc-=3;else sc+=1;sc+=Math.min(2,c.st.spec[g.id]||0);}
+ if(c.st[X.quirk[0]]>=X.quirk[1]){sc+=2;lines.push(`💬 ${firstName(D)}: "${X.quirk[2]}"`);}
+ g.score+=sc;g.fights++;
+ if(g.fights>=g.need){
+  const m=S.world.meet[g.id];
+  const gain=clamp(Math.round(10*g.score/(g.need*7)),-3,10);
+  m.job=clamp(m.job+gain,0,30);m.jobs++;
+  lines.push(gain>=6?`🤝 <b>You and ${D.n} work well together.</b> (+${gain} trust)`:gain>=3?`🤝 ${D.n} says it went fine. (+${gain} trust)`:`😐 ${D.n} says it just did not click. (${gain>=0?'+':''}${gain} trust)`);
+  h.guest=null;
+ }
+ return lines;
+}
+Object.assign(ACT,{
+ trialStart(id){if(!trialReady(id))return;ACT.talk('t_'+id);S.talkBack='tavern';},
+ approach(id){if(!canApproach(id))return;S.hireLines=meetComp(id,0);},
+ convo(id){
+  const h=S.hero,m=S.world.meet[id];if(!m||h.talked[id]===h.day)return;
+  const X=COMPX[id],idx=m.sc<3?X.sc[m.sc]:ri(1,12);
+  S.cv={id,idx,first:m.spoke===0,res:null};S.screen='convo';
+ },
+ cvch(i){
+  const cv=S.cv,X=COMPX[cv.id],m=S.world.meet[cv.id],ch=SCEN[cv.idx].ch[+i];if(!ch||cv.res)return;
+  let d=X.like.includes(ch[1])?9:X.dis.includes(ch[1])?-5:3;
+  if(m.sc>=3)d=Math.round(d*.6);
+  const b=m.chat;m.chat=clamp(m.chat+d,0,45);m.sc++;m.spoke=1;S.hero.talked[cv.id]=S.hero.day;
+  const kind=d>=5?0:d>0?1:2,real=m.chat-b;
+  cv.res=[`<i>${X.re[kind]}</i>`,d>0?(real>0?`💞 Trust +${real}`:'💞 They already know you well.'):`💔 Trust ${real}`];
+ },
+ cvdone(){S.cv=null;S.screen='tavern';},
+ jobStart(id){const h=S.hero;if(h.guest){note('Finish your current partnership first.','e');return;}if(!S.world.meet[id])return;h.guest={id,need:5,fights:0,score:0};note(`${COMP[id].n} will fight beside you for 5 fights.`,'y');},
+ guestEnd(){const h=S.hero,g=h.guest;if(!g)return;if(g.trial){delete h.q['t_'+g.id];const m=S.world.meet[g.id];if(m)m.chat=Math.max(0,m.chat-2);}h.guest=null;},
+ invite(id){
+  if(!canInvite(id))return;
+  S.hireLines=[`<i>${COMP[id].n}: "You earned it. If the offer stands, I would be honored to fight at your side."</i>`,...recruit(id)];
+ }
 });
 
 /* ---------------- rendering ---------------- */
@@ -2380,7 +2514,7 @@ ACT.closeBg=(p,b)=>{};
    EXPANSION C — VIEWS
    ===================================================================== */
 const questMark=()=>{const h=S.hero;let n=0;for(const id in h.q)if(stepDone(id))n++;return n;};
-const townQuests=()=>QLIST.map(id=>QS[id]).filter(q=>q.w==='town');
+const townQuests=()=>QLIST.map(id=>QS[id]).filter(q=>q.w==='town'&&!(q.req&&q.req.trial));
 const zoneQuests=zi=>QLIST.map(id=>QS[id]).filter(q=>q.w!=='town'&&q.w.z===zi);
 function questCard(q){
  const h=S.hero,act=h.q[q.id];
@@ -2625,7 +2759,7 @@ function skillUse(id){
  return null;
 }
 const NAV=[
- ['town','🏘️','Town',['town','train','hunt','enc','result','shop','library','tinker','square','tavern','crypt','explore','dungeon','puzzle','talk','delve']],
+ ['town','🏘️','Town',['town','train','hunt','enc','result','shop','library','tinker','square','tavern','crypt','explore','dungeon','puzzle','talk','delve','convo']],
  ['journal','📖','Journal',['journal']],['hero','🧍','Hero',['hero']],['pack','🎒','Pack',['pack']],['guild','📜','Guild',['guild']],['menu','⚙️','Menu',['menu']]
 ];
 function render(){
@@ -2640,6 +2774,7 @@ function render(){
  if(S.screen==='explore'&&!S.ev)S.screen='hunt';
  if(S.screen==='talk'&&!S.talk)S.screen='square';
  if(S.screen==='delve'&&!S.dl)S.screen='town';
+ if(S.screen==='convo'&&!S.cv)S.screen='tavern';
  const sc=S.screen,h=S.hero,p=P();
  top.style.display=sc==='death'?'none':'block';
  top.innerHTML=`<div class="row"><span><b>${esc(h.name)}</b> Lv ${h.lvl}</span><span>💰 <b>${fmt(S.world.gold)}</b></span><span>⚡ <b>${h.sta}/${p.maxsta}</b></span><span>Day <b>${h.day}</b></span></div>${bar(h.hp,p.maxhp,'hp')}<div class="row"><span>❤ ${h.hp}/${p.maxhp}</span><span>XP ${h.xp}/${xpNeed(h.lvl)}</span></div>`;
@@ -2700,11 +2835,14 @@ VIEWS.party=function(){
  const h=S.hero,w=S.world,mp=maxParty();
  let t=`<p class="mut sm">Party: ${h.party.length}/${mp} companions. Slot 3 opens at Gold rank, slot 4 with the Pack Leader's Collar. Companions fight automatically; you can give <b>Orders</b> in battle to fire their specials on demand. They scale with you (up to 2 levels above).</p>`;
  const sl=synList();
+ if(h.guest){const gd=COMP[h.guest.id];t+=`<div class="card sm" style="border-color:var(--acc)">${gd.ic} <b>${gd.n}</b> is working with you${h.guest.trial?' on a trial':` (${h.guest.fights}/${h.guest.need} fights)`}.</div>`;}
  t+=`<h2>Synergies</h2>`+(sl.length?sl.map(s=>`<div class="card sm" style="border-color:var(--good)"><b class="up">${s.n}</b><br>${s.d}</div>`).join(''):'<p class="mut sm">No active synergies. Try pairing a tank with a healer, or a pyromancer with a cryomancer.</p>');
- t+=`<h2>In your party</h2>`+(h.party.length?h.party.map(id=>compCard(id,true)).join(''):'<p class="mut sm">Empty. Recruit companions at the Tavern, in dungeons and through quests.</p>');
+ t+=`<h2>In your party</h2>`+(h.party.length?h.party.map(id=>compCard(id,true)).join(''):'<p class="mut sm">Empty. Meet people at the Tavern, in dungeons and through quests, then earn their trust.</p>');
  const bench=COMPIDS.filter(id=>w.comp[id]&&!h.party.includes(id));
  if(bench.length)t+=`<h2>Roster</h2>`+bench.map(id=>compCard(id,false)).join('');
- const un=COMPIDS.filter(id=>!w.comp[id]);
+ const acq=COMPIDS.filter(id=>!w.comp[id]&&w.meet[id]);
+ if(acq.length)t+=`<h2>Acquaintances</h2>`+acq.map(id=>`<div class="item" style="cursor:default"><div><div class="n">${COMP[id].ic} ${COMP[id].n}</div><div class="s">Trust ${trustOf(id)}/100 · find them at the Tavern</div></div></div>`).join('');
+ const un=COMPIDS.filter(id=>!w.comp[id]&&!w.meet[id]);
  if(un.length)t+=`<h2>Not yet met (${un.length})</h2>`+un.map(id=>`<div class="item" style="cursor:default"><div><div class="n">❔ ${COMP[id].role}</div><div class="s">${COMP[id].from}</div></div></div>`).join('');
  return t;
 };
@@ -2750,6 +2888,52 @@ VIEWS.menu=function(){
  return _menu()+`<h2>Challenge</h2><p class="sm mut">Scales enemy HP and damage. Higher challenge pays better in XP, gold and drops. Good for when your build gets out of hand.</p><div class="grid">${DIFF.map((d,i)=>btn(d.n,'diff',i,dIdx()===i?'pri c':'c',false,`enemies ×${d.m} · rewards ×${d.r}`)).join('')}</div>`;
 };
 
+/* =====================================================================
+   EXPANSION F — VIEWS: tavern, conversations
+   ===================================================================== */
+const TAVERN_IDS=['brom','kael','orla','gorm'];
+function metCard(id){
+ const D=COMP[id],m=S.world.meet[id],h=S.hero,tr=trustOf(id);
+ const talked=h.talked[id]===h.day,g=h.guest&&h.guest.id===id,qa=h.q['t_'+id];
+ let status;
+ if(m.test)status='✅ Test passed';
+ else if(qa)status=`🎯 Trial in progress: ${qStep('t_'+id).j}`;
+ else if(m.chat+m.job<20)status='Needs more trust before they will set you a test';
+ else if(h.day<m.cool)status=`They want some space. Try again in ${m.cool-h.day} day${m.cool-h.day===1?'':'s'}.`;
+ else status='🎯 Ready to set you a trial';
+ let t=`<div class="card"><div class="row2"><b>${D.ic} ${D.n}</b><span class="tag">${D.role}</span></div>
+ <div class="sm mut">Trust ${tr}/100 · chats ${m.chat}/45 · work ${m.job}/30${m.test?' · test +25':''}</div>${bar(tr,100,'xp')}<div class="sm">${status}</div>`;
+ if(g&&!h.guest.trial)t+=`<div class="sm up">Working with you: ${h.guest.fights}/${h.guest.need} fights</div>`;
+ t+=`<div class="grid" style="margin-top:8px">${btn('💬 Talk','convo',id,'c',talked,talked?'once a day':'')}${btn('🤝 Work together','jobStart',id,'c',!!h.guest,h.guest?'busy':'5 fights, see if you gel')}</div>`;
+ if(qa){
+  const done=stepDone('t_'+id);
+  t+=`<div style="margin-top:6px">${done?btn('🎯 Report back','talk','t_'+id,'good c'):`<div class="sm mut">${stepProg('t_'+id)[0]}/${stepProg('t_'+id)[1]}</div>`+btn('Call off the trial','guestEnd',undefined,'c')}</div>`;
+ }else if(trialReady(id)&&!m.test)t+=`<div style="margin-top:6px">${btn('🎯 Ask about their trial','trialStart',id,'pri c')}</div>`;
+ if(g&&!h.guest.trial)t+=`<div style="margin-top:6px">${btn('End the partnership early','guestEnd',undefined,'c')}</div>`;
+ if(canInvite(id))t+=`<div style="margin-top:6px">${btn(`✅ ${D.n.split(' ')[0]} is ready to join you`,'invite',id,'good c')}</div>`;
+ return t+'</div>';
+}
+VIEWS.tavern=function(){
+ const h=S.hero,w=S.world,cost=Math.round(15+h.lvl*4);
+ let t=`<h1>🍺 The Gilded Mug</h1><p class="mut">Smoke, rumor, and mediocre stew. People worth fighting beside don't sign up for gold. They have to <b>trust</b> you: talk to them (once a day each), work a few fights together, and pass their personal test.</p>${S.rumor?`<div class="card">${S.rumor}</div>`:''}`;
+ if(S.hireLines){t+=`<div class="card">${S.hireLines.map(l=>`<p>${l}</p>`).join('')}</div>`;S.hireLines=null;}
+ const st=TAVERN_IDS.filter(canApproach);
+ if(st.length)t+=`<h2>A stranger catches your eye</h2>`+st.map(id=>`<div class="card"><div class="sm mut">Someone at the bar has been watching you. A ${COMP[id].role.toLowerCase()}, by the look of them.</div>${btn('Go over and say hello','approach',id,'pri c')}</div>`).join('');
+ const met=COMPIDS.filter(id=>w.meet[id]&&!w.comp[id]);
+ t+=`<h2>Faces you know</h2>`+(met.length?met.map(metCard).join(''):'<p class="mut sm">No one yet. Keep hunting. People notice a capable adventurer, and some wait in dungeons or the wilds.</p>');
+ t+=`<h2>Rumors</h2>${btn('Buy a round for rumors','rumor',undefined,'c',w.gold<cost,`${cost}g · may reveal a dungeon`)}`;
+ return t+'<div style="height:8px"></div>'+btn('← Back to town','go','town','c');
+};
+VIEWS.convo=function(){
+ const cv=S.cv,D=COMP[cv.id],X=COMPX[cv.id],sc=SCEN[cv.idx];
+ let t=`<h1>${D.ic} ${D.n}</h1>`;
+ if(cv.first)t+=`<div class="card"><i>${X.open}</i></div>`;
+ t+=`<div class="card"><p>${sc.t}</p></div>`;
+ if(!cv.res)t+=sc.ch.map((c,i)=>btn(esc(c[0]),'cvch',i,'')).join('');
+ else t+=`<div class="card">${cv.res.map(l=>`<p>${l}</p>`).join('')}</div>${btn('Done','cvdone',undefined,'pri c')}`;
+ return t;
+};
+
 function main(){
  S=load();
  if(S&&S.world&&S.hero){S.modal=null;ensureState();} else S=null;
@@ -2770,7 +2954,7 @@ function main(){
  render();
 }
 if(typeof document!=='undefined'&&typeof window!=='undefined'&&!window.__TQ_TEST){main();}
-if(typeof window!=='undefined')window.TQ={COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
+if(typeof window!=='undefined')window.TQ={meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>
 </html>

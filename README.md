@@ -21,3 +21,6 @@ A mobile-first, text-based RPG in a single file. Open `index.html` in any browse
 ## Pacing & mastery
 - Hunting is the core loop: find a monster, kill it. Each kill builds **familiarity** with the region. Dungeons, wanderers and a rare special find while hunting appear as familiarity grows, and Scouting unlocks at 20%.
 - Skills level up **through use** (max Lv 10). Spamming one skill slows its gain, while neglected skills train up to twice as fast, so rotating abilities makes you stronger overall.
+
+## Earning trust (no hiring)
+Companions can't be bought. You meet them naturally (tavern regulars who notice you as you progress, captives in dungeons, people from quests), then build **trust** three ways: one conversation a day each (their personality decides how your answers land), **temporary work** (they fight beside you for 5 fights and you're scored on how well you gel), and a **personal trial** they set once you're close. Pass it and reach 55 trust, and they offer to join. Fail a trial and you can retry after a few days.
