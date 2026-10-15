@@ -161,3 +161,6 @@ Buttons, cards and list rows are now about 20% smaller by default. Menu > Settin
 - **Hiring Hall** (after your first contract): porter, scout, clerk, bodyguard. Daily wages, loyalty levels (1-5), up to 1 + rank people. Three unpaid days and they leave.
 - **New skills** in the Skills log: Appraisal (sell screen), Foraging (Hunt screen), Navigation (travel), Leadership (hired help).
 - Quest chats and companion conversations also pop up. Town service descriptions are shorter.
+
+## Font styles
+Menu > Settings (and the title screen settings) now has a Font style picker: Default, Easy to read (Atkinson Hyperlegible), Storybook (Lora), Old book (Crimson Pro), Rounded (Nunito), Typewriter (JetBrains Mono). Fonts load from Google Fonts and fall back to system fonts offline.
