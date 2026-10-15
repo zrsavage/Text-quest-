@@ -121,7 +121,9 @@ function wroll(ws){let t=ws.reduce((a,b)=>a+b,0),r=Math.random()*t;for(let i=0;i
 /* ---------------- static data ---------------- */
 const GUILD='Lanternwatch Guild', TOWN='Hollowmere';
 const DPY=120;
-const FIGHT_COST=1, BOSS_COST=3, INV_MAX=40, UNLOCK_TC=10, HEIR_TC=3, GUILD_KILLS=25;
+const EARLY_HP=1.3, EARLY_ATK=1.6;
+const lowHp=l=>l>=5?1:[1.6,1.4,1.2,1.1][Math.max(0,l-1)];
+const FIGHT_COST=1, BOSS_COST=3, INV_MAX=40, UNLOCK_TC=30, HEIR_TC=3, GUILD_KILLS=25;
 const SLOTS=['weapon','helm','armor','boots','ring','amulet'];
 const SLOT_ICON={weapon:'⚔️',helm:'🪖',armor:'🛡️',boots:'👢',ring:'💍',amulet:'📿'};
 const RAR=[{n:'Common',c:'#b8c0cc'},{n:'Uncommon',c:'#5fd38d'},{n:'Rare',c:'#4aa3ff'},{n:'Epic',c:'#c077ff'},{n:'Legendary',c:'#ffb02e'}];
@@ -392,7 +394,7 @@ function makeEnemy(zi,boss,forceEl){
  const el=!boss&&(!!notor||forceEl||(h.lvl>=3&&Math.random()<.12)),tier=boss?'b':el?'e':'n';
  if(el)lvl=Math.min(lvl+1,zmax+1);
  const packN=(!boss&&!early&&!el&&PACKS.includes(tpl.n)&&h.lvl>=4&&Math.random()<.18)?ri(3,lvl>=15?5:4):0;
- const hm={n:1,e:1.9,b:3.6}[tier]*(notor?1.3:1)*(early?.55:1),am={n:1,e:1.3,b:1.5}[tier]*(early?.5:1);
+ const hm={n:1,e:1.9,b:3.6}[tier]*(notor?1.3:1)*(early?EARLY_HP:1)*lowHp(lvl),am={n:1,e:1.3,b:1.5}[tier]*(early?EARLY_ATK:1);
  const base=14+13*lvl+.6*lvl*lvl;
  const hp=Math.round(base*tpl.hp*hm*dm()*(packN?packN*.8:1));
  return{name:notor?`Notorious ${notor.nick} the ${tpl.n}`:(el?pick(['Alpha','Ravenous','Ancient','Frenzied'])+' ':'')+tpl.n+(packN?' Pack':''),base:tpl.n,pack:packN,notor:notor?notor.id:null,lvl,tier,zi,
@@ -2737,8 +2739,8 @@ SYN.push(
 
 /* ----- contextual hints (a gentle nudge, never a lecture) ----- */
 const HINTS=[
- {id:'train',scr:['town'],when:()=>!huntUnlocked(),t:'Training raises your stats a little each session. After a few, the town gates open.'},
- {id:'sleep',scr:['town','train','hunt'],when:()=>S.hero.sta<=1,t:'Out of stamina? Sleeping in town restores HP and stamina and starts a new day.'},
+ {id:'train',scr:['town'],when:()=>!huntUnlocked(),t:'Training raises your stats a little each session. You are very weak. It takes a great many sessions before the gates are worth opening.'},
+ {id:'sleep',scr:['town','train','hunt'],when:()=>S.hero.sta<=1,t:'Out of stamina? Sleeping restores stamina and starts a new day. While you are still green, it only mends part of your wounds, so keep training while you heal.'},
  {id:'points',scr:['town','hunt','result','guild'],when:()=>S.hero.pts>0,t:'You have unspent stat points. Spend them in the Hero tab.'},
  {id:'danger',scr:['enc'],when:()=>true,t:'The danger rating compares this monster to your current power. Red means trouble. You can slip away, and some monsters are far stronger than usual for your level.'},
  {id:'skills',scr:['combat'],when:()=>Object.keys(S.hero.skills).length>0,t:'Skills spend Focus and level up through use. Spamming one slows its gains, so rotate your abilities.'},
@@ -6404,6 +6406,17 @@ const POTQ={hp1:'Tastes like hope and mild cough syrup.',hp2:'Fizzy, bright, and
 const _buyPotM5=ACT.buyPot;
 ACT.buyPot=function(id){const g0=S.world.gold;_buyPotM5(id);if(S.world.gold<g0&&POTQ[id])note(`🧪 ${POTQ[id]}`);};
 
+
+/* ----- a slow start: bodies heal over days, not overnight, until you are properly seasoned ----- */
+const nightRecovery=()=>{const L=S.hero.lvl;return L>=8?1:Math.min(1,.38+.09*(L-1));};
+const _sleepDayRec=sleepDay;
+sleepDay=function(){
+ const h=S.hero,before=h.hp;
+ _sleepDayRec();
+ if(S.screen==='death')return;
+ const rec=nightRecovery();
+ if(rec<1){const p=P();h.hp=Math.min(p.maxhp,Math.max(1,before)+Math.round(p.maxhp*rec));if(h.hp<p.maxhp)note('🩹 You wake stiff and sore. A few more nights of rest and you will be right again.');}
+};
 if(typeof window!=='undefined')window.TQ={reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>

@@ -89,3 +89,7 @@ There are now about 130 materials instead of 18. Every creature leaves its own p
 - **The Far Shore:** a late-game outpost by sea, with its own monsters, boss, two dungeons, materials, gear and trade.
 - **A family ledger** with collections across every generation (creatures, materials, vestige families, towns, pastimes, friends, dungeons). Each grants bonuses to every heir. The Journal gains a Field Guide.
 - **Sound** (synthesized, off by default) and **downloadable save files**.
+
+## A harder, slower start
+
+The first rat is now a real fight: it has far more health than before and bites harder, so a fresh hero wins most of the time but loses about half their health doing it. Early enemies stay tougher until around level 5. The gates only open after **30 training sessions** (it was 10), so you spend days on the training yard first. While you are below level 8, sleeping only mends part of your wounds (38% of your health a night at level 1, rising to full by level 8), so you recover over several days while you keep training.
