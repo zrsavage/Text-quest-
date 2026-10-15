@@ -1152,7 +1152,7 @@ Q('hunt',{t:'Big Game',npc:'Hunter Rolf',w:{z:0,p:35},req:{},
   CH('Take the coins','Practical.',{gold:1}))}]});
 const QLIST=Object.keys(QS);
 
-const potPrice=k=>Math.round(POTS[k].price*(wf('alchemist')?.8:1));
+const potPrice=k=>Math.round(POTS[k].price*(wf('alchemist')?.8:1)*(typeof townPot==='function'?townPot():1));
 const tinkerCost=m=>({rand:12,slot:20,grand:35}[m])-(wf('tinker')?2:0);
 /* =====================================================================
    EXPANSION B — LOGIC
@@ -2492,10 +2492,12 @@ function codexView(){
  const w=S.world,h=S.hero,sec=S.cxs||'z0',all=codexEntries();
  const known=en=>!!(w.best[en.name]&&(w.best[en.name].seen||w.best[en.name].k>0));
  const cnt=all.filter(known).length;
- let t=`<p class="mut sm">Everything you've met in the wild. Encounter levels follow a <b>bell curve</b> around your level: usually close, but now and then something far stronger wanders in. Check the danger rating, and <b>run</b> when it's red. Discovered ${cnt}/${all.length}. Bounty rank: ${BRANKS[brank()][0]} (${w.bounty.kills} marks). Every 10 kills of a species grants +1% damage against it (max +25%), shared across your bloodline.</p>`;
- const secs=ZONES.map((z,i)=>['z'+i,z.ic+' '+z.n.replace(/^The /,'').split(' ')[0]]).concat([['dg','🏰 Dungeons']]);
- t+=`<div class="grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:8px">${secs.map(x=>btn(x[1],'cxsec',x[0],sec===x[0]?'pri c':'c')).join('')}</div>`;
- const list=all.filter(en=>en.sec===sec);
+ let t=`<p class="mut sm">Everything you've met in the wild. Encounter levels follow a <b>bell curve</b> around your level: usually close, but now and then something far stronger wanders in. Check the danger rating, and <b>run</b> when it's red. Entries fill in as you meet things. Every 10 kills of a species grants +1% damage against it (max +25%), shared across your bloodline.</p>`;
+ const secs=ZONES.map((z,i)=>['z'+i,z.ic+' '+z.n.replace(/^The /,'').split(' ')[0]]).concat([['dg','🏰 Dungeons']]).concat(Object.keys(HAB).map(id=>['h_'+id,HAB[id].ic+' '+HAB[id].n.replace(/^The /,'').split(' ')[0]]));
+ const secsV=secs.filter(x=>x[0]===sec||all.some(en=>en.sec===x[0]&&known(en)));
+ t+=`<div class="grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:8px">${secsV.map(x=>btn(x[1],'cxsec',x[0],sec===x[0]?'pri c':'c')).join('')}</div>`;
+ const list=all.filter(en=>en.sec===sec&&known(en));
+ if(!list.length)t+='<p class="mut sm">Nothing recorded here yet.</p>';
  let lastSrc='';
  list.forEach(en=>{
   const k=known(en),b=w.best[en.name]||{k:0},open=S.cxo===en.name;
@@ -4437,7 +4439,7 @@ Object.keys(DGMAT).forEach(id=>{const zi=DG[id].zi;DGMAT[id].forEach(n=>{MT[n]=z
 function dropMat(e){
  const r=Math.random(),tbl=MONMAT[e.base];
  if(e.dg&&DGMAT[e.dg]&&r<.3)return pick(DGMAT[e.dg]);
- if(tbl&&r<.72)return Math.random()<({n:.18,e:.45,b:.6}[e.tier]||.2)?tbl[1]:tbl[0];
+ if(tbl&&r<.72)return Math.random()<({n:.18,e:.45,b:.6}[e.tier]||.2)?(tbl[1]||tbl[0]):tbl[0];
  return pick(ZGATHER[clamp(e.zi,0,5)]);
 }
 function trophyFor(e){
@@ -4468,7 +4470,757 @@ ACT._tinker=function(mode,tier,slot){
  }
 };
 
-if(typeof window!=='undefined')window.TQ={MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
+/* =====================================================================
+   PASS 7 / M1 — 90 more monsters: deeper regions plus roads, coast, mines,
+   frontier, back-alleys and the Far Shore. Each leaves its own part.
+   [name, hp, atk, def, pattern, icon, vestige family, part, quip]
+   ===================================================================== */
+const NEWZ=[
+ [ // Dewfield Meadow
+  ['Giant Beetle',1,.8,1.6,'ah','insect','crab','Beetle Shell','Polished, hard, and surprisingly good as a hat.'],
+  ['Meadow Viper',.7,1,.6,'app','serpent','serpent','Viper Fang','Tiny, thin, and extremely rude to ankles.'],
+  ['Bog Toad',1,.9,.8,'as','beast','slime','Toad Wart','Nobody asked for this. Nobody gets it removed either.'],
+  ['Hornet Swarm',.6,1.1,.5,'ax','insect','swarm','Hornet Stinger','The business end of a very bad afternoon.'],
+  ['Haunted Scarecrow',1.1,.9,.9,'ahs','undead','undead','Scarecrow Straw','Itchy, damp, and slightly judgmental.'],
+  ['Stray Hound',.9,1,.7,'aah','beast','wolf','Hound Collar','Someone loved this dog. The dog is not sure who.'],
+  ['Mud Sprite',.8,.9,.7,'abr','imp','sprite','Mud Charm','A lump of luck that smells of pond.']
+ ],
+ [ // Whisperwood
+  ['Thornback Boar',1.3,1.1,1.2,'aah','beast','boar','Thorn Hide','Prickly on the outside. Also prickly on the inside.'],
+  ['Woodland Bandit',.9,1.1,.9,'ax','human','brigand','Bandit Mask','Smells like stolen bread and bad decisions.'],
+  ['Owlbear',1.5,1.2,1,'ahh','beast','beast','Owlbear Feather','Too big to be an owl, too cross to be a bear.'],
+  ['Mushroom Shambler',1.3,.9,1.1,'ap','tree','tree','Spore Cap','Do not eat. Do not sniff. Do not make eye contact.'],
+  ['Will-o\'-Wisp',.7,1.2,.5,'asp','imp','sprite','Wisp Lantern','A glowing lie that follows you home.'],
+  ['Giant Mantis',.9,1.2,.8,'ax','insect','swarm','Mantis Blade','Folds up like a pocketknife. Opens like regret.'],
+  ['Dryad Husk',1.1,1,1.2,'arh','tree','tree','Hollow Bark','The dryad left. The bark is still sulking.']
+ ],
+ [ // Sunken Catacombs
+  ['Tomb Rat Swarm',.8,1,.6,'ax','beast','vermin','Tomb Whisker','Fine, white, and haunted by crumbs.'],
+  ['Grave Robber',1,1.1,.9,'as','human','brigand','Robber Shovel','Dirt on the blade. Dirt on the conscience.'],
+  ['Plague Bearer',1.2,.9,1,'ppa','undead','undead','Plague Rag','Handle only with tongs, gloves and a long talk with yourself.'],
+  ['Ossuary Knight',1.2,1.2,1.5,'ahh','undead','knight','Knight Gauntlet','The knight is gone. His manners are not.'],
+  ['Cursed Priest',.9,1.1,.8,'cap','undead','undead','Priest Rosary','Prayers do nothing. Beads do plenty.'],
+  ['Mummy Guard',1.4,1,1.3,'ahb','undead','undead','Mummy Wrap','Wound very tight. Smells like old attic.'],
+  ['Bat Colony',.7,1,.5,'axs','bird','bird','Bat Wing','Leathery, flappy, and stuck in your hair.']
+ ],
+ [ // Ashen Cliffs
+  ['Lava Salamander',1.1,1.2,1,'aph','serpent','fire','Salamander Tail','Wiggles on its own. Do not ask how long.'],
+  ['Ember Elemental',1.2,1.3,.9,'abh','golem','fire','Ember Core','A coal that decided to be somebody.'],
+  ['Ash Wraith',.9,1.2,.8,'ash','undead','wraith','Ash Veil','Soot in the shape of a grudge.'],
+  ['Cliff Roc',1.4,1.3,1,'ahh','bird','bird','Roc Quill','Big enough to write a will with. Possibly yours.'],
+  ['Slag Golem',1.6,1,1.7,'ah','golem','golem','Slag Heart','The forge\'s trash, standing up for itself.'],
+  ['Fire Beetle',.9,1.1,1.2,'aa','insect','crab','Beetle Ember','Glows when happy. Is never happy.'],
+  ['Brimstone Bat',.8,1.2,.7,'axp','bird','bird','Brimstone Wing','Sulphur-scented and very hard to hug.']
+ ],
+ [ // Frostmarch Wastes
+  ['Snow Leopard',1,1.3,.9,'aah','beast','beast','Leopard Pelt','Silent, spotted, and a little bit smug.'],
+  ['Frost Giant',1.8,1.2,1.4,'ahh','golem','troll','Giant Toenail','Do not ask where this came from. Please.'],
+  ['Winter Hag',.9,1.3,.8,'cps','human','wraith','Hag Charm','A charm to make your tea very cold.'],
+  ['Ice Serpent',1.1,1.2,1,'aps','serpent','serpent','Serpent Rime','Slithers. Freezes. Leaves a slippery mess.'],
+  ['Woolly Mammoth',1.9,1.1,1.3,'ahh','beast','boar','Mammoth Tusk','The largest toothpick in the known world.'],
+  ['Blizzard Spirit',.9,1.3,.7,'asp','imp','wraith','Blizzard Breath','A sneeze of the sky, kept in a jar.'],
+  ['Walrus Brute',1.6,1.1,1.2,'ah','beast','boar','Walrus Whisker','A bristle thick enough to prop open a door.']
+ ],
+ [ // Abyssal Rift
+  ['Void Walker',1,1.3,.9,'ahs','human','wraith','Walker Sandal','Leaves no prints. Occasionally leaves no foot.'],
+  ['Star-Eater Moth',.9,1.3,.7,'asd','insect','bird','Moth Dust','Glitter that eats the stars. Hungry stuff.'],
+  ['Shattered Colossus',1.9,1.2,1.7,'ahh','golem','golem','Colossus Shard','Used to be a statue. Now it is a lot of rocks.'],
+  ['Rift Hound',1.1,1.4,.9,'aah','beast','wolf','Rift Collar','Whoever owned it is somewhere else, hopefully.'],
+  ['Null Priest',1,1.2,1,'cas','human','undead','Null Censer','Burns nothing. Smells of absolutely nothing. Disturbing.'],
+  ['Chaos Slime',1.4,1.1,.8,'rpa','slime','slime','Chaos Gel','Never the same color twice. Often a different mood.'],
+  ['Time-Lost Soldier',1.2,1.3,1.4,'ahb','human','knight','Lost Medal','Proud of a war that nobody remembers.']
+ ]
+];
+const HAB={
+ highroad:{n:'The High Road',ic:'🛤️',dyn:1,zi:1,mon:[
+  ['Highwayman',.9,1.1,.9,'ax','human','brigand','Highwayman Hat','Ancient hat. Still smells of ambition.'],
+  ['Brigand Archer',.8,1.2,.7,'aah','human','archer','Brigand Arrow','Pointed, feathered, and rude about it.'],
+  ['Rogue Mercenary',1.1,1.1,1.1,'ah','human','knight','Mercenary Coin','Paid in advance. Still ungrateful.'],
+  ['Mad Cart-Horse',1.2,1,.8,'aah','beast','stag','Horseshoe Nail','Went rogue. The cart is still attached.'],
+  ['Wandering Ogre',1.7,1.2,1,'ahh','golem','troll','Ogre Tooth','Big, slow, and entitled to your lunch.'],
+  ['Fake Toll Collector',.8,.9,.8,'as','human','goblin','Toll Ticket','A ticket for a bridge that does not exist.']
+ ]},
+ sea:{n:'The Salt Coast',ic:'🌊',zi:3,min:12,max:45,mon:[
+  ['Crab Swarm',.9,1,1.2,'ax','insect','crab','Crab Claw','Sideways, snappy, and absurdly numerous.'],
+  ['Sea Serpent',1.5,1.2,1,'ahp','serpent','serpent','Sea Scale','Green, glossy, and unimpressed by boats.'],
+  ['Drowned Sailor',1.1,1,.9,'ap','undead','undead','Sailor Knot','A very good knot. Still holds.'],
+  ['Siren',.9,1.3,.7,'csa','bird','wraith','Siren Pearl','Pretty song. Terrible reviews.'],
+  ['Kraken Spawn',1.5,1.1,1,'ahs','eye','eye','Spawn Ink','Black, sticky, and very hard to get out of a coat.'],
+  ['Pirate Cutthroat',1,1.3,.9,'ax','human','brigand','Pirate Earring','Gold, shiny, and mostly brass.'],
+  ['Reef Shark',1.3,1.3,.9,'aah','fish','tide','Shark Tooth','Don\'t ask how many it has. It will tell you.'],
+  ['Barnacle Brute',1.7,1,1.7,'ah','golem','crab','Barnacle Cluster','Sharp, damp, and smells like low tide.']
+ ]},
+ mine:{n:'The Deep Mines',ic:'⛏️',zi:2,min:14,max:40,mon:[
+  ['Rock Borer',1.3,1,1.4,'ah','insect','crab','Borer Mandible','Chews rock. Can chew you, too.'],
+  ['Kobold Digger',.8,1,.8,'ax','imp','goblin','Kobold Pick','Tiny pickaxe. Great ambitions.'],
+  ['Gas Wisp',.7,1.2,.5,'asp','imp','sprite','Wisp Bottle','A bottle of bad air. A smell with a memory.'],
+  ['Coal Golem',1.6,1.1,1.6,'ahh','golem','golem','Coal Chunk','Black, dusty, and awfully heavy for its size.'],
+  ['Gem Beetle',.9,1,1.5,'ah','insect','crab','Gem Husk','Wears jewelry. Cannot tell anyone why.'],
+  ['Dwarven Revenant',1.2,1.3,1.3,'abh','undead','knight','Revenant Rivet','Still mining. Mostly with its fists.']
+ ]},
+ frontier:{n:'The Frontier Steppe',ic:'🏜️',zi:3,min:18,max:45,mon:[
+  ['Steppe Raider',1,1.3,.9,'ax','human','brigand','Raider Banner','A banner that says "Raiders" in terrible handwriting.'],
+  ['Dire Hyena',1.1,1.3,.9,'aah','beast','wolf','Hyena Laugh','A laugh in a jar. It is not funny.'],
+  ['Locust Cloud',.7,1,.4,'ax','insect','swarm','Locust Wing','A gust of grasshopper. Unbelievably crunchy.'],
+  ['Rogue Knight',1.3,1.3,1.5,'ahb','human','knight','Rogue Crest','A knight with no lord and no manners.']
+ ]},
+ rough:{n:'The Back-Alleys',ic:'🌑',dyn:1,zi:1,mon:[
+  ['Cutpurse',.7,.9,.7,'ab','human','brigand','Cutpurse Knife','Slim. Fast. Underused.'],
+  ['Back-Alley Thug',1.1,1.1,1,'aah','human','brigand','Thug Knuckleduster','Blunt, brass, and smug.'],
+  ['Knife Fighter',.8,1.3,.7,'ax','human','archer','Switchblade','Folded neatly. Unfolds poorly.'],
+  ['Drunken Brawler',1.2,1,.8,'ahs','human','boar','Empty Flagon','Smells like a lost evening.'],
+  ['Sewer Gator',1.3,1.1,1.2,'ah','serpent','serpent','Gator Scute','The sewers had a bigger problem than rats.'],
+  ['Alley Cat Pack',.6,1,.5,'ax','beast','beast','Cat Whisker','Soft and ungrateful.'],
+  ['Debt Collector',1.1,1.2,1.2,'ahs','human','knight','Collector Ledger','Every number is written in someone\'s tears.'],
+  ['Smuggler Enforcer',1.3,1.2,1.3,'ah','human','brigand','Enforcer Badge','Official-looking. Entirely unofficial.'],
+  ['Pit Dog',1,1.2,.9,'aah','beast','wolf','Pit Collar','A well-fed dog with a bad past.'],
+  ['Gutter Witch',.8,1.2,.7,'cps','human','sprite','Witch Bottle','Smells like sulphur and mothballs.']
+ ]},
+ far:{n:'The Far Shore',ic:'🏝️',zi:5,min:70,max:100,mon:[
+  ['Brine Wraith',1,1.4,.9,'ash','undead','wraith','Brine Veil','Salty. Mournful. Slightly damp.'],
+  ['Tide Priest',1.1,1.3,1,'cas','human','undead','Tide Chalice','Holds the sea. And a certain kind of grudge.'],
+  ['Salt Golem',1.9,1.2,1.8,'ahh','golem','golem','Salt Block','A lick will cure you of any curiosity.'],
+  ['Storm Eel',1,1.5,.8,'ax','fish','tide','Eel Spark','Zaps. Zaps again. Shows remorse for neither.'],
+  ['Coral Horror',1.5,1.3,1.2,'ahs','eye','eye','Coral Eye','It blinks. You should too.'],
+  ['Drowned Titan',2.2,1.3,1.6,'ahh','golem','troll','Titan Barnacle','A single barnacle the size of your head.'],
+  ['Pale Mariner',1.2,1.4,1,'ahp','undead','undead','Mariner Compass','Always points to a worse place.'],
+  ['Reef Dragon',1.8,1.5,1.3,'ahb','dragon','dragon','Reef Scale','Coral-covered, hungry, and difficult to compliment.'],
+  ['Mirage Stalker',1,1.5,.8,'aah','beast','beast','Mirage Pelt','Looks like a wall. Isn\'t.'],
+  ['Sunless Hound',1.2,1.5,1,'aah','beast','wolf','Sunless Fang','Raised in the dark. Resents the sun.'],
+  ['Hollow Pilgrim',1.1,1.3,1.1,'cas','human','undead','Pilgrim Staff','Walked a long way. Arrived nowhere.'],
+  ['Lantern Eater',1.3,1.4,1,'ads','eye','eye','Lantern Husk','Fed on light. Craves more.'],
+  ['Crown Guard',1.5,1.4,1.7,'ahb','human','knight','Crown Shard','Guarding something that is no longer there.'],
+  ['Leviathan Whelp',2,1.4,1.4,'ahh','serpent','serpent','Whelp Fin','A baby. A baby the size of a house.']
+ ]}
+};
+const ARCHX={},MONFAM={};
+Object.assign(POW,{
+ brigand:{n:'Cutthroat Luck',ic:'🗡️',e:{goldf:3,crit:1},w:['fortune','shadow'],r:1},
+ tide:{n:'Undertow',ic:'🌊',e:{dodge:1,regen:1.5},w:['wind','life'],r:.8},
+ swarm:{n:'Swarm Instinct',ic:'🐝',e:{dodge:1,atk:.02},w:['wind','war'],r:1},
+ serpent:{n:'Venom Scales',ic:'🐍',e:{crit:1,lifesteal:.5},w:['shadow','blood'],r:.9}
+});
+(function(){
+ const add=(tbl,zi,m,src)=>{
+  const [n,hp,atk,def,pat,arch,fam,part,quip]=m;
+  ARCHX[n.toLowerCase()]=arch;MONFAM[n]=fam;MONMAT[n]=[part];MATQ[part]=quip;MT[part]=zi;MATF[part]=fam;MATK[part]='common';MATSRC[part]='from '+n+(n.endsWith('s')||n.endsWith('Swarm')?'':'s');
+  if(tbl)tbl.push({n,hp,atk,def,pat});
+ };
+ NEWZ.forEach((arr,zi)=>arr.forEach(m=>add(ZONES[zi].mon,zi,m)));
+ Object.keys(HAB).forEach(id=>{const H=HAB[id],tbl=[];H.mon.forEach(m=>add(tbl,H.zi,m));H.tpl=tbl;H.id=id;});
+})();
+// monsters in swarms or packs gang up
+PACKS.push('Hornet Swarm','Tomb Rat Swarm','Bat Colony','Crab Swarm','Locust Cloud','Alley Cat Pack','Stray Hound','Dire Hyena','Rift Hound','Woodland Bandit','Steppe Raider','Pit Dog','Sunless Hound','Kobold Digger');
+const _archOfN=archOf;
+archOf=function(n){const x=ARCHX[String(n).toLowerCase().replace(/ pack$/,'')];return x||_archOfN(n);};
+const _coreFamN=coreFam;
+coreFam=function(name){const b=String(name).replace(/^(Alpha|Ravenous|Ancient|Frenzied|Elder|Dread|Savage|Abyssal|Echo of) /,'').replace(/ Pack$/,'');return MONFAM[b]||_coreFamN(name);};
+const _icoBodyN=icoBody;
+icoBody=function(arch,n,c1,c2,c3){
+ const dark='#14161c';
+ if(arch==='fish')return `<path d="M6 32 Q22 12 44 24 L59 13 L54 32 L59 51 L44 40 Q22 52 6 32Z" fill="${c1}" stroke="${c2}" stroke-width="2"/><path d="M26 22 Q33 32 26 42" stroke="${c2}" stroke-width="2" fill="none"/><circle cx="16" cy="30" r="3.2" fill="#fff"/><circle cx="15.5" cy="30" r="1.6" fill="${dark}"/><path d="M10 38 Q14 40 18 38" stroke="${dark}" stroke-width="1.5" fill="none"/>`;
+ if(arch==='insect')return `<path d="M24 22 L14 10 M40 22 L50 10" stroke="${c2}" stroke-width="2" fill="none"/><path d="M22 38 L8 44 M22 46 L10 56 M42 38 L56 44 M42 46 L54 56" stroke="${c2}" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="32" cy="42" rx="14" ry="15" fill="${c1}" stroke="${c2}" stroke-width="2"/><path d="M32 28 V56" stroke="${c2}" stroke-width="1.5"/><circle cx="32" cy="24" r="8" fill="${c1}" stroke="${c2}" stroke-width="2"/><circle cx="28" cy="23" r="2" fill="#fff"/><circle cx="36" cy="23" r="2" fill="#fff"/>`;
+ if(arch==='serpent')return `<path d="M10 50 Q4 36 22 36 Q40 36 34 24 Q30 14 44 12" stroke="${c1}" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M10 50 Q4 36 22 36 Q40 36 34 24 Q30 14 44 12" stroke="${c2}" stroke-width="2" fill="none" stroke-dasharray="2 5"/><ellipse cx="48" cy="12" rx="9" ry="6" fill="${c1}" stroke="${c2}" stroke-width="2"/><circle cx="50" cy="10" r="1.8" fill="#fff"/><path d="M56 12 L62 10 M56 13 L62 15" stroke="#e05555" stroke-width="1.5"/>`;
+ if(arch==='human')return `<path d="M20 18 Q32 2 44 18 L46 30 L18 30Z" fill="${c2}"/><circle cx="32" cy="24" r="9" fill="${c3}" stroke="${c2}" stroke-width="2"/><rect x="26" y="20" width="12" height="4" fill="${dark}" opacity=".7"/><path d="M14 58 L18 36 L32 32 L46 36 L50 58Z" fill="${c1}" stroke="${c2}" stroke-width="2"/><path d="M50 40 L60 28" stroke="#cfd3dc" stroke-width="3" stroke-linecap="round"/><circle cx="29" cy="25" r="1.4" fill="#fff"/><circle cx="35" cy="25" r="1.4" fill="#fff"/>`;
+ return _icoBodyN(arch,n,c1,c2,c3);
+};
+// fight something native to a habitat instead of a numbered region
+function makeEnemyHab(id,boss){
+ const H=HAB[id],h=S.hero,zi=H.zi,saved=ZONES[zi];
+ const lo=H.dyn?Math.max(1,h.lvl-2):H.min,hi=H.dyn?h.lvl+2:H.max;
+ ZONES[zi]=Object.assign({},saved,{n:H.n,min:lo,max:hi,mon:H.tpl,boss:H.boss||saved.boss});
+ let e;try{e=makeEnemy(zi,!!boss);}finally{ZONES[zi]=saved;}
+ e.hab=id;e.zi=zi;return e;
+}
+
+const _codexEntriesN=codexEntries;
+codexEntries=function(){
+ const out=_codexEntriesN();
+ Object.keys(HAB).forEach(id=>{const H=HAB[id];H.tpl.forEach(t=>out.push({name:t.n,zi:H.zi,sec:'h_'+id,lvl:H.dyn?[1,60]:[H.min,H.max],tpl:t,tier:'n',pack:PACKS.includes(t.n),src:H.n}));});
+ return out;
+};
+
+/* =====================================================================
+   PASS 7 / M2a — six towns, goods, prices, bank, reputation, news
+   ===================================================================== */
+const HT='hollowmere';
+const TOWNS={
+ hollowmere:{n:'Hollowmere',ic:'🏘️',style:'home',d:'Home. Lantern-lit walls, a guild hall, and a baker with opinions.',inn:0,pot:1,rough:'The Stews',roughLv:1,hab:null,
+  produce:['grain','ale','oil','pottery'],demand:['salt','spice','silk','ore','fur'],deal:['grain','ale','oil','pottery','salt','spice','silk','ore','fur','wool','timber','tools','herb','leather'],slots:[3,2,2,2,1.5,1.5],ilOff:0,rar:[40,40,17,3],pm:1},
+ briarhold:{n:'Briarhold',ic:'🌳',style:'wood',d:'A village of crooked roofs among old trees. Herbalists, hunters, and a suspicious number of owls.',inn:6,pot:.85,rough:'The Thicket',roughLv:1,hab:'fens',
+  produce:['herb','timber','wool','medicine','fur'],demand:['grain','salt','tools','glass','wine'],deal:['herb','timber','wool','medicine','fur','grain','salt','tools','glass','wine','leather','dye','ale','pottery'],slots:[1.5,3,2,1.5,1.5,2],ilOff:-1,rar:[45,38,14,3],pm:.9},
+ saltmarch:{n:'Saltmarch',ic:'⚓',style:'harbor',d:'A noisy port that smells of fish, tar, and everyone\'s business. The gulls own the place.',inn:9,pot:1.05,rough:'The Drowned Quarter',roughLv:2,hab:'sea',
+  produce:['fish','salt','dye','wine'],demand:['timber','grain','tools','leather','book'],deal:['fish','salt','dye','wine','spice','timber','grain','tools','leather','book','oil','glass','silk','ale'],slots:[2,1.5,2,3,2,2.5],ilOff:1,rar:[38,40,18,4],pm:1.05},
+ cragstead:{n:'Cragstead',ic:'⛏️',style:'mine',d:'A mining town of soot, echoes, and hard hands. Everyone here is either strong or lying.',inn:8,pot:1.1,rough:'The Slagheap',roughLv:2,hab:'mine',
+  produce:['ore','coal','gem','tools'],demand:['ale','grain','wool','oil','fish'],deal:['ore','coal','gem','tools','ale','grain','wool','oil','fish','leather','timber','weapon','medicine','pottery'],slots:[2.5,2,3,1.5,2.5,2],ilOff:1,rar:[36,40,20,4],pm:1.1},
+ ironvale:{n:'Ironvale',ic:'🏰',style:'fort',d:'A frontier fortress. Cheap armor, expensive manners, and a drill ground that never sleeps.',inn:10,pot:1.15,rough:'Camp Followers\' Row',roughLv:1,hab:'frontier',
+  produce:['weapon','leather','tools','coal'],demand:['medicine','wine','grain','coal','cloth'],deal:['weapon','leather','tools','coal','medicine','wine','grain','cloth','ore','fish','ale','salt','herb','fur'],slots:[4,2.5,3,2,1,1],ilOff:2,rar:[34,40,21,5],pm:1.15},
+ gildenreach:{n:'Gildenreach',ic:'🏛️',style:'city',d:'The merchant city. Everything is for sale, including the mayor, on certain Tuesdays.',inn:18,pot:1.25,rough:'Lowgate',roughLv:3,hab:'highroad',
+  produce:['silk','cloth','glass','book','incense'],demand:['gem','spice','fur','weapon','herb'],deal:['silk','cloth','glass','book','incense','gem','spice','fur','weapon','herb','wine','dye','medicine','tools'],slots:[2,2,2,2,3,3],ilOff:3,rar:[28,38,26,8],pm:1.25}
+};
+const TOWN_IDS=Object.keys(TOWNS);
+const DIST={'hollowmere-briarhold':2,'hollowmere-saltmarch':3,'hollowmere-cragstead':3,'hollowmere-ironvale':4,'hollowmere-gildenreach':5,'briarhold-saltmarch':4,'briarhold-cragstead':3,'briarhold-ironvale':5,'briarhold-gildenreach':4,'saltmarch-cragstead':5,'saltmarch-ironvale':6,'saltmarch-gildenreach':3,'cragstead-ironvale':2,'cragstead-gildenreach':4,'ironvale-gildenreach':4};
+const dist=(a,b)=>a===b?0:(DIST[a+'-'+b]||DIST[b+'-'+a]||5);
+const GOODS={
+ grain:{n:'Grain',ic:'🌾',b:12,w:2,q:'Bread, beer, and arguments all begin here.'},
+ fish:{n:'Salt Fish',ic:'🐟',b:18,w:2,q:'Smells like the sea, if the sea had given up.'},
+ salt:{n:'Salt',ic:'🧂',b:20,w:2,q:'The only rock people sprinkle on food.'},
+ wine:{n:'Wine',ic:'🍷',b:55,w:2,q:'Red, fancy, and strongly recommended by the seller.'},
+ ale:{n:'Ale',ic:'🍺',b:25,w:2,q:'Liquid courage by the barrel.'},
+ spice:{n:'Spices',ic:'🌶️',b:90,w:1,q:'Worth more than gold, if you ask a very tired cook.'},
+ silk:{n:'Silk',ic:'🧵',b:140,w:1,q:'Soft, shiny, and priced by the nervous.'},
+ wool:{n:'Wool',ic:'🐑',b:30,w:2,q:'Warm, itchy, and fiercely loyal to sheep.'},
+ fur:{n:'Furs',ic:'🦊',b:70,w:2,q:'Someone else\'s coat, now yours to sell.'},
+ leather:{n:'Leather',ic:'🥾',b:40,w:2,q:'Tough, supple, and has seen things.'},
+ timber:{n:'Timber',ic:'🪵',b:22,w:3,q:'A tree with fewer opinions.'},
+ ore:{n:'Iron Ore',ic:'⛏️',b:35,w:3,q:'Heavy, dull, and the reason your sword exists.'},
+ coal:{n:'Coal',ic:'⚫',b:20,w:3,q:'Black rocks that make everything else possible.'},
+ gem:{n:'Gems',ic:'💎',b:220,w:1,q:'Small, shiny, and excellent at ruining friendships.'},
+ glass:{n:'Glassware',ic:'🔮',b:80,w:2,q:'Handle with care. The glass did not ask for this.'},
+ pottery:{n:'Pottery',ic:'🏺',b:35,w:2,q:'Cracked pots are a lifestyle.'},
+ tools:{n:'Tools',ic:'🔧',b:60,w:2,q:'A hammer for every problem.'},
+ weapon:{n:'Weapon Crates',ic:'⚔️',b:110,w:3,q:'Contains a lot of pointy opinions.'},
+ oil:{n:'Lamp Oil',ic:'🛢️',b:28,w:2,q:'Keeps the lanterns lit and the lamplighters employed.'},
+ herb:{n:'Herbs',ic:'🌿',b:45,w:1,q:'Leaves. Magic leaves. Some are just leaves.'},
+ medicine:{n:'Medicine',ic:'⚗️',b:95,w:1,q:'Tastes terrible. Works eventually.'},
+ book:{n:'Books',ic:'📚',b:75,w:2,q:'Heavy, dusty, and thoroughly judged by cover.'},
+ cloth:{n:'Fine Cloth',ic:'👘',b:120,w:1,q:'For people who own a good opinion of themselves.'},
+ dye:{n:'Dyes',ic:'🎨',b:65,w:1,q:'Makes everything look better. Stains your fingers worse.'},
+ incense:{n:'Incense',ic:'🪔',b:85,w:1,q:'Smells holy. Cheap versions smell holy-adjacent.'},
+ lotus:{n:'Dream Lotus',ic:'🌸',b:260,w:1,x:1,q:'Illegal, lovely, and not discussed in front of the guard.'},
+ rum:{n:'Smuggled Rum',ic:'🥃',b:180,w:2,x:1,q:'Duty paid? Absolutely not.'},
+ seals:{n:'Forged Seals',ic:'📜',b:300,w:1,x:1,q:'A very official piece of nonsense.'}
+};
+const GOOD_IDS=Object.keys(GOODS).filter(g=>!GOODS[g].x);
+const CARTS=[{n:'Backpack',cap:20,cost:0,lv:0},{n:'Handcart',cap:45,cost:250,lv:0},{n:'Pack Mule',cap:80,cost:1200,lv:2},{n:'Wagon',cap:140,cost:5000,lv:4},{n:'Caravan',cap:300,cost:25000,lv:7}];
+const TRADE_T=['Peddler','Hawker','Trader','Merchant','Magnate','Tycoon','Guild Master','Legend of the Ledger'];
+function T(){
+ const w=S.world;
+ if(!w.t){
+  w.t={loc:HT,rep:{},mult:{},seen:{},cargo:{},cart:0,tx:0,shops:{},shopDay:{},ev:[],news:[],clock:0,fam:{},
+   bank:{bal:0,debt:0,credit:40,due:0,rate:0,ven:[],vclock:0,shark:0,sdue:0},know:{t:{hollowmere:1}},sales:0,ticker:0};
+  TOWN_IDS.forEach(id=>{w.t.mult[id]={};GOOD_IDS.concat(['lotus','rum','seals']).forEach(g=>{w.t.mult[id][g]=goodTarget(id,g);});});
+ }
+ const t=w.t;t.bank=t.bank||{bal:0,debt:0,credit:40,due:0,ven:[],vclock:0};
+ return t;
+}
+function goodTarget(town,g){
+ const P=TOWNS[town];let m=1;
+ if(P.produce.includes(g))m=.62;else if(P.demand.includes(g))m=1.45;else if(!P.deal.includes(g)&&!GOODS[g].x)m=1.1;
+ return m;
+}
+const KT=()=>{const k=K();k.t=k.t||{hollowmere:1};k.p=k.p||{};k.r=k.r||{};return k;};
+const knowT=id=>id===HT||!!KT().t[id];
+const where=()=>T().loc;
+const atHome=()=>where()===HT;
+const tradeLv=()=>{const x=T().tx;let l=0;while(x>=40*(l+1)*(l+1)&&l<7)l++;return l;};
+const spreadF=()=>Math.max(.015,.07-.006*tradeLv());
+const cargoCap=()=>CARTS[T().cart].cap+tradeLv()*4;
+const cargoUsed=()=>{const c=T().cargo;let n=0;for(const g in c)n+=c[g].n*GOODS[g].w;return n;};
+const repOf=id=>(T().rep[id]||0);
+const repMul=id=>1-.0007*clamp(repOf(id),-100,100);
+function evMult(town,g){
+ let m=1;T().ev.forEach(e=>{if(e.town&&e.town!==town)return;if(e.good&&e.good!==g)return;if(e.cat&&!(e.cat.includes(g)))return;m*=e.mult||1;});return m;
+}
+function midPrice(town,g){return GOODS[g].b*T().mult[town][g];}
+function buyPrice(town,g){return Math.max(1,Math.round(midPrice(town,g)*(1+spreadF())*repMul(town)));}
+function sellPrice(town,g){return Math.max(1,Math.round(midPrice(town,g)*(1-spreadF())/Math.max(.9,repMul(town))));}
+function marketTick(n){
+ const t=T();n=n||1;
+ for(let d=0;d<n;d++){
+  t.clock++;
+  // events
+  t.ev.forEach(e=>e.left--);
+  const gone=t.ev.filter(e=>e.left<=0);t.ev=t.ev.filter(e=>e.left>0);
+  gone.forEach(e=>t.news.unshift({c:t.clock,t:'Over: '+e.txt.replace(/^[^:]*: ?/,'')}));
+  if(Math.random()<.14)spawnEvent();
+  TOWN_IDS.forEach(id=>{
+   Object.keys(t.mult[id]).forEach(g=>{
+    const tg=goodTarget(id,g)*evMult(id,g),m=t.mult[id][g];
+    t.mult[id][g]=clamp(m+(tg-m)*.12+(Math.random()-.5)*.06,.35,2.6);
+   });
+  });
+ }
+ if(t.news.length>40)t.news.length=40;
+}
+const EVK=[
+ ()=>{const id=pick(TOWN_IDS),g=pick(GOOD_IDS);return{kind:'shortage',town:id,good:g,mult:1.55,left:ri(10,20),txt:`Shortage: ${GOODS[g].n} is scarce in ${TOWNS[id].n}.`};},
+ ()=>{const id=pick(TOWN_IDS),g=pick(GOOD_IDS);return{kind:'glut',town:id,good:g,mult:.6,left:ri(10,20),txt:`Glut: ${TOWNS[id].n} is drowning in ${GOODS[g].n}.`};},
+ ()=>{const id=pick(TOWN_IDS);return{kind:'festival',town:id,cat:['wine','ale','spice','silk','incense','cloth'],mult:1.3,left:ri(5,8),txt:`Festival: ${TOWNS[id].n} is celebrating. Luxuries sell high, and doors are open.`};},
+ ()=>{const id=pick(TOWN_IDS);return{kind:'plague',town:id,cat:['medicine','herb'],mult:1.8,left:ri(12,18),txt:`Fever: a sickness is going around ${TOWNS[id].n}. Medicine is in demand.`};},
+ ()=>{const id=pick(TOWN_IDS.filter(x=>x!==HT));return{kind:'surge',town:id,mult:1,left:ri(10,16),txt:`Unrest: bandits are thick on the roads near ${TOWNS[id].n}.`};},
+ ()=>{const id=pick(TOWN_IDS);return{kind:'boom',town:id,cat:GOOD_IDS,mult:1.12,left:ri(8,14),txt:`Boom: ${TOWNS[id].n} is flush with coin. Everything fetches a little more.`};}
+];
+function spawnEvent(){
+ const t=T(),e=pick(EVK)();
+ if(t.ev.some(x=>x.kind===e.kind&&x.town===e.town))return;
+ t.ev.push(e);t.news.unshift({c:t.clock,t:e.txt});
+}
+// the town remembers
+function addRep(id,n){const t=T();t.rep[id]=clamp((t.rep[id]||0)+n,-100,100);}
+const repTitle=r=>r>=80?'Hero of the Town':r>=50?'Honored Friend':r>=20?'Well Regarded':r>-20?'A Stranger':r>-50?'Distrusted':'Notorious';
+/* ----- bank ----- */
+const bk=()=>T().bank;
+const loanLimit=()=>Math.round(40*bk().credit+S.hero.lvl*30+(S.world.estate&&S.world.estate.deed?500:0));
+const bankRate=()=>.04+(bk().bal>=50000?.02:bk().bal>=5000?.01:0)+(bk().credit>=70?.005:0);
+function bankDaily(n){
+ const b=bk();n=n||1;
+ for(let i=0;i<n;i++){
+  if(b.bal>0)b.bal+=b.bal*bankRate()/120;
+  if(b.debt>0){b.debt+=b.debt*.10/120;if(b.due>0){b.due--;if(b.due===0){b.late=1;b.credit=Math.max(0,b.credit-10);b.debt+=Math.round(b.debt*.05);note('🏦 Your loan is overdue. The bank adds a penalty and a stern letter.','e');}}
+   else if(b.late&&Math.random()<.04)b.debt+=Math.round(b.debt*.02);
+  }
+  if(b.shark>0){b.shark+=b.shark*.20/30;b.sdue--;if(b.sdue<=0&&Math.random()<.3)b.sharkPress=(b.sharkPress||0)+1;}
+ }
+ b.bal=Math.round(b.bal*100)/100;b.debt=Math.round(b.debt*100)/100;b.shark=Math.round(b.shark*100)/100;
+ // ventures
+ b.vclock=(b.vclock||0)+n;
+ b.ven=(b.ven||[]).filter(v=>{v.left-=n;if(v.left>0)return true;
+  const r=Math.random(),mul=r<v.p[0]?v.r[0]:r<v.p[0]+v.p[1]?v.r[1]:v.r[2];
+  const out=Math.round(v.stake*mul);b.bal+=out;
+  note(`📈 Your stake in <b>${v.n}</b> pays out ${fmt(out)}g (${mul>=1?'+':''}${Math.round((mul-1)*100)}%).`,mul>=1?'g':'e');
+  return false;});
+}
+function ventureOffers(){
+ const b=bk();
+ if(!b.offers||b.offerClock!==Math.floor(b.vclock/30)){
+  b.offerClock=Math.floor(b.vclock/30);
+  b.offers=[
+   {n:'Spice Convoy',min:200,days:30,p:[.62,.28],r:[1.25,1.0,0],d:'A fat caravan east. Lots of ways to lose it.'},
+   {n:'Lantern Mine Shares',min:100,days:20,p:[.55,.35],r:[1.15,1.0,.2],d:'Safe, boring, and slightly damp.'},
+   {n:'The Sailor\'s Gamble',min:500,days:40,p:[.45,.25],r:[1.9,.9,0],d:'A ship, a map, and a captain who laughs too much.'}
+  ];
+ }
+ return b.offers;
+}
+/* ----- discovery of towns and places ----- */
+function learnTown(id,msg){const k=KT();if(k.t[id])return false;k.t[id]=1;if(msg!==false)note(`🧭 You now know the way to <b>${TOWNS[id].n}</b>.`,'y');return true;}
+const _tipPoolM2=tipPool;
+tipPool=function(){
+ const L=_tipPoolM2(),h=S.hero,r=rankIdx(h.contracts);
+ TOWN_IDS.forEach((id,i)=>{if(id!==HT&&!knowT(id)&&i<=r+2)L.push(['t',id]);});
+ TOWN_IDS.forEach(id=>{if(knowT(id)&&!KT().r[id]&&h.kills>=15)L.push(['r',id]);});
+ TOWN_IDS.forEach(id=>{if(knowT(id)&&id!==where()&&Object.keys(T().mult[id]).length)L.push(['m',id]);});
+ return L;
+};
+function giveTip(){
+ const L=tipPool();if(!L.length)return null;
+ const [k,v]=pick(L),w=S.world,kn=K();
+ if(k==='z'){kn.z[v]=1;return `🗺️ A drover mentions <b>${ZONES[v].n}</b>. ${ZFLAV[v]} You make a mental note of where it is.`;}
+ if(k==='b'){kn.b[v]=1;kn.bn[v]=1;return `🐾 Someone swears that <b>${ZONES[v].boss.n}</b> lairs in ${ZONES[v].n}. ${pick(BFLAV)}`;}
+ if(k==='t'){learnTown(v,false);return `🧭 A peddler talks up <b>${TOWNS[v].n}</b>, ${dist(where(),v)} days' travel away. "${TOWNS[v].d}"`;}
+ if(k==='r'){KT().r[v]=1;return `🌑 A woman lowers her voice about <b>${TOWNS[v].rough}</b> in ${TOWNS[v].n}. "Come with coin. Leave with it, if you can."`;}
+ if(k==='m'){
+  const id=v,g=pick(TOWNS[id].produce.concat(TOWNS[id].demand)),st=T().seen[id]=T().seen[id]||{};
+  st[g]={p:Math.round(GOODS[g].b*T().mult[id][g]),c:T().clock,hear:1};learnTown(id,false);
+  const cheap=TOWNS[id].produce.includes(g);
+  return `📊 A carter says ${GOODS[g].n.toLowerCase()} ${cheap?'is going cheap':'is fetching a fine price'} in ${TOWNS[id].n}: about ${st[g].p}g a unit.`;
+ }
+ const d=DG[v];w.map.found[v]=1;return `🕳️ A drunk whispers about <b>${d.n}</b>. "${esc(d.desc)}" You mark it on your map.`;
+}
+
+/* =====================================================================
+   PASS 7 / M2b — travel, shops, the exchange, the bank, town pages
+   ===================================================================== */
+const HABX={fens:{id:'fens',n:'The Briar Fens',ic:'🌿',dyn:1,zi:1,tpl:ZONES[1].mon}};
+const _makeEnemyHab=makeEnemyHab;
+makeEnemyHab=function(id,boss){
+ if(!HAB[id]&&HABX[id]){const H=HABX[id],h=S.hero,zi=H.zi,saved=ZONES[zi];
+  ZONES[zi]=Object.assign({},saved,{n:H.n,min:Math.max(1,h.lvl-2),max:h.lvl+2,mon:H.tpl});
+  let e;try{e=makeEnemy(zi,!!boss);}finally{ZONES[zi]=saved;}
+  e.hab=id;e.zi=zi;return e;}
+ return _makeEnemyHab(id,boss);
+};
+const habOf=id=>HAB[id]||HABX[id];
+// every day that passes keeps the markets and the bank moving
+const _sleepDayM2=sleepDay;
+sleepDay=function(){_sleepDayM2();if(S.screen!=='death'){marketTick(1);bankDaily(1);}};
+// each town stocks its own shelves
+const _refreshShopM2=refreshShop;
+refreshShop=function(){
+ const h=S.hero,w=S.world,P=TOWNS[where()];
+ w.shop=[];
+ const qm=estLv('staff','quartermaster'),n=6+qm;
+ const festive=T().ev.some(e=>e.kind==='festival'&&e.town===where())?.92:1;
+ for(let i=0;i<n;i++){
+  const slot=SLOTS[wroll(P.slots)];
+  const it=genItem(Math.max(1,h.lvl+ri(-2,3)+(P.ilOff||0)),wroll(P.rar),slot);
+  it.price=Math.round(it.val*2.4*(wf('smith')?.9:1)*(1-bgv('price'))*(1-.04*qm)*P.pm*repMul(where())*festive);
+  w.shop.push(it);
+ }
+};
+function townPot(){const P=TOWNS[where()];let m=P.pot;if(T().ev.some(e=>e.kind==='plague'&&e.town===where()))m*=1.4;return m*repMul(where());}
+function swapShop(from,to){
+ const t=T(),w=S.world;t.shops[from]=w.shop;t.loc=to;
+ w.shop=t.shops[to]||[];
+ if(!w.shop.length||(t.shopDay[to]||-9)<t.clock-3)refreshShop();
+ t.shopDay[to]=t.clock;
+}
+function arrive(to){
+ const t=T(),from=t.loc;swapShop(from,to);
+ t.visited=t.visited||{};const first=!t.visited[to];t.visited[to]=1;
+ S.trip=null;S.screen='town';
+ note(`🏁 You arrive in <b>${TOWNS[to].n}</b>. ${first?TOWNS[to].d:''}`,'y');
+ if(first){addRep(to,2);if(!KT().r[to]&&Math.random()<.3)KT().r[to]=1,note(`🌑 You hear whispers about ${TOWNS[to].rough} before you have even set down your bag.`);}
+ if(t.ev.some(e=>e.kind==='festival'&&e.town===to))note(`🎉 ${TOWNS[to].n} is celebrating something. There is bunting.`,'y');
+ if(t.ev.some(e=>e.kind==='plague'&&e.town===to)&&Math.random()<.4)note('🤒 You feel a little off. The air here has opinions.','e');
+}
+/* ----- the road ----- */
+const TRAVEL_FLAV=['A cart ahead is carrying live geese. The geese are not in favor.','The road is mostly mud and regret.','A crow follows you for an hour, then loses interest.','You pass a sign that says "Danger." Underneath, someone has written "No kidding."','A farmer waves. You wave back. Both of you are very sure of yourselves.','The wind brings the smell of rain, bread, and a goat.','A shepherd sells you a tale about a talking sheep. You do not buy.','You stop to rest. Your feet file a formal complaint.','Dusty miles. Dull miles. Good miles.','A tinker\'s bell rings somewhere out of sight. Whatever it is selling, it is not for you.'];
+function surgeNear(a,b){return T().ev.some(e=>e.kind==='surge'&&(e.town===a||e.town===b));}
+function rollTrip(){
+ const tr=S.trip,t=T(),h=S.hero,w=S.world;tr.lines=[];
+ let p=.30;if(surgeNear(tr.from,tr.to))p*=2;if(tr.guard)p*=.35;
+ const r=Math.random();
+ if(r<p){
+  const e=makeEnemyHab('highroad',false);
+  tr.lines.push(`⚔️ <b>${esc(e.name)}</b> blocks the road${tr.guard?' as your escort shifts uneasily':''}!`);
+  tr.stage='night';startCombat(e,false,{type:'loc',free:true,ret:'trip',ambush:Math.random()<.35});return;
+ }
+ const r2=r-p;
+ if(r2<.09&&!tr.guard){
+  const amt=Math.max(10,Math.round(w.gold*.08));
+  tr.pend={k:'toll',amt};tr.lines.push(`🗡️ A few men step out of the trees. "Toll," says the one in front. "${amt}g. Very reasonable. Very modern."`);return;
+ }
+ if(r2<.19&&Object.keys(t.cargo).length<GOOD_IDS.length){
+  const g=pick(GOOD_IDS),mid=GOODS[g].b*.75,q=Math.min(8,Math.floor((cargoCap()-cargoUsed())/GOODS[g].w));
+  if(q>0){tr.pend={k:'offer',g,price:Math.round(mid),q};tr.lines.push(`🛒 A passing trader has too much ${GOODS[g].n.toLowerCase()} and not enough patience. "${q} units at ${Math.round(mid)}g each, no haggling, I'm in a hurry."`);return;}
+ }
+ if(r2<.30){const m=pick(ZGATHER[clamp(tierOf(h.lvl),0,5)]);w.mats[m]=(w.mats[m]||0)+ri(1,3);tr.lines.push(`🌿 You find ${m} by the roadside. Nobody else wanted it.`);return;}
+ if(r2<.38){const tip=giveTip();tr.lines.push(tip?`🗣️ A fellow traveler talks your ear off. ${tip}`:'🗣️ A fellow traveler talks your ear off about nothing in particular.');return;}
+ if(r2<.45){tr.lines.push('🌧️ A storm rolls in. You hole up under a cart for an extra evening.');tr.extra=1;return;}
+ tr.lines.push(pick(TRAVEL_FLAV));
+}
+function tripNight(){
+ const tr=S.trip;
+ sleepDay();
+ if(S.screen==='death')return;
+ tr.d++;if(tr.extra){tr.extra=0;marketTick(1);bankDaily(1);}
+ if(tr.d>=tr.total){arrive(tr.to);return;}
+ tr.stage='day';tr.lines=[`🌅 Day ${tr.d+1} of ${tr.total} on the road to ${TOWNS[tr.to].n}.`];
+}
+Object.assign(ACT,{
+ setOut(p){
+  const [to,g]=p.split(':'),from=where(),days=dist(from,to),guard=g==='g';
+  if(!knowT(to)||to===from||S.dg)return;
+  const fee=guard?25*days:0;if(S.world.gold<fee){note('You cannot afford an escort.','e');return;}
+  S.world.gold-=fee;
+  S.trip={from,to,total:days,d:0,stage:'day',guard,lines:[`🧭 You set out for ${TOWNS[to].n}${guard?' with a hired escort':''}. It is ${days} days away.`],pend:null};
+  S.screen='trip';
+ },
+ tripGo(){
+  const tr=S.trip;if(!tr||tr.pend)return;
+  if(tr.stage==='day'){rollTrip();}
+  else tripNight();
+ },
+ tripPay(){const tr=S.trip,w=S.world;if(!tr||!tr.pend||tr.pend.k!=='toll')return;const a=Math.min(w.gold,tr.pend.amt);w.gold-=a;tr.pend=null;tr.lines=[`💸 You hand over ${a}g. "Pleasure," says the man. It was not.`];addRep(tr.from,0);},
+ tripBluff(){
+  const tr=S.trip,h=S.hero,p=P();if(!tr||!tr.pend||tr.pend.k!=='toll')return;
+  const ch=clamp(.25+p.int*.006+p.st.agi*.004,.2,.7);
+  tr.pend=null;
+  if(Math.random()<ch){tr.lines=['😎 You explain, loudly and with great detail, that the toll was paid by someone else. They are not sure who. They let you go, confused.'];}
+  else{const e=makeEnemyHab('highroad',false);tr.lines=['😬 They did not buy it.'];tr.stage='night';startCombat(e,false,{type:'loc',free:true,ret:'trip'});}
+ },
+ tripFight(){const tr=S.trip;if(!tr||!tr.pend||tr.pend.k!=='toll')return;tr.pend=null;const e=makeEnemyHab('highroad',false);tr.stage='night';startCombat(e,false,{type:'loc',free:true,ret:'trip'});},
+ tripBuy(){
+  const tr=S.trip,t=T(),o=tr&&tr.pend;if(!o||o.k!=='offer')return;
+  const cost=o.price*o.q;if(S.world.gold<cost){note('Not enough gold.','e');return;}
+  S.world.gold-=cost;const c=t.cargo[o.g]=t.cargo[o.g]||{n:0,cost:0};c.n+=o.q;c.cost+=cost;
+  tr.pend=null;tr.lines=[`📦 Done. ${o.q} ${GOODS[o.g].n.toLowerCase()} on your back, ${fmt(cost)}g lighter.`];
+ },
+ tripPass(){const tr=S.trip;if(!tr||!tr.pend)return;tr.pend=null;tr.lines=['You wave the trader on. He looks personally wounded.'];},
+ tripTurn(){const tr=S.trip;if(!tr||tr.d>0||tr.stage!=='day')return;S.trip=null;S.screen='town';note('You think better of it and stay put.');}
+});
+// combat that happens off the numbered regions
+const _fleeOKM2=fleeOK;
+fleeOK=function(){
+ const c=S.cb,ctx=(c&&c.ctx)||{};
+ if(ctx.ret==='trip'&&S.trip){
+  const t=T();note(`You escaped from ${c.e.name}.`);S.cb=null;
+  let lost=0;Object.keys(t.cargo).forEach(g=>{const l=Math.floor(t.cargo[g].n*.25);if(l>0){const per=t.cargo[g].cost/t.cargo[g].n;t.cargo[g].n-=l;t.cargo[g].cost-=per*l;lost+=l;if(t.cargo[g].n<=0)delete t.cargo[g];}});
+  if(lost)note(`You drop ${lost} units of cargo in the scramble.`,'e');
+  S.screen='trip';return;
+ }
+ if(ctx.ret){S.cb=null;note(`You escaped from ${c.e.name}.`);S.screen=ctx.ret;return;}
+ return _fleeOKM2();
+};
+const _resultM2=VIEWS.result;
+VIEWS.result=function(){
+ const r=S.res,ctx=(r&&r.ctx)||{};
+ if(ctx.type==='loc'){
+  const h=S.hero,back=ctx.ret==='trip'?btn('Continue the journey','go','trip','pri c'):ctx.rep?btn(ctx.rep,'go',ctx.ret,'pri c'):btn('Continue','go',ctx.ret||'town','pri c');
+  const again=ctx.again?btn('Fight another','habHunt',ctx.again,'c',h.sta<FIGHT_COST,FIGHT_COST+'⚡'):'';
+  return `<h1>🏆 Victory</h1><p class="mut">${esc(r.name)} (Lv ${r.lvl}) defeated.</p><div class="card">${r.lines.map(l=>`<p>${l}</p>`).join('')}</div><p class="sm mut">❤ ${h.hp}/${P().maxhp} · ⚡ ${h.sta}/${P().maxsta}</p><div class="grid">${back}${again}</div>`;
+ }
+ return _resultM2();
+};
+/* ----- exchange ----- */
+function seeMarket(){
+ const t=T(),id=where();t.seen[id]=t.seen[id]||{};
+ TOWNS[id].deal.forEach(g=>{t.seen[id][g]={p:Math.round(midPrice(id,g)),c:t.clock};});
+}
+function ago(c){const d=T().clock-c;return d<=0?'today':d===1?'yesterday':d+' days ago';}
+Object.assign(ACT,{
+ tbuy(p){
+  const [g,q0]=p.split(':'),t=T(),id=where();if(!GOODS[g]||!TOWNS[id].deal.includes(g))return;
+  const pr=buyPrice(id,g),room=Math.floor((cargoCap()-cargoUsed())/GOODS[g].w);
+  let q=q0==='max'?Math.min(room,Math.floor(S.world.gold/pr)):+q0;q=Math.min(q,room,Math.floor(S.world.gold/pr));
+  if(q<=0){note(room<=0?'Your load is full.':'Not enough gold.','e');return;}
+  const c=t.cargo[g]=t.cargo[g]||{n:0,cost:0};const tot=pr*q;S.world.gold-=tot;c.n+=q;c.cost+=tot;
+  t.mult[id][g]=Math.min(2.6,t.mult[id][g]*(1+.004*q));t.tx+=q*.15;
+ },
+ tsell(p){
+  const [g,q0]=p.split(':'),t=T(),id=where(),c=t.cargo[g];if(!c||!TOWNS[id].deal.includes(g))return;
+  const q=q0==='all'?c.n:Math.min(+q0,c.n);if(q<=0)return;
+  const pr=sellPrice(id,g),rev=pr*q,per=c.cost/c.n,cost=per*q,prof=rev-cost;
+  S.world.gold+=rev;c.n-=q;c.cost-=cost;if(c.n<=0)delete t.cargo[g];
+  t.mult[id][g]=Math.max(.35,t.mult[id][g]*(1-.004*q));
+  const before=tradeLv();t.tx+=q*.15+Math.max(0,prof)/9;t.sales=(t.sales||0)+rev;
+  if(prof>0)addRep(id,Math.min(1,prof/800));
+  note(`${GOODS[g].ic} Sold ${q} ${GOODS[g].n.toLowerCase()} for ${fmt(rev)}g (${prof>=0?'+':''}${fmt(Math.round(prof))}g profit).`,prof>=0?'g':'e');
+  if(tradeLv()>before)note(`📈 Your trade skill rises. You are now a <b>${TRADE_T[tradeLv()]}</b>.`,'y');
+ },
+ cartBuy(i){
+  const t=T(),c=CARTS[+i];if(!c||+i!==t.cart+1)return;
+  if(tradeLv()<c.lv){note('You need more standing as a trader.','e');return;}
+  if(S.world.gold<c.cost){note('Not enough gold.','e');return;}
+  S.world.gold-=c.cost;t.cart=+i;note(`🛒 You now carry loads in a ${c.n}.`,'y');
+ },
+ xtab(p){S.xtab=p;},
+ dumpCargo(g){const t=T();if(t.cargo[g]){delete t.cargo[g];note('You tip it into a ditch. The ditch is baffled.','e');}}
+});
+VIEWS.exchange=function(){
+ const t=T(),id=where(),P=TOWNS[id],tab=S.xtab||'market';seeMarket();
+ let s=`<h1>⚖️ ${id===HT?'Trading Post':P.n+' Market'}</h1><p class="mut sm">💰 <b>${fmt(S.world.gold)}</b> · Load ${cargoUsed()}/${cargoCap()} (${CARTS[t.cart].n}) · Trade rank: <b>${TRADE_T[tradeLv()]}</b></p>`;
+ s+=`<div class="grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:8px">${[['market','Market'],['book','Price book'],['cart','Carts']].map(x=>btn(x[1],'xtab',x[0],tab===x[0]?'pri c':'c')).join('')}</div>`;
+ if(tab==='market'){
+  const ev=t.ev.filter(e=>e.town===id);
+  if(ev.length)s+=ev.map(e=>`<div class="card sm">📰 ${e.txt}</div>`).join('');
+  s+=P.deal.map(g=>{
+   const G=GOODS[g],mid=midPrice(id,g),ratio=mid/G.b,bp=buyPrice(id,g),sp=sellPrice(id,g),c=t.cargo[g],avg=c?Math.round(c.cost/c.n):0;
+   const tag=ratio<.8?'<span class="tag" style="color:var(--good)">cheap</span>':ratio>1.25?'<span class="tag" style="color:#ff9a3c">dear</span>':'<span class="tag">fair</span>';
+   const room=Math.floor((cargoCap()-cargoUsed())/G.w);
+   return `<div class="card sm"><div class="row2"><b>${G.ic} ${G.n}</b>${tag}</div><div class="mut">${G.q}</div><div style="margin:4px 0">Buy <b>${bp}g</b> · Sell <b>${sp}g</b>${c?` · own ${c.n} (paid ~${avg}g)`:''}</div>
+   <div class="grid" style="grid-template-columns:repeat(3,1fr)">${btn('Buy 1','tbuy',g+':1','c',room<1||S.world.gold<bp)}${btn('Buy 5','tbuy',g+':5','c',room<1||S.world.gold<bp)}${btn('Buy max','tbuy',g+':max','c',room<1||S.world.gold<bp)}</div>
+   ${c?`<div class="grid" style="grid-template-columns:repeat(3,1fr);margin-top:6px">${btn('Sell 1','tsell',g+':1','c')}${btn('Sell 5','tsell',g+':5','c',c.n<2)}${btn('Sell all','tsell',g+':all','good c')}</div>`:''}</div>`;
+  }).join('');
+ }else if(tab==='book'){
+  s+=`<p class="mut sm">What you last saw, or were told. Prices move every day, so older notes may be wrong.</p>`;
+  const rows=GOOD_IDS.map(g=>{const li=TOWN_IDS.filter(x=>t.seen[x]&&t.seen[x][g]).map(x=>({x,p:t.seen[x][g].p,c:t.seen[x][g].c}));return{g,li};}).filter(r=>r.li.length);
+  s+=rows.length?rows.map(r=>`<div class="card sm"><b>${GOODS[r.g].ic} ${GOODS[r.g].n}</b> <span class="mut">(usual ${GOODS[r.g].b}g)</span>${r.li.sort((a,b)=>a.p-b.p).map(v=>`<div>${TOWNS[v.x].n}: <b>${v.p}g</b> <span class="mut">${ago(v.c)}</span></div>`).join('')}</div>`).join(''):'<p class="mut">Nothing written down yet. Visit markets and listen to people.</p>';
+ }else{
+  s+=`<p class="mut sm">More room means bigger loads and bigger profits. Better rigs need trade standing.</p>`;
+  s+=CARTS.map((c,i)=>{const own=i===t.cart,next=i===t.cart+1,done=i<t.cart;
+   return `<div class="card sm"><div class="row2"><b>${c.n}</b><span class="tag">${c.cap} load</span></div>${own?'<div class="up">In use</div>':done?'<div class="mut">Outgrown</div>':btn(fmt(c.cost)+'g','cartBuy',i,'c',!next||S.world.gold<c.cost||tradeLv()<c.lv,tradeLv()<c.lv?'Needs trade rank: '+TRADE_T[c.lv]:next?'':'Buy the one before first')}</div>`;}).join('');
+ }
+ return s+'<div style="height:8px"></div>'+btn('← Back','go','town','c');
+};
+/* ----- bank ----- */
+const BANK_AMTS=[100,500,2000,10000,50000];
+Object.assign(ACT,{
+ bdep(a){const w=S.world,b=bk();let n=a==='all'?Math.floor(w.gold):+a;n=Math.min(n,Math.floor(w.gold));if(n<=0)return;w.gold-=n;b.bal+=n;},
+ bwd(a){
+  const w=S.world,b=bk();let n=a==='all'?Math.floor(b.bal):+a;n=Math.min(n,Math.floor(b.bal));if(n<=0)return;
+  const fee=(where()===HT||where()==='gildenreach')?0:Math.max(1,Math.round(n*.01));
+  b.bal-=n;w.gold+=n-fee;if(fee)note(`The branch keeps ${fee}g as a handling fee.`);
+ },
+ bborrow(a){
+  const b=bk();if(b.debt>0.5){note('Settle your current loan first.','e');return;}
+  const lim=loanLimit();let n=a==='max'?lim:Math.round(lim*(+a));n=Math.max(0,Math.min(n,lim));if(n<50)return;
+  b.debt=n;b.due=60;b.late=0;S.world.gold+=n;note(`🏦 The bank advances you ${fmt(n)}g. Repay within 60 days.`,'y');
+ },
+ brepay(a){
+  const w=S.world,b=bk();if(b.debt<=0)return;let n=a==='all'?Math.ceil(b.debt):+a;n=Math.min(n,Math.ceil(b.debt),Math.floor(w.gold));if(n<=0)return;
+  w.gold-=n;b.debt=Math.max(0,b.debt-n);
+  if(b.debt<=.5){b.debt=0;b.due=0;if(!b.late)b.credit=Math.min(100,b.credit+8);else b.credit=Math.min(100,b.credit+2);b.late=0;note('✅ Loan cleared. The clerk very nearly smiles.','g');}
+ },
+ bpaybal(){const b=bk();if(b.debt<=0||b.bal<=0)return;const n=Math.min(b.bal,Math.ceil(b.debt));b.bal-=n;ACT_brepayFrom(n);},
+ binvest(p){
+  const [i,m]=p.split(':'),b=bk(),o=ventureOffers()[+i];if(!o)return;
+  const amt=o.min*(+m);if(b.bal<amt){note('Move the money into your account first.','e');return;}
+  b.bal-=amt;b.ven.push({n:o.n,stake:amt,left:o.days,p:o.p.concat([1-o.p[0]-o.p[1]]),r:o.r});note(`📈 You back the ${o.n} with ${fmt(amt)}g.`,'y');
+ }
+});
+function ACT_brepayFrom(n){const b=bk();b.debt=Math.max(0,b.debt-n);if(b.debt<=.5){b.debt=0;b.due=0;b.late=0;b.credit=Math.min(100,b.credit+6);note('✅ Loan cleared from your savings.','g');}}
+VIEWS.bank=function(){
+ const w=S.world,b=bk(),here=where();
+ let s=`<h1>🏦 ${here===HT?'The Counting House':TOWNS[here].n+' Branch'}</h1><p class="mut sm">Gold in your purse can be stolen, gambled away, or dropped in a ditch. Gold in the bank earns interest and stays put. Branches in every town share one account.</p>
+ <div class="card"><div class="row2"><b>Savings</b><span class="tag">${(bankRate()*100).toFixed(1)}% a year</span></div><div style="font-size:1.25rem;margin:4px 0">💰 ${fmt(Math.floor(b.bal))}g</div><div class="mut sm">Purse: ${fmt(Math.floor(w.gold))}g · Credit standing: ${b.credit}/100</div>
+ <h3>Deposit</h3><div class="grid" style="grid-template-columns:repeat(3,1fr)">${BANK_AMTS.map(a=>btn(fmt(a),'bdep',a,'c',w.gold<a)).join('')}${btn('All','bdep','all','good c',w.gold<1)}</div>
+ <h3>Withdraw ${here===HT||here==='gildenreach'?'':'<span class="mut sm">(1% fee here)</span>'}</h3><div class="grid" style="grid-template-columns:repeat(3,1fr)">${BANK_AMTS.map(a=>btn(fmt(a),'bwd',a,'c',b.bal<a)).join('')}${btn('All','bwd','all','c',b.bal<1)}</div></div>`;
+ const lim=loanLimit();
+ s+=`<div class="card"><div class="row2"><b>Loans</b><span class="tag">limit ${fmt(lim)}g</span></div>`;
+ if(b.debt>0.5)s+=`<div class="${b.late?'dn':''}" style="margin:4px 0">You owe <b>${fmt(Math.ceil(b.debt))}g</b>${b.late?' · OVERDUE':` · due in ${b.due} days`}</div><div class="mut sm">10% a year, and a nasty penalty when late. Debts do not die with you. Your heirs inherit them.</div>
+ <div class="grid" style="grid-template-columns:repeat(3,1fr)">${btn('Pay 500','brepay',500,'c',w.gold<500)}${btn('Pay all','brepay','all','good c',w.gold<1)}${btn('From savings','bpaybal',undefined,'c',b.bal<1)}</div>`;
+ else s+=`<div class="mut sm">A fair loan at 10% a year, due in 60 days. Pay it on time and your standing improves.</div><div class="grid" style="grid-template-columns:repeat(3,1fr)">${btn('Borrow ¼','bborrow',.25,'c',lim<200)}${btn('Borrow ½','bborrow',.5,'c',lim<100)}${btn('Borrow max','bborrow','max','c',lim<50)}</div>`;
+ s+=`</div>`;
+ if(b.shark>0)s+=`<div class="card dn sm">🦈 You still owe <b>${fmt(Math.ceil(b.shark))}g</b> to a man who does not use a bank.</div>`;
+ const offers=ventureOffers();
+ s+=`<div class="card"><b>Ventures</b><div class="mut sm">Back a risky scheme with savings. Offers refresh each month.</div>${offers.map((o,i)=>`<div class="item" style="cursor:default"><div><div class="n">${o.n}</div><div class="s">${o.d}<br>${o.days} days · from ${fmt(o.min)}g · up to ×${o.r[0]}</div></div><div style="width:110px">${btn('×1','binvest',i+':1','c',b.bal<o.min)}${btn('×5','binvest',i+':5','c',b.bal<o.min*5)}</div></div>`).join('')}
+ ${b.ven.length?`<h3>Your stakes</h3>${b.ven.map(v=>`<div class="sm">${v.n}: ${fmt(v.stake)}g · ${v.left} days left</div>`).join('')}`:''}</div>`;
+ return s+btn('← Back','go','town','c');
+};
+
+/* =====================================================================
+   PASS 7 / M2c — town pages, travel screens, inn, scenes
+   ===================================================================== */
+function placeOpen(id,town){
+ town=town||where();
+ if(town!==HT)return true;
+ if(id==='bank')return S.world.gold>=60||bk().bal>0||bk().debt>0||S.hero.lvl>=3||!!KT().p.bank;
+ if(id==='post')return Object.keys(S.world.mats).length>0||S.hero.kills>=8||Object.keys(T().cargo).length>0||!!KT().p.post;
+ return true;
+}
+function noticePlaces(){
+ const k=KT();
+ if(!k.p.bank&&placeOpen('bank',HT)){k.p.bank=1;note('📍 You notice the <b>Counting House</b> by the square. Brass doors, a lot of locks.','y');}
+ if(!k.p.post&&placeOpen('post',HT)){k.p.post=1;note('📍 A cluster of wagons and shouting by the east gate turns out to be the <b>Trading Post</b>.','y');}
+}
+const FEATS=[
+ {ord:1,show:t=>placeOpen('post',t),btn:t=>btn('⚖️ '+(t===HT?'Trading Post':'Market Exchange'),'go','exchange','',false,'Buy low, sell high')},
+ {ord:2,show:t=>placeOpen('bank',t),btn:t=>btn('🏦 '+(t===HT?'Counting House':'Bank'),'go','bank','',false,bk().debt>0.5?'You owe '+fmt(Math.ceil(bk().debt))+'g':'Savings, loans, ventures')},
+ {ord:3,show:t=>true,btn:t=>btn('📰 Town Crier','go','news','',false,'What is going on')},
+ {ord:8,show:t=>!!KT().r[t],btn:t=>btn('🌑 '+TOWNS[t].rough,'go','rough','',false,'Not for the careful')},
+ {ord:9,show:t=>TOWN_IDS.some(x=>x!==t&&knowT(x)),btn:t=>btn('🧭 Travel','go','map','pri',false,'Roads to other towns')}
+];
+const featureButtons=t=>FEATS.filter(f=>f.show(t)).sort((a,b)=>a.ord-b.ord).map(f=>f.btn(t)).join('');
+function innCost(id){const P=TOWNS[id];let c=P.inn;if(T().ev.some(e=>e.kind==='festival'&&e.town===id))c=Math.round(c*1.4);return c;}
+Object.assign(ACT,{
+ habHunt(id){
+  const h=S.hero;if(h.sta<FIGHT_COST){note('Too tired to hunt. Sleep first.','e');return;}
+  const e=makeEnemyHab(id,false);seeMon(e);S.enc={zi:e.zi,boss:false,e,hab:id};S.screen='enc';
+ },
+ sleepRough(){
+  const h=S.hero,w=S.world,p=P();
+  S.sleepLoc='tn:'+where();sleepDay();
+  if(S.screen==='death'){playSleep(true);return;}
+  h.hp=Math.min(p.maxhp,Math.round(p.maxhp*.6));h.sta=Math.round(p.maxsta*.7);
+  if(Math.random()<.3&&w.gold>20){const l=Math.round(w.gold*.1);w.gold-=l;note(`🩹 You wake up a little lighter. ${fmt(l)}g, specifically.`,'e');}
+  playSleep(false);
+ },
+ pcamp(){} 
+});
+const _fightM2=ACT.fight,_avoidM2=ACT.avoid;
+ACT.fight=function(){const en=S.enc;if(en&&en.hab){S.enc=null;startCombat(en.e,false,{type:'loc',ret:'outskirts',again:en.hab});return;}_fightM2();};
+ACT.avoid=function(){const en=S.enc;if(en&&en.hab){S.enc=null;S.screen='outskirts';return;}_avoidM2();};
+const _sleepM2=ACT.sleep;
+ACT.sleep=function(){
+ const id=where();
+ if(id===HT)return _sleepM2();
+ const c=innCost(id);
+ if(S.world.gold<c){note('You cannot afford the inn.','e');return;}
+ S.world.gold-=c;S.sleepLoc='tn:'+id;sleepDay();playSleep(S.screen==='death');
+};
+VIEWS.outskirts=function(){
+ const id=where(),P=TOWNS[id],H=habOf(P.hab),h=S.hero;
+ if(!H)return '<p class="mut">Nothing but fields.</p>'+btn('← Back','go','town','c');
+ const lo=H.dyn?Math.max(1,h.lvl-2):H.min,hi=H.dyn?h.lvl+2:H.max;
+ return `<h1>${H.ic} ${esc(H.n)}</h1><p class="mut">Where the town ends and the trouble starts. What lives out here is not what lives around Hollowmere.</p>
+ <div class="card"><div class="row2"><b>${esc(H.n)}</b><span class="tag">Lv ${lo}–${hi}</span></div><div class="mut sm">${H.tpl.length} kinds of creature known to roam here.</div>
+ <div style="margin-top:8px">${btn('Hunt','habHunt',H.id,'pri c',h.sta<FIGHT_COST||S.dg,FIGHT_COST+'⚡')}</div></div>${btn('← Back to town','go','town','c')}`;
+};
+VIEWS.news=function(){
+ const t=T(),here=where();
+ const near=t.news.filter(n=>true).slice(0,12);
+ let s=`<h1>📰 Town Crier</h1><p class="mut">A man in a very large hat shouts the day's business at anyone standing still.</p>`;
+ s+=near.length?near.map(n=>`<div class="card sm">${n.t}<div class="mut" style="font-size:.75rem">${ago(n.c)}</div></div>`).join(''):'<div class="card sm mut">Nothing worth shouting about. He shouts it anyway.</div>';
+ TOWN_IDS.forEach(id=>{if(t.news.some(n=>n.t.includes(TOWNS[id].n)))learnTown(id,false);});
+ return s+btn('← Back','go','town','c');
+};
+VIEWS.map=function(){
+ const t=T(),from=where();
+ let s=`<h1>🧭 The Roads</h1><p class="mut">Travel takes days, and the road has opinions. An escort costs 25g a day and keeps most trouble away.</p>`;
+ const ks=TOWN_IDS.filter(x=>x!==from&&knowT(x));
+ s+=ks.length?ks.map(x=>{const P=TOWNS[x],d=dist(from,x),vis=t.visited&&t.visited[x],surge=surgeNear(from,x);
+  return `<div class="card"><div class="row2"><b>${P.ic} ${P.n}</b><span class="tag">${d} days</span></div><div class="mut sm">${vis?P.d:'You know the name and little else.'}</div>${surge?'<div class="dn sm">⚠ The roads there are said to be dangerous right now.</div>':''}
+  <div class="grid" style="margin-top:6px">${btn('Set out','setOut',x+':n','pri c',!!S.dg)}${btn('With escort','setOut',x+':g','c',!!S.dg||S.world.gold<25*d,25*d+'g')}</div></div>`;}).join(''):'<p class="mut">You do not know of anywhere else yet. People talk, though.</p>';
+ return s+btn('← Back','go','town','c');
+};
+VIEWS.trip=function(){
+ const tr=S.trip;if(!tr){S.screen='town';return VIEWS.town();}
+ const pend=tr.pend;
+ let s=`<h1>🛤️ On the road</h1><p class="mut">${TOWNS[tr.from].n} → <b>${TOWNS[tr.to].n}</b> · day ${Math.min(tr.d+1,tr.total)} of ${tr.total}${tr.guard?' · escorted':''}</p>`;
+ s+=`<div class="card">${(tr.lines||[]).map(l=>`<p>${l}</p>`).join('')}</div>`;
+ s+=`<p class="sm mut">❤ ${S.hero.hp}/${P().maxhp} · ⚡ ${S.hero.sta}/${P().maxsta} · 💰 ${fmt(S.world.gold)} · Load ${cargoUsed()}/${cargoCap()}</p>`;
+ if(pend&&pend.k==='toll')s+=`<div class="grid">${btn('Pay '+pend.amt+'g','tripPay',undefined,'pri c',S.world.gold<1)}${btn('Bluff','tripBluff',undefined,'c',false,'INT & AGI')}${btn('Fight','tripFight',undefined,'bad c')}</div>`;
+ else if(pend&&pend.k==='offer')s+=`<div class="grid">${btn('Buy all','tripBuy',undefined,'pri c',S.world.gold<pend.price*pend.q,fmt(pend.price*pend.q)+'g')}${btn('Pass','tripPass',undefined,'c')}</div>`;
+ else s+=btn(tr.stage==='day'?'Press on':'Make camp for the night','tripGo',undefined,'pri c')+(tr.d===0&&tr.stage==='day'?'<div style="height:8px"></div>'+btn('Turn back','tripTurn',undefined,'c'):'');
+ return s;
+};
+function ptownView(){
+ const id=where(),P=TOWNS[id],h=S.hero,w=S.world;
+ const fest=T().ev.some(e=>e.kind==='festival'&&e.town===id),plague=T().ev.some(e=>e.kind==='plague'&&e.town===id);
+ let s=`<h1>${P.ic} ${P.n}</h1><p class="mut">${P.d}</p>${envNote()}`;
+ s+=`<p class="sm mut">Year ${Math.floor((h.day-1)/DPY)+1}, ${SEASONS[season()][0]} · standing here: <b>${repTitle(repOf(id))}</b>${fest?' · 🎉 festival':''}${plague?' · 🤒 fever':''}</p>`;
+ s+=`<div class="grid">${btn('🛒 Market','go','shop','',false,'Local gear & potions')}${btn('🍺 Tavern','go','tavern','',false,'Food, drink, gossip')}${P.hab?btn('🌲 Outskirts','go','outskirts','',false,'Hunt what lives here'):''}${featureButtons(id)}</div>`;
+ const c=innCost(id);
+ s+=`<div style="margin-top:10px">${btn('🛏️ Sleep at the inn','sleep',undefined,'good',w.gold<c,c+'g · rest, next day')}<div style="height:6px"></div>${btn('⛺ Sleep rough','sleepRough',undefined,'c',false,'free · half rest · may cost you')}</div><h2>Recent events</h2>${logHtml(S.log,6)}`;
+ return s;
+}
+const _townM2c=VIEWS.town;
+VIEWS.town=function(){
+ if(S.trip)return VIEWS.trip();
+ if(where()!==HT)return ptownView();
+ noticePlaces();
+ let t=_townM2c();
+ const f=featureButtons(HT);
+ if(f)t=t.replace(/<div style="margin-top:10px"><button class="btn good" data-a="sleep"/,`<h2>About town</h2><div class="grid">${f}</div><div style="margin-top:10px"><button class="btn good" data-a="sleep"`);
+ return t;
+};
+// things that only exist at home
+const _guildM2=VIEWS.guild;
+VIEWS.guild=function(){if(!atHome())return `<h1>📜 ${GUILD}</h1><p class="mut">The guild hall is in ${TOWNS[HT].n}. You are a long way from its lanterns.</p>`+btn('← Back','go','town','c');return _guildM2();};
+const _estateM2=VIEWS.estate;
+VIEWS.estate=function(){if(!atHome())return `<h1>🏡 Estate</h1><p class="mut">Your land is back in ${TOWNS[HT].n}.</p>`+btn('← Back','go','town','c');return _estateM2();};
+const _tavernM2=VIEWS.tavern;
+VIEWS.tavern=function(){
+ const id=where();if(id===HT)return _tavernM2();
+ const h=S.hero,w=S.world,cost=Math.round(15+h.lvl*4);
+ return `<h1>🍺 ${TOWNS[id].n} Tavern</h1><p class="mut">Smoke, noise, and the local version of mediocre stew. You do not know anyone here yet, but that never stopped a tavern.</p>${S.rumor?`<div class="card">${S.rumor}</div>`:''}
+ <h2>Rumors</h2>${btn('👂 Listen in','listen',undefined,'c',h.lstDay===h.day,h.lstDay===h.day?'you have heard enough today':'free · once a day')}<div style="height:8px"></div>${btn('Buy a round for the house','rumor',undefined,'c',w.gold<cost,`${cost}g · loosens tongues`)}<div style="height:8px"></div>${btn('← Back','go','town','c')}`;
+};
+// the market uses local prices
+const _shopM2=VIEWS.shop;
+VIEWS.shop=function(){return _shopM2().replace(/<h1>🛒 Market<\/h1>/,`<h1>🛒 ${TOWNS[where()].n} Market</h1>`);};
+NAV[0][3].push('travel','trip','map','exchange','bank','ptown','outskirts','news','rough','casino','doings','people','cage','dealer','pit','fence','shark','market','chronicle','guide','legacy','venture');
+/* ----- scenes for the other towns ----- */
+function townSceneSvg(style){
+ let s='<rect x="0" y="100" width="400" height="20"/>';
+ const win=(x,y)=>`<rect class="gl" x="${x}" y="${y}" width="5" height="7" fill="#ffc861"/>`;
+ if(style==='harbor'){
+  s+=scHouse(90,34,22,1)+scHouse(132,40,28,1)+scHouse(260,36,24,1)+`<rect x="196" y="40" width="3" height="60"/><polygon points="199,44 199,86 232,86"/><rect x="226" y="30" width="3" height="70"/><polygon points="229,34 229,80 256,80"/><path d="M180 100 Q215 108 250 100 L244 92 L186 92Z"/><rect x="296" y="76" width="4" height="24"/><circle class="gl" cx="298" cy="74" r="3" fill="#ffd27a"/>`;
+ }else if(style==='mine'){
+  s+=`<polygon points="80,100 130,60 170,100"/><polygon points="250,100 290,56 320,100"/><rect x="170" y="52" width="6" height="48"/><rect x="214" y="52" width="6" height="48"/><polygon points="168,52 195,34 222,52"/><circle cx="195" cy="68" r="8"/><rect x="190" y="72" width="10" height="28"/>`+scHouse(98,30,18,1)+scHouse(236,34,20,1)+`<rect class="gl" x="150" y="92" width="6" height="8" fill="#ffb347"/>`;
+ }else if(style==='fort'){
+  s+=`<rect x="80" y="70" width="240" height="30"/><rect x="82" y="62" width="10" height="10"/><rect x="100" y="62" width="10" height="10"/><rect x="118" y="62" width="10" height="10"/><rect x="262" y="62" width="10" height="10"/><rect x="280" y="62" width="10" height="10"/><rect x="298" y="62" width="10" height="10"/><rect x="176" y="40" width="48" height="60"/><polygon points="170,40 200,18 230,40"/><rect x="186" y="82" width="28" height="18" fill="#000"/>`+win(192,52)+win(204,52)+`<rect class="gl" x="150" y="86" width="4" height="8" fill="#ffb347"/><rect class="gl" x="246" y="86" width="4" height="8" fill="#ffb347"/>`;
+ }else if(style==='city'){
+  s+=[[84,26,52],[114,30,64],[148,24,44],[176,36,76],[216,28,58],[248,30,48],[282,30,66]].map(([x,w,hh],i)=>`<rect x="${x}" y="${100-hh}" width="${w}" height="${hh}"/><polygon points="${x-2},${100-hh} ${x+w/2},${100-hh-12} ${x+w+2},${100-hh}"/>`+win(x+6,100-hh+10)+win(x+w-12,100-hh+10)+win(x+6,100-hh+26)+win(x+w-12,100-hh+26)).join('')+`<rect x="196" y="20" width="3" height="20"/>`;
+ }else{ // wood village
+  s+=scPine(94,56)+scPine(124,44)+scPine(300,60)+scPine(270,40)+scHouse(150,34,22,1)+scHouse(196,30,18,1)+scHouse(232,28,22,1)+`<rect x="180" y="96" width="30" height="3"/>`;
+ }
+ return `<svg class="scene" viewBox="80 0 240 120" preserveAspectRatio="xMidYMax meet" fill="${SC_FILL}" aria-hidden="true">${s}</svg>`;
+}
+const _sceneSvgM2=sceneSvg;
+sceneSvg=function(L){if(L.t==='town'&&L.style&&L.style!=='home')return townSceneSvg(L.style);return _sceneSvgM2(L);};
+const _sleepLocM2=sleepLoc;
+sleepLoc=function(){
+ const l=(S&&S.sleepLoc)||'town';
+ if(l.indexOf('tn:')===0){const id=l.slice(3),P=TOWNS[id];return{t:'town',style:P?P.style:'home',txt:'Lamps go out across '+(P?P.n:'town')+'…'};}
+ return _sleepLocM2();
+};
+// an heir comes home, the family name keeps its reputation, debts carry on
+const _makeHeirM2=makeHeir;
+makeHeir=function(){
+ const t=T();
+ _makeHeirM2();
+ for(const id in t.rep)t.rep[id]=Math.round(t.rep[id]*.5);
+ if(t.loc!==HT)swapShop(t.loc,HT);
+ if(S.trip)S.trip=null;
+ const b=bk();if(b.debt>0.5)note(`🏦 The bank's letter arrives before the funeral does. Your family owes ${fmt(Math.ceil(b.debt))}g.`,'e');
+};
+
+
+if(typeof window!=='undefined')window.TQ={TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>
 </html>
