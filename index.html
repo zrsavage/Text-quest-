@@ -360,7 +360,7 @@ function genContract(ri_){
   const D=pick(dgs);c.zi=D.zi;c.dg=D.id;c.n=1;c.rankReq=Math.min(D.zi,ri_);c.text=`Clear ${D.n}`;
   c.gold=Math.round(120+D.lvl*55);c.xp=Math.round((10+D.lvl*3.2)*8);c.q=2;
  }else{
-  c.n=ri(6,10);c.target=pick(z.mats);c.text=`Deliver ${c.n} × ${c.target}`;
+  c.n=ri(6,10);c.target=pick(ZPRIM[zi]);c.text=`Deliver ${c.n} × ${c.target}`;
   c.gold=Math.round(c.n*(8+lvl*3));c.xp=Math.round(c.n*(8+lvl*2.4));c.q=1;
  }
  return c;
@@ -1191,7 +1191,7 @@ function applyOut(o,zi,qid){
   else{const d=Math.max(1,Math.round(p.maxhp*-o.hp*(hasSpecial('delver')?.5:1)));h.hp=Math.max(1,h.hp-d);out.push(`💔 −${d} HP`);}
  }
  if(o.item!=null){const it=genItem(L+ri(0,2),rollRarity(RW[o.item],1+p.dropf/200));const r=addItem(it);out.push(`🎁 ${rarName(it)} <span class="mut">(${RAR[it.rar].n})</span>${r==='full'?' — pack full, sold':r==='sold'?' — auto-sold':''}`);}
- if(o.mat){const z=ZONES[clamp(zi==null?tierOf(h.lvl):zi,0,5)],m=pick(z.mats);w.mats[m]=(w.mats[m]||0)+o.mat;out.push(`🧶 +${o.mat} ${m}`);}
+ if(o.mat){const z=ZONES[clamp(zi==null?tierOf(h.lvl):zi,0,5)],m=pick(ZGATHER[ZONES.indexOf(z)]);w.mats[m]=(w.mats[m]||0)+o.mat;out.push(`🧶 +${o.mat} ${m}`);}
  if(o.pot){w.pots[o.pot]=(w.pots[o.pot]||0)+1;out.push(`🧪 ${POTS[o.pot].n}`);}
  if(o.tome){const t=learnTome(zi==null?tierOf(h.lvl):zi);if(t)out.push(t);}
  if(o.fx)out.push(addFx(o.fx));
@@ -1386,7 +1386,7 @@ function chestLoot(D,vault,smash){
   const it=genItem(L+ri(0,3),rar);const r=addItem(it);
   lines.push(`🎁 ${rarName(it)} <span class="mut">(${RAR[it.rar].n}, Lv ${it.il})</span>${r==='full'?' — pack full, sold':r==='sold'?' — auto-sold':''}`);
  }
- const z=ZONES[D.zi],m=pick(z.mats),mn=ri(1,3);w.mats[m]=(w.mats[m]||0)+mn;lines.push(`🧶 +${mn} ${m}`);
+ const z=ZONES[D.zi],m=(DGMAT[D.id]&&Math.random()<.5)?pick(DGMAT[D.id]):pick(ZGATHER[D.zi]),mn=ri(1,3);w.mats[m]=(w.mats[m]||0)+mn;lines.push(`🧶 +${mn} ${m}`);
  if(Math.random()<.4){const k=L>=30?'hp2':'hp1';w.pots[k]++;lines.push(`🧪 ${POTS[k].n}`);}
  if(Math.random()<.12){const t=learnTome(D.zi);if(t)lines.push(t);}
  return lines;
@@ -1462,7 +1462,8 @@ function victory(){
  const tc={n:.05,e:.15,b:.5}[e.tier];
  if(Math.random()<tc){const t=learnTome(e.zi);if(t)lines.push(t);}
  const nm=e.tier==='b'?ri(5,8):e.tier==='e'?ri(2,4):(Math.random()<.65?ri(1,2):0);
- if(nm){const m=pick(z.mats);w.mats[m]=(w.mats[m]||0)+nm;lines.push(`🧶 +${nm} ${m}`);}
+ if(nm){const m=dropMat(e);w.mats[m]=(w.mats[m]||0)+nm;lines.push(`🧶 +${nm} ${m}`);}
+ {const tr=trophyFor(e);if(tr){w.mats[tr]=(w.mats[tr]||0)+1;lines.push(`🏆 <b>+1 ${tr}</b>`);}}
  // bestiary
  const b=w.best[e.base]=w.best[e.base]||{k:0,zi:e.zi};b.k++;
  if(b.k%10===0&&b.k<=250)lines.push(`📕 Bestiary: ${esc(e.base)} ×${b.k} — you deal +${Math.round(bestBonus(e.base)*100)}% damage to them.`);
@@ -2984,7 +2985,7 @@ function estateDaily(){
   v.gold+=Math.round(gold);
   if(E.staff.apothecary){const k=apoPot(E.staff.apothecary);v.pots[k]=(v.pots[k]||0)+1;}
   if(E.biz.farm)v.pots.hp1=(v.pots.hp1||0)+E.biz.farm;
-  if(E.biz.mine){const z=ZONES[clamp(tierOf(h.lvl),0,5)];for(let i=0;i<E.biz.mine*2;i++){const m=pick(z.mats);v.mats[m]=(v.mats[m]||0)+1;}}
+  if(E.biz.mine){const z=ZONES[clamp(tierOf(h.lvl),0,5)];for(let i=0;i<E.biz.mine*2;i++){const m=pick(ZGATHER[ZONES.indexOf(z)]);v.mats[m]=(v.mats[m]||0)+1;}}
   const ar=E.staff.armorer||0;
   if(ar&&(ar>=3||h.day%2===0)&&v.items.length<10)v.items.push(genItem(Math.max(1,h.lvl),rollRarity(ar>=4?[10,40,40,10]:ar>=2?[30,45,22,3]:[55,35,9,1])));
  }
@@ -3159,7 +3160,7 @@ const VIEWS={
   const pk=Object.keys(POTS).filter(k=>w.pots[k]>0);
   t+=`<h2>Potions</h2>`+(pk.length?pk.map(k=>btn(`${POTS[k].n} ×${w.pots[k]}`,'usePot',k,'good',h.hp>=P().maxhp,'Tap to drink')).join(''):'<p class="mut sm">None. Buy some at the Market.</p>');
   const mk=Object.keys(w.mats);
-  t+=`<h2>Materials</h2>`+(mk.length?`<div class="card sm">${mk.sort((a,b)=>MT[a]-MT[b]).map(m=>`<div style="margin:3px 0"><b>${esc(m)}</b> ×${w.mats[m]}${MATQ[m]?`<div class="mut"><i>${MATQ[m]}</i></div>`:''}</div>`).join('')}</div>`:'<p class="mut sm">None yet.</p>');
+  t+=`<h2>Materials</h2>`+(mk.length?`<div class="card sm">${mk.sort((a,b)=>((MT[a]-MT[b])||a.localeCompare(b))).map(m=>`<div style="margin:3px 0"><b>${esc(m)}</b> ×${w.mats[m]}${MATQ[m]?`<div class="mut"><i>${MATQ[m]}</i></div>`:''}${MATSRC[m]?`<div class="mut" style="font-size:.75rem;opacity:.7">${MATSRC[m]}</div>`:''}</div>`).join('')}</div>`:'<p class="mut sm">None yet.</p>');
   t+=`<h2>Inventory</h2><div class="grid">${btn('Sell Commons','sellAll',0,'c')}${btn('Sell ≤ Uncommon','sellAll',1,'c')}</div>`;
   const inv=w.inv.slice().sort((a,b)=>b.rar-a.rar||b.il-a.il);
   t+=inv.length?inv.map(it=>itemRow(it,h.lvl<it.req?`<span class="dn">Req Lv ${it.req}</span>`:`${sellVal(it)}g`)).join(''):'<p class="mut sm">Empty.</p>';
@@ -4359,7 +4360,115 @@ applyOut=function(o,zi,qid){window.__pend=[];const out=_applyOutQ(o,zi,qid);retu
 const _renderQ=render;
 render=function(){_renderQ();window.__pend=[];};
 
-if(typeof window!=='undefined')window.TQ={K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
+/* =====================================================================
+   PASS 6 — a proper pile of materials: every creature leaves its own parts,
+   regions have things to find, dungeons and bosses have their own keepsakes
+   ===================================================================== */
+// [monster, common part, rarer part]
+const MONMAT={
+ 'Gel Slime':['Slime Gel','Wobbling Core'],'Field Rat':['Rat Pelt','Rat Tooth'],'Wild Boar':['Boar Tusk','Boar Bristle'],'Crow Pack':['Crow Feather','Shiny Trinket'],'Thistle Sprite':['Thistle Down','Sprite Dust'],
+ 'Timber Wolf':['Wolf Fang','Wolf Pelt'],'Bramble Goblin':['Goblin Ear','Rusty Shiv'],'Cave Spider':['Silkthread','Spider Eye'],'Moss Golem':['Moss Clump','Living Stone'],'Hollow Stag':['Stag Antler','Hollow Hoof'],
+ 'Skeleton Soldier':['Bone Dust','Cracked Skull'],'Drowned Ghoul':['Ghoul Claw','Waterlogged Shroud'],'Bone Archer':['Fletching Bone','Brittle Bowstring'],'Wailing Wraith':['Ectoplasm','Wail Wisp'],'Crypt Leech':['Leech Gland','Engorged Sac'],
+ 'Ash Hound':['Ash Pelt','Smoldering Fang'],'Cinder Imp':['Cinder Shard','Imp Horn'],'Magma Crab':['Magma Shell','Lava Pearl'],'Harpy Raider':['Harpy Talon','Storm Feather'],'Obsidian Wyrmling':['Drake Scale','Wyrmling Fang'],
+ 'Frost Wolf':['Frost Pelt','Icicle Fang'],'Ice Wraith':['Wraith Rime','Chill Wisp'],'Yeti':['Yeti Fur','Yeti Claw'],'Rime Archer':['Frozen Quiver','Rime Arrowhead'],'Glacier Golem':['Glacier Core','Perma-Ice Shard'],
+ 'Rift Stalker':['Stalker Hide','Rift Claw'],'Void Maw':['Void Shard','Maw Tooth'],'Hollow Knight':['Hollow Plate','Empty Gauntlet'],'Gloom Weaver':['Gloom Essence','Gloomsilk'],'Eldritch Eye':['Watching Eye','Lens of Dread']
+};
+const ZGATHER=[
+ ['Dandelion Clock','Clover Sprig','Smooth River Pebble','Beeswax Lump','Old Horseshoe'],
+ ['Heartwood Splinter','Glowcap Mushroom','Owl Pellet','Amber Sap','Whisperleaf'],
+ ['Grave Iron','Candle Stub','Tomb Moss','Coffin Nail','Funerary Coin'],
+ ['Obsidian Chip','Sulfur Crumb','Basalt Slab','Cooled Magma','Ash Lily'],
+ ['Frost Crystal','Snowdrop Bloom','Frozen Berry','Whalebone Sliver','Aurora Glass'],
+ ['Rift Ore','Star-Metal Flake','Warped Bark','Null Salt','Echo Stone']
+];
+const DGMAT={
+ warren:['Stolen Spoon','Tunnel Dust'],cellar:['Millstone Chip','Flour-Dusted Ledger'],mosshollow:['Bat Guano','Glow Moss'],chapel:['Drowned Psalm','Tide-Worn Bell'],
+ forge:['Slag Ingot','Bellows Scrap'],spire:['Gale Feather','Nest Twig'],glacier:['Entombed Ice','Frozen Heirloom'],observatory:['Cracked Lens','Star Chart Scrap'],
+ bastion:['Gate Rivet',"Sentry's Oath Tag"],library:['Blank Page','Ink of Nothing'],crypt:['Ancestral Dust','Family Seal Wax']
+};
+const BOSSZ=['Gelatinous Crown','Oak Heartwood Core','Drowned Veil','Cinderwing Plume','Rime Heart',"Hollow God's Tear"];
+const BOSSD={warren:"Rat King's Crown",cellar:"Miller's Last Grain",mosshollow:'Mossback Knuckle',chapel:"Bishop's Tide Stone",forge:"Ignar's Hammer Head",spire:"Kree's Storm Eye",glacier:"Sylvaine's Frozen Tear",observatory:'Astral Prism',bastion:"Oth's Key Fragment",library:"Archivist's Empty Quill",crypt:'Echo of a Name'};
+Object.assign(MATQ,{
+ 'Wobbling Core':'The slime\'s one organized thought. It was mostly "wobble."','Rat Tooth':'Small, sharp, and strangely proud of itself.','Boar Bristle':'Stiff enough to scrub a pot. Or a boar. Mostly the boar.',
+ 'Crow Feather':'Black, glossy, and judging your outfit.','Shiny Trinket':'The crow insisted it was a gift. It was not a gift.','Thistle Down':'Fluff with an attitude. Makes you sneeze with intent.',
+ 'Sprite Dust':'Glitter, but angrier.','Dandelion Clock':'Make a wish. Then try not to inhale it.','Clover Sprig':'Three leaves. The fourth is a rumor.','Smooth River Pebble':'A rock with excellent manners.',
+ 'Beeswax Lump':'Sweet-smelling and extremely unwilling to be shared.','Old Horseshoe':'Lucky, if you are a horse. Less so for the horse who lost it.',
+ 'Wolf Pelt':'Warm, thick, and still a little bit growly.','Goblin Ear':'Pointy, grimy, and apparently worth two coppers a pair.','Rusty Shiv':'Tetanus with a handle.',
+ 'Spider Eye':'One of eight. It still looks at you.','Moss Clump':'Damp, squishy, and an excellent pillow for nobody.','Living Stone':'It twitches when you are not looking. Please keep looking.',
+ 'Stag Antler':'Impressive. Carries the dignity of a creature who lost an argument.','Hollow Hoof':'Hollow, light, and mildly echoey.','Glowcap Mushroom':'Glows softly. Do not eat, no matter how sure you feel.',
+ 'Owl Pellet':'Fur, bones, and secrets. Somebody\'s lunch.','Amber Sap':'Sticky, golden, and unwilling to let go of anything.','Whisperleaf':'Rustles when you talk about it. Rude.',
+ 'Cracked Skull':'Has seen better days. Mostly the days it was attached.','Ghoul Claw':'Long, yellow, and badly in need of a manicure.','Waterlogged Shroud':'Damp, cold, and smells like the bottom of a well.',
+ 'Fletching Bone':'A bone feather. Do not ask how.','Brittle Bowstring':'Snaps when you look at it. Possibly out of spite.','Wail Wisp':'A scrap of scream, bottled.',
+ 'Leech Gland':'Squishy, ripe, and far too interested in your wrist.','Engorged Sac':'Full of something. Please don\'t squeeze.','Candle Stub':'Short on wick, long on atmosphere.',
+ 'Tomb Moss':'Grows where nothing should. Thrives on that.','Coffin Nail':'Slightly used. The previous owner did not complain.','Funerary Coin':'Payment for the ferryman. You are, at best, a customer.',
+ 'Ash Pelt':'Warm, coarse, and smells like a campfire\'s last bad decision.','Smoldering Fang':'Still glowing. Pocket carefully.','Imp Horn':'Little, curly, and smugly convinced it came from a dragon.',
+ 'Magma Shell':'A crab\'s house, still holding a grudge and some heat.','Lava Pearl':'Hot, round, and expensive. Tastes like regret.','Harpy Talon':'Curved, sharp, and unbelievably rude.',
+ 'Storm Feather':'Crackles when you stroke it. Please don\'t.','Wyrmling Fang':'The dragon equivalent of a baby tooth. Still bites.','Sulfur Crumb':'Smells like a disappointed egg.',
+ 'Basalt Slab':'Heavy, dark, and incredibly unimpressed.','Cooled Magma':'Used to be exciting.','Ash Lily':'A flower that survived on pure spite.',
+ 'Frost Pelt':'Thick, silver, and keenly aware it is better than your coat.','Icicle Fang':'Looks fragile. Is not. Do not lick.','Wraith Rime':'Cold, white, and mildly offended.',
+ 'Chill Wisp':'The breath of something that is not breathing.','Yeti Claw':'Big, blunt, and very good at making an entrance.','Frozen Quiver':'Contains six arrows and one frozen sandwich.',
+ 'Rime Arrowhead':'Sharp, cold, and absolutely not a toy.','Perma-Ice Shard':'Never melts. We asked politely.','Snowdrop Bloom':'A tiny flower that thinks it is a hero.',
+ 'Frozen Berry':'Tastes like winter with a hint of disappointment.','Whalebone Sliver':'Nobody can explain how it got here. Nobody asks.','Aurora Glass':'Catches the light like a smug rainbow.',
+ 'Stalker Hide':'Skin that always seems to be looking somewhere else.','Rift Claw':'Cuts things that were not there a second ago.','Maw Tooth':'Enormous, hollow, and faintly humming.',
+ 'Hollow Plate':'Armor with nobody home.','Empty Gauntlet':'It still wants to punch someone.','Gloomsilk':'Thread spun from the weaver\'s bad mood.','Watching Eye':'It blinks. Sometimes.',
+ 'Lens of Dread':'Look through it, then immediately stop.','Star-Metal Flake':'Fell from somewhere with a better view.','Warped Bark':'Twisted wood from a tree that never existed.',
+ 'Null Salt':'Seasons nothing. Removes everything.','Echo Stone':'Repeats your last word. And your last word. And your last word.',
+ 'Stolen Spoon':'The rats were building an empire. It had cutlery.','Tunnel Dust':'Fine, brown, and in every pocket now.','Millstone Chip':'Ground a few good years of wheat.',
+ 'Flour-Dusted Ledger':'Nothing of value, but extremely rude marginalia.','Bat Guano':'The finest fertilizer, if you hate your nose.','Glow Moss':'Dim, green, and nature\'s worst lantern.',
+ 'Drowned Psalm':'Pages stuck together. Probably the good bits.','Tide-Worn Bell':'Rings once. Then regrets it.','Slag Ingot':'The forge\'s compost.','Bellows Scrap':'It still wheezes.',
+ 'Gale Feather':'Weighs nothing. Argues with the wind.','Nest Twig':'A harpy\'s idea of interior design.','Entombed Ice':'Clear ice with a suspicious silhouette inside.',
+ 'Frozen Heirloom':'A family treasure. Not yours. Finders keepers.','Cracked Lens':'Showed too much, so it cracked.','Star Chart Scrap':'Half the stars are in the wrong place. Or are you?',
+ 'Gate Rivet':'Holds the world together, mostly.',"Sentry's Oath Tag":'Said "I will stand here forever." Meant it.','Blank Page':'Not empty. Just unwilling to commit.','Ink of Nothing':'Writes in invisible, which is rude.',
+ 'Ancestral Dust':'Family. Mostly dust now.','Family Seal Wax':'Bears your family crest. Somehow, already.',
+ 'Gelatinous Crown':'A jelly tiara. The king was not a gracious loser.','Oak Heartwood Core':'The warm center of a very old, very cross tree.','Drowned Veil':'Wet. Always wet. Fashionable in some circles.',
+ 'Cinderwing Plume':'Still faintly on fire. Wear with care.','Rime Heart':'It still beats once a day, out of habit.',"Hollow God's Tear":'It wept for you. Rude, honestly.',
+ "Rat King's Crown":'Cheese-scented, rusty, and extremely majestic.',"Miller's Last Grain":'The last wheat. It will not make good bread.','Mossback Knuckle':'Troll-sized and fully moss.',
+ "Bishop's Tide Stone":'A blessing, soaked.',"Ignar's Hammer Head":'The handle left long ago. The hammer has opinions.',"Kree's Storm Eye":'Looks at the storm. The storm looks back.',
+ "Sylvaine's Frozen Tear":'Beautiful, cold, and clearly meant for someone else.','Astral Prism':'Splits light and, apparently, your attention.',"Oth's Key Fragment":'Opens something. Probably something you do not want open.',
+ "Archivist's Empty Quill":'Wrote everything, then forgot it.','Echo of a Name':'Someone\'s name. Not yours. Not yet.'
+});
+const MATF={},ZPRIM=[[],[],[],[],[],[]],MATK={};
+ZONES.forEach((z,zi)=>{
+ z.mon.forEach(m=>{const t=MONMAT[m.n];if(!t)return;t.forEach((n,k)=>{MT[n]=zi;MATF[n]=coreFam(m.n);MATK[n]=k?'part':'common';});ZPRIM[zi].push(t[0]);});
+ ZGATHER[zi].forEach(n=>{MT[n]=zi;MATK[n]='find';});
+ MT[BOSSZ[zi]]=zi;MATK[BOSSZ[zi]]='trophy';
+});
+Object.keys(DGMAT).forEach(id=>{const zi=DG[id].zi;DGMAT[id].forEach(n=>{MT[n]=zi;MATK[n]='delve';});MT[BOSSD[id]]=zi;MATK[BOSSD[id]]='trophy';});
+function dropMat(e){
+ const r=Math.random(),tbl=MONMAT[e.base];
+ if(e.dg&&DGMAT[e.dg]&&r<.3)return pick(DGMAT[e.dg]);
+ if(tbl&&r<.72)return Math.random()<({n:.18,e:.45,b:.6}[e.tier]||.2)?tbl[1]:tbl[0];
+ return pick(ZGATHER[clamp(e.zi,0,5)]);
+}
+function trophyFor(e){
+ if(e.tier!=='b')return null;
+ if(e.dg&&e.dg!=='abyss')return BOSSD[e.dg]||null;
+ if(!e.dg&&ZONES[e.zi]&&ZONES[e.zi].boss.n===e.base)return BOSSZ[e.zi];
+ return null;
+}
+const MATSRC={};
+Object.keys(MONMAT).forEach(mn=>MONMAT[mn].forEach(n=>MATSRC[n]='from '+mn+(mn.endsWith('s')?'':'s')));
+ZGATHER.forEach(a=>a.forEach(n=>MATSRC[n]='found while exploring and in chests'));
+Object.keys(DGMAT).forEach(id=>DGMAT[id].forEach(n=>MATSRC[n]='found in '+DG[id].n));
+BOSSZ.forEach((n,i)=>MATSRC[n]='trophy of '+ZONES[i].boss.n);Object.keys(BOSSD).forEach(id=>MATSRC[BOSSD[id]]='trophy of '+DG[id].boss.n);
+const FAMAF={maxhp:'hp'};
+const _tinkerK=ACT._tinker;
+ACT._tinker=function(mode,tier,slot){
+ const w=S.world;if(w.inv.length>=invMax())return _tinkerK(mode,tier,slot);
+ // remember which creatures' parts are going in
+ let need=tinkerCost(mode);const fam={};
+ Object.keys(w.mats).filter(m=>MT[m]===tier).forEach(m=>{const t=Math.min(need,w.mats[m]);if(t>0&&MATF[m])fam[MATF[m]]=(fam[MATF[m]]||0)+t;need-=t;});
+ const before=w.inv.length;
+ _tinkerK(mode,tier,slot);
+ const top=Object.keys(fam).sort((a,b)=>fam[b]-fam[a])[0];
+ if(top&&w.inv.length>before&&Math.random()<.65){
+  const it=w.inv[w.inv.length-1],ks=Object.keys(POW[top].e),k0=ks[0],key=FAMAF[k0]||k0;
+  if(AF[key]){const v=AF[key].pct?Math.round(AF[key].f(it.il)*rnd(.9,1.2)*10)/10:Math.max(1,Math.round(AF[key].f(it.il)*rnd(.9,1.2)));it.st[key]=Math.round(((it.st[key]||0)+v)*10)/10;it.val=Math.round(it.val*1.15);
+   note(`🔧 The Tinker works the ${top} parts into it (${statLine(key,v)}).`,'y');}
+ }
+};
+
+if(typeof window!=='undefined')window.TQ={MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>
 </html>

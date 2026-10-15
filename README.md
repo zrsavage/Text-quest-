@@ -70,3 +70,7 @@ The sleep animation now shows a dark silhouette of wherever you rest: the town's
 - **The Town Square** is a place to look around, not a list. Once a day you can work the crowd, and someone with a problem may wave you over. Wanderers on the road are strangers until you talk to them.
 - **Years, not days.** Life is measured in age. A year is 120 days (four 30-day seasons), heroes start between 16 and 19, and old age takes each one somewhere between 64 and 74. Combat is still the main killer.
 - **Things have something to say.** Materials come with a short quip the first time you find them (and in the Pack), and every item type has its own one-liners on its detail sheet and in drop results.
+
+## Materials
+
+There are now about 130 materials instead of 18. Every creature leaves its own parts (a common one and a rarer one), each region has five things to find while exploring or in chests, every dungeon has two finds of its own, and every region boss and dungeon boss leaves a guaranteed trophy. Each has a one-line quip and a source line in the Pack. At the Tinker's Wagon, the creature the parts came from now leaves a mark on the crafted item: wolf parts push attack, bone parts push lifesteal, and so on.
