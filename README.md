@@ -154,3 +154,10 @@ Talking to townsfolk, market keepers, listening in, buying rumours and mingling 
 
 ## Compact layout
 Buttons, cards and list rows are now about 20% smaller by default. Menu > Settings > Roomy buttons restores the older size; Large tap targets still goes bigger.
+
+## Rank trials, guild roll, hired help, more skills
+- **Rank trials**: contracts now only *qualify* you for the next rank. At the guild you take a trial fight (2 stamina, non-lethal: a defeat leaves you at 1 HP, try again tomorrow). Winning promotes you. Heirs inherit the rank their contracts earn.
+- **Guild roll**: six other adventurers (Unranked up to Mythril) grow a little every day. Spar with anyone within 6 levels (once a day, non-lethal) for XP and sometimes a stat lesson.
+- **Hiring Hall** (after your first contract): porter, scout, clerk, bodyguard. Daily wages, loyalty levels (1-5), up to 1 + rank people. Three unpaid days and they leave.
+- **New skills** in the Skills log: Appraisal (sell screen), Foraging (Hunt screen), Navigation (travel), Leadership (hired help).
+- Quest chats and companion conversations also pop up. Town service descriptions are shorter.

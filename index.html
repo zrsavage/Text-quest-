@@ -4741,7 +4741,7 @@ const where=()=>T().loc;
 const atHome=()=>where()===HT;
 const tradeLv=()=>{const x=T().tx;let l=0;while(x>=40*(l+1)*(l+1)&&l<7)l++;return l;};
 const spreadF=()=>Math.max(.015,.07-.006*tradeLv());
-const cargoCap=()=>CARTS[T().cart].cap+tradeLv()*4+((S.world.fam||{}).cargo||0);
+const cargoCap=()=>CARTS[T().cart].cap+tradeLv()*4+((S.world.fam||{}).cargo||0)+crewCargo();
 const cargoUsed=()=>{const c=T().cargo;let n=0;for(const g in c)n+=c[g].n*GOODS[g].w;return n;};
 const repOf=id=>(T().rep[id]||0);
 const repMul=id=>1-.0007*clamp(repOf(id),-100,100);
@@ -4885,7 +4885,7 @@ function swapShop(from,to){
 function arrive(to){
  const t=T(),from=t.loc;swapShop(from,to);
  t.visited=t.visited||{};const first=!t.visited[to];t.visited[to]=1;
- S.trip=null;S.screen='town';
+ S.trip=null;S.screen='town';try{lsUse('nav',true,2);}catch(e){}
  note(`🏁 You arrive in <b>${TOWNS[to].n}</b>. ${first?TOWNS[to].d:''}`,'y');
  if(first){addRep(to,2);if(!KT().r[to]&&Math.random()<.3)KT().r[to]=1,note(`🌑 You hear whispers about ${TOWNS[to].rough} before you have even set down your bag.`);}
  if(t.ev.some(e=>e.kind==='festival'&&e.town===to))note(`🎉 ${TOWNS[to].n} is celebrating something. There is bunting.`,'y');
@@ -4896,7 +4896,7 @@ const TRAVEL_FLAV=['A cart ahead is carrying live geese. The geese are not in fa
 function surgeNear(a,b){return T().ev.some(e=>e.kind==='surge'&&(e.town===a||e.town===b));}
 function rollTrip(){
  const tr=S.trip,t=T(),h=S.hero,w=S.world;tr.lines=[];
- let p=.30;if(surgeNear(tr.from,tr.to))p*=2;if(tr.guard)p*=.35;
+ let p=.30*(1-Math.min(.4,lsLvl('nav')*.03));if(surgeNear(tr.from,tr.to))p*=2;if(tr.guard)p*=.35;
  const r=Math.random();
  if(r<p){
   const e=makeEnemyHab(routeHab(),false);
@@ -6895,16 +6895,16 @@ function focusStrip(t){
  VIEWS.town=function(){
   let t=_t();
   if(!hasFocus()&&!libJob())t=t.replace(/<button class="btn[^"]*" data-a="go" data-p="library"[^>]*>[\s\S]*?<\/button>/,'');
-  const R=[['Potions &amp; gear','Potions and equipment. Stock changes daily. To sell, use Sell goods inside the Market.'],['Potions & gear','Potions and equipment. Stock changes daily. To sell, use Sell goods inside the Market.'],
-   ['Skill tomes','Learn and sharpen skills. Skills also grow with use.'],['Food, drink, gossip','Meals, rumours, and people who might fight beside you.'],
-   ['Scrap → random loot','Trade scrap for a gamble on gear.'],['Regions, dungeons, secrets','Where you hunt monsters, explore and find hidden places.'],
-   ['Who is about?','Townsfolk who need help, and the day\'s requests.'],['Buy low, sell high','Buy goods where they are cheap, sell them where they are dear. Every town prices differently.'],
-   ['Savings, loans, ventures','Keep gold safe (it passes to your heir), borrow against your name, or back a venture. Debts pass on too.'],
-   ['What is going on','Today\'s news: events, prices and trouble on the roads.'],['Jobs &amp; distractions','Odd jobs for coin and training, and small happenings around town.'],['Jobs & distractions','Odd jobs for coin and training, and small happenings around town.'],
-   ['Chat, gifts, friends','Talk to the locals. Friends share tips, discounts and sometimes work.'],['Roads to other towns','Travel to towns you have found. Each has its own prices and dangers.'],
-   ['2 stamina · raise your stats','2 stamina each. Lift, run and drill to raise your stats. Rest when you tire.']];
+  const R=[['Potions &amp; gear','Buy gear · sell goods inside'],['Potions & gear','Buy gear · sell goods inside'],
+   ['Skill tomes','Learn and sharpen skills'],['Food, drink, gossip','Meals, rumours, companions'],
+   ['Scrap → random loot','Scrap for a gamble on gear'],['Regions, dungeons, secrets','Hunt, explore, find secrets'],
+   ['Who is about?','Townsfolk and requests'],['Buy low, sell high','Trade goods between towns'],
+   ['Savings, loans, ventures','Savings, loans, ventures'],
+   ['What is going on','News and prices'],['Jobs &amp; distractions','Odd jobs and small events'],['Jobs & distractions','Odd jobs and small events'],
+   ['Chat, gifts, friends','Talk to locals, make friends'],['Roads to other towns','Travel to other towns'],
+   ['2 stamina · raise your stats','2 stamina · raise your stats']];
   R.forEach(r=>{t=t.split('<small>'+r[0]+'</small>').join('<small>'+r[1]+'</small>');});
-  t=t.replace(/<small>Rank: ([^<]*)<\/small>/,'<small>Rank: $1. Contracts and bounties pay gold and permanent bonuses.</small>');
+  
   return t;
  };
 }
@@ -6957,7 +6957,7 @@ Object.assign(ACT,{
   if(it.hgd===h.day){S.hagMsg='You already bargained over that one today.';return;}
   if(hagLeft()<1){S.hagMsg='The merchant has had enough bargaining for one day.';return;}
   h.hag={d:h.day,n:(h.hag&&h.hag.d===h.day?h.hag.n:0)+1};it.hgd=h.day;
-  if(Math.random()<hagChance()){
+  if(Math.random()<hagChance()+(it.appr?.1:0)){
    it.hg=Math.max(sellVal(it)+1,Math.round(it.val*(.55+Math.random()*.12+lsLvl('haggle')*.004)*sellMult()));
    S.hagMsg=`The merchant sighs and agrees to ${it.hg}g for ${esc(it.name)}.`;
    lsUse('haggle',true);
@@ -6994,7 +6994,7 @@ VIEWS.sell=function(){
  inv.slice(0,25).forEach(it=>{
   const d=upDiff(it),cmp=h.equip[it.slot]?(d>0?'<span class="up">better than worn</span>':'<span class="mut">no better than worn</span>'):'<span class="up">empty slot</span>';
   const done=it.hgd===h.day;
-  t+=`<div class="card sm"><div class="row2"><b>${SLOT_ICON[it.slot]} ${rarName(it)}${it.lock?' <span class="tag">locked</span>':''}</b><b>${hprice(it)}g</b></div><div class="mut sm">Lv ${it.il} · ${cmp}${done&&it.hg>sellVal(it)?' · <span class="up">good price</span>':done?' · <span class="dn">offer soured</span>':''}</div><div class="grid" style="margin-top:6px">${btn('Sell','hsell',it.id,'c',!!it.lock)}${btn('Haggle','hag',it.id,'c',!!it.lock||done||hagLeft()<1,done?'tried today':hagLeft()<1?'no chances left':'')}</div></div>`;
+  t+=`<div class="card sm"><div class="row2"><b>${SLOT_ICON[it.slot]} ${rarName(it)}${it.lock?' <span class="tag">locked</span>':''}</b><b>${hprice(it)}g</b></div><div class="mut sm">Lv ${it.il} · ${cmp}${it.appr?` · worth ~${it.val}g, a fence pays ${Math.round(it.val*.6)}g`:''}${done&&it.hg>sellVal(it)?' · <span class="up">good price</span>':done?' · <span class="dn">offer soured</span>':''}</div><div class="grid" style="margin-top:6px;grid-template-columns:repeat(3,1fr)">${btn('Sell','hsell',it.id,'c',!!it.lock)}${btn('Appraise','appraise',it.id,'c',it.apd===h.day||it.appr,it.appr?'known':it.apd===h.day?'tried today':'free')}${btn('Haggle','hag',it.id,'c',!!it.lock||done||hagLeft()<1,done?'tried today':hagLeft()<1?'no chances left':'')}</div></div>`;
  });
  if(inv.length>25)t+=`<p class="mut sm">${inv.length-25} cheaper items not shown. Use Sell Commons for those.</p>`;
  return t+btn('← Back to Market','go','shop','c');
@@ -7193,8 +7193,8 @@ const KEEPERS={
 Object.keys(KEEPERS).forEach(tn=>{const k=KEEPERS[tn];NPC_BY['kp_'+tn]={id:'kp_'+tn,n:k[0],role:k[1],ic:'',trait:k[2],teach:'m',like:'talk',intro:k[3],town:tn};});
 const keeper=()=>NPC_BY['kp_'+where()]||null;
 const keeperTier=()=>{try{const k=keeper();return k?npcTier(aff(k.id).a):0;}catch(e){return 0;}};
-function sellMult(){return [1,1.03,1.06,1.1][keeperTier()]||1;}
-const buyMult=()=>[1,.97,.94,.9][keeperTier()]||1;
+function sellMult(){return ([1,1.03,1.06,1.1][keeperTier()]||1)+crewClerk();}
+const buyMult=()=>([1,.97,.94,.9][keeperTier()]||1)-crewClerk();
 const MKT_LINES=[
  'Business is steady. People always need boots.',
  'Prices follow the roads. When the roads are bad, everything costs more.',
@@ -7400,6 +7400,195 @@ function popReward(title,lines,ms){
  };
 }
 
+/* =====================================================================
+   PASS Z — rank trials, the guild roll (rival adventurers), hired help,
+   and four more skills in the log
+   ===================================================================== */
+// ---------- more skills ----------
+Object.assign(LSK,{
+ appraise:{n:'Appraisal',d:'Reading what an item is really worth.',eff:l=>`${Math.round(Math.min(.9,.45+.025*l)*100)}% base chance to read an item, plus Intellect. A read shows true worth and what a fence would pay, and helps when haggling`},
+ forage:{n:'Foraging',d:'Finding useful things growing, hiding or lying around.',eff:l=>`${Math.round(Math.min(.9,.5+.03*l)*100)}% to find something · ${1+Math.floor(l/4)} to ${2+Math.floor(l/3)} finds`},
+ nav:{n:'Navigation',d:'Reading roads, weather and landmarks.',eff:l=>`${Math.min(40,l*3)}% fewer roadside encounters`},
+ lead:{n:'Leadership',d:'Keeping hired people paid, busy and loyal.',eff:l=>`Wages ${Math.min(30,l*2)}% lower · hired help gain levels ${Math.min(50,l*4)}% faster`}
+});
+const apprChance=()=>clamp(.45+P().int*.006+lsLvl('appraise')*.025,.3,.9);
+Object.assign(ACT,{
+ appraise(id){
+  const h=S.hero,f=findItem(id);if(!f||f.where!=='inv')return;const it=f.it;
+  if(it.apd===h.day){S.hagMsg='You have already studied that one today.';return;}
+  it.apd=h.day;const ok=Math.random()<apprChance();lsUse('appraise',ok);
+  if(ok){it.appr=1;S.hagMsg=`You look ${esc(it.name)} over carefully. It is worth about ${it.val}g.`;}
+  else S.hagMsg=`You turn ${esc(it.name)} over and over. You cannot tell what it is worth.`;
+ },
+ forage(){
+  const h=S.hero,w=S.world;if(h.sta<1){note('Too tired to look around.','e');return;}
+  h.sta-=1;const l=lsLvl('forage'),zi=forageZone(),ok=Math.random()<clamp(.5+.03*l,.5,.9);let msg;
+  if(ok){const n=ri(1+Math.floor(l/4),2+Math.floor(l/3)),m=pick(ZGATHER[zi]||ZGATHER[0]);w.mats[m]=(w.mats[m]||0)+n;msg=`You find ${n} ${esc(m)}.`;}
+  else msg='You turn over stones and push through brush, and find nothing worth carrying.';
+  lsUse('forage',ok);S.forageMsg=msg;popReward('Foraging',[msg]);
+ }
+});
+function forageZone(){const h=S.hero,r=rankIdx(h.contracts);let zi=0;ZONES.forEach((z,i)=>{if(i<=r&&h.lvl>=z.min-2)zi=i;});return zi;}
+{
+ const _hu=VIEWS.hunt;
+ VIEWS.hunt=function(){
+  let t=_hu();const h=S.hero,m=S.forageMsg;S.forageMsg=null;
+  return t.replace(/(<\/p>)/,'$1<div class="card sm"><div class="row2"><b>Forage</b><span class="mut">Lv '+lsLvl('forage')+'</span></div><div class="mut sm">Look around the edges of the region for useful things. 1 stamina.</div>'+(m?'<div style="margin:4px 0">'+m+'</div>':'')+btn('Forage','forage',undefined,'c',h.sta<1)+'</div>');
+ };
+}
+
+// ---------- rank trials ----------
+const rankRaw=rankIdx;
+rankIdx=function(c){const r=rankRaw(c),h=S&&S.hero;if(h&&h.rkPass!=null&&c===h.contracts)return Math.min(r,h.rkPass);return r;};
+const rkTrialReady=()=>{const h=S.hero;return h&&h.rkPass!=null&&rankRaw(h.contracts)>h.rkPass;};
+{
+ const _st=ACT.start;ACT.start=function(){_st.apply(this,arguments);if(S.hero){S.hero.rkPass=0;}};
+ const _mh=makeHeir;makeHeir=function(){_mh();if(S.hero)S.hero.rkPass=rankRaw(S.hero.contracts);};
+}
+Object.assign(ACT,{
+ rankTrial(){
+  const h=S.hero;if(!rkTrialReady())return;
+  if(h.sta<2){note('You need 2 stamina for a trial.','e');return;}
+  if(h.trialDay===h.day){note('The examiners will see you again tomorrow.','e');return;}
+  h.sta-=2;const nr=h.rkPass+1,zi=Math.min(nr,ZONES.length-1);
+  const e=makeEnemy(zi,false,true);e.hp=e.max=Math.round(e.hp*1.15);e.name='Trial: '+e.base;
+  startCombat(e,false,{type:'loc',free:true,ret:'guild',rep:'Back to the guild',spar:true,trial:true});
+ }
+});
+function sparLose(){
+ const h=S.hero,c=S.cb,ctx=(c&&c.ctx)||{};
+ h.hp=1;S.cb=null;S.res=null;
+ if(ctx.trial){h.trialDay=h.day;S.sparMsg=`The examiners call it. You are not ready for ${RANKS[h.rkPass+1].n} rank yet. Rest, then try again tomorrow.`;}
+ else{S.sparMsg='You yield. Your sparring partner helps you up. "Again, when you are ready."';}
+ note(S.sparMsg,'e');S.screen=ctx.ret||'guild';
+}
+{
+ const _d=die;
+ die=function(cause){const c=S.cb;if(c&&c.ctx&&c.ctx.spar){sparLose();return;}return _d(cause);};
+ const _v=victory;
+ victory=function(){
+  const c=S.cb,ctx=c&&c.ctx;_v();
+  const r=S.res,h=S.hero;if(!r||!ctx)return;
+  if(ctx.trial){h.rkPass++;r.lines.push(`🏅 <b>Promoted to ${RANKS[h.rkPass].n} rank!</b> Your level can now grow to ${lvCap()}.`);note(`Promoted to ${RANKS[h.rkPass].n} rank.`,'y');}
+  if(ctx.rival){const rv=((S.world.rivals)||[]).find(x=>x.id===ctx.rival);if(rv){rv.rel=(rv.rel||0)+1;rv.spar=(rv.spar||0)+1;r.lines.push(`${esc(rv.n)} nods. "Good."`);
+   if(Math.random()<.4){const g=.4*catchMult()/(1+h.st[rv.stat]/30);h.st[rv.stat]+=g;r.lines.push(`💪 ${esc(rv.n)} corrects your stance. ${STAT_NAME[rv.stat]} +${g.toFixed(2)}`);}}}
+ };
+}
+
+// ---------- the guild roll: other adventurers ----------
+const RIV_FIRST=['Aldric','Brenna','Corvin','Dagny','Edric','Fenna','Garrow','Hilde','Ivo','Jora','Kestrel','Lysander','Mara','Nils','Orin','Petra','Quill','Rowan','Sigrun','Tobias','Una','Voss','Wren','Yara'];
+const RIV_LAST=['Ashgrove','Blackwell','Crowe','Dunmore','Eastwick','Fairweather','Grimshaw','Holloway','Ironside','Kettleburn','Lark','Marsh','Northcott','Oakhart','Pike','Quarrel','Redfern','Stormer','Thorne','Underhill','Vane','Wolfe'];
+const RIV_STYLE=[['str','a duelist who never wastes a step'],['vit','a veteran of the shield wall'],['agi','a scout who strikes and vanishes'],['int','a caster with a library in their head']];
+function genRivals(){
+ const used=new Set(),out=[];
+ [6,14,24,34,46,60].forEach((L,i)=>{
+  let n,f;do{f=pick(RIV_FIRST);}while(used.has(f));used.add(f);n=f+' '+pick(RIV_LAST);
+  const st=pick(RIV_STYLE);out.push({id:'rv'+i,n,lvl:Math.max(3,L+ri(-2,3)),xp:0,stat:st[0],desc:st[1],rel:0,spar:0});
+ });
+ return out;
+}
+const rivRank=lvl=>{let r=LV_CAP.findIndex(c=>lvl<=c);return r<0?6:r;};
+{
+ const _es=ensureState;
+ ensureState=function(){_es();const w=S.world;if(w){if(!w.rivals)w.rivals=genRivals();if(!w.crew)w.crew=[];}};
+ const _sl=sleepDay;
+ sleepDay=function(){
+  _sl();
+  try{const w=S.world;(w.rivals||[]).forEach(r=>{r.xp+=ri(1,3);while(r.xp>=r.lvl*4){r.xp-=r.lvl*4;r.lvl++;}});}catch(e){}
+  try{crewDay();}catch(e){}
+ };
+}
+Object.assign(ACT,{
+ spar(id){
+  const h=S.hero,rv=(S.world.rivals||[]).find(x=>x.id===id);if(!rv)return;
+  if(h.sta<2){note('You need 2 stamina to spar.','e');return;}
+  if(h.sparDay===h.day){note('One spar a day is plenty.','e');return;}
+  if(rv.lvl>h.lvl+6){note(`${rv.n} would not spar with you yet.`,'e');return;}
+  h.sta-=2;h.sparDay=h.day;
+  let zi=ZONES.findIndex(z=>rv.lvl<=z.max);if(zi<0)zi=ZONES.length-1;
+  const e=makeEnemy(zi,false,true),k=clamp(1+.07*(rv.lvl-e.lvl),.5,3);
+  e.base=e.base;e.name=rv.n;e.lvl=rv.lvl;e.hp=e.max=Math.round(e.hp*k);e.atk=Math.round(e.atk*k);e.def=Math.round(e.def*k);
+  startCombat(e,false,{type:'loc',free:true,ret:'roll',rep:'Back to the guild roll',spar:true,rival:id});
+ }
+});
+VIEWS.roll=function(){
+ const h=S.hero,w=S.world,rs=(w.rivals||[]).slice().sort((a,b)=>b.lvl-a.lvl);
+ let t=`<h1>Guild roll</h1><p class="mut sm">Other adventurers on the guild's books. They grow too, a little every day. Sparring is not to the death: if you lose you walk away at 1 HP.</p>`;
+ const ahead=rs.filter(r=>r.lvl>h.lvl).length;
+ t+=`<div class="card sm">You are level ${h.lvl} (${rankName()}). ${ahead?`${ahead} on the roll ${ahead===1?'is':'are'} ahead of you.`:'Nobody on the roll is ahead of you.'}</div>`;
+ rs.forEach(r=>{
+  const ok=r.lvl<=h.lvl+6;
+  t+=`<div class="card sm"><div class="row2"><b>${esc(r.n)}</b><span class="tag">${RANKS[rivRank(r.lvl)].n} · Lv ${r.lvl}</span></div><div class="mut sm">${esc(r.desc)}${r.spar?` · sparred ${r.spar}×`:''}</div>${ok?btn('Ask for a spar','spar',r.id,'c',h.sta<2||h.sparDay===h.day,h.sparDay===h.day?'one a day':'2 stamina'):'<div class="sm dn">Out of your league for now.</div>'}</div>`;
+ });
+ return t+btn('← Back to the guild','go','guild','c');
+};
+NAV[0][3].push('roll');NAV[0][3].push('crew');
+{
+ const _g=VIEWS.guild;
+ VIEWS.guild=function(){
+  let t=_g();if(!S.world.guild||!atHome())return t;
+  const h=S.hero;let add='';
+  if(S.sparMsg){add+=`<div class="card" style="border-color:var(--bad)">${S.sparMsg}</div>`;S.sparMsg=null;}
+  if(rkTrialReady()){const nr=RANKS[h.rkPass+1];add+=`<div class="card" style="border-color:var(--acc)"><b>Rank trial: ${nr.n}</b><p class="sm">Your contracts qualify you. The guild wants to see you fight before it makes it official. A defeat is not fatal; you walk away at 1 HP and may try again tomorrow.</p>${btn('Take the trial','rankTrial',undefined,'pri c',h.sta<2||h.trialDay===h.day,h.trialDay===h.day?'try again tomorrow':'2 stamina')}</div>`;}
+  add+=btn('Guild roll','go','roll','c',false,'Other adventurers and sparring');
+  return t.replace(/(<h1>[^<]*<\/h1>)/,'$1'+add);
+ };
+}
+
+// ---------- hired help ----------
+const CREW={
+ porter:{n:'Porter',d:'Carries part of your cargo.',fee:80,wage:3,eff:l=>`+${3+2*l} cargo space`},
+ scout:{n:'Scout',d:'Listens at the gates and brings back news each morning.',fee:120,wage:5,eff:l=>`${Math.min(90,45+8*l)}% chance of a tip each morning`},
+ clerk:{n:'Clerk',d:'Bargains quietly on your behalf.',fee:150,wage:6,eff:l=>`${(1+l*.8).toFixed(1)}% better buying and selling prices`},
+ guard:{n:'Bodyguard',d:'Keeps trouble off your back in rough places.',fee:200,wage:8,eff:l=>`${Math.min(60,10+8*l)}% of ambushes in rough quarters avoided`}
+};
+const crewLvl=c=>Math.min(5,Math.floor(c.days/Math.max(8,14*(1-.04*lsLvl('lead')))));
+const crewOf=t=>((S.world&&S.world.crew)||[]).find(c=>c.t===t);
+const crewWage=c=>Math.max(1,Math.round(CREW[c.t].wage*(1+.12*crewLvl(c))*(1-Math.min(.3,.02*lsLvl('lead')))));
+const crewMax=()=>1+rankIdx(S.hero.contracts);
+function crewCargo(){const c=crewOf('porter');return c?3+2*crewLvl(c):0;}
+function crewClerk(){const c=crewOf('clerk');return c?.008*(1+crewLvl(c)):0;}
+function crewDay(){
+ const w=S.world,list=w.crew||[];if(!list.length)return;
+ const tot=list.reduce((a,c)=>a+crewWage(c),0);
+ if(w.gold>=tot){w.gold-=tot;list.forEach(c=>{c.days++;c.unpaid=0;});lsUse('lead',true,1);}
+ else{list.forEach(c=>{c.unpaid=(c.unpaid||0)+1;});lsUse('lead',false,1);note('You could not cover everyone\'s wages today.','e');}
+ w.crew=list.filter(c=>{if((c.unpaid||0)>=3){note(`${CREW[c.t].n} leaves. Three days without pay is three too many.`,'e');return false;}return true;});
+ const sc=crewOf('scout');
+ if(sc&&Math.random()<Math.min(.9,.45+.08*crewLvl(sc))){const tp=giveTip();if(tp)note(`Your scout reports: ${tp}`,'y');}
+}
+Object.assign(ACT,{
+ crewHire(t){
+  const w=S.world,D=CREW[t];if(!D||crewOf(t))return;
+  if((w.crew||[]).length>=crewMax()){note('You cannot manage more people yet. Your standing at the guild limits it.','e');return;}
+  if(w.gold<D.fee){note('Not enough gold for the signing fee.','e');return;}
+  w.gold-=D.fee;w.crew.push({t,days:0,unpaid:0});note(`${D.n} hired.`,'y');
+ },
+ letgo(t){S.world.crew=(S.world.crew||[]).filter(c=>c.t!==t);note(`${CREW[t].n} let go.`);}
+});
+VIEWS.crew=function(){
+ const w=S.world,list=w.crew||[];
+ let t=`<h1>Hiring hall</h1><p class="mut sm">People who work for you and the family. They are paid every morning and get better the longer they stay. Leadership makes it cheaper. You can manage ${crewMax()} at your standing.</p>`;
+ t+=`<h2>Your people (${list.length}/${crewMax()})</h2>`;
+ t+=list.length?list.map(c=>{const D=CREW[c.t],l=crewLvl(c);return `<div class="card sm"><div class="row2"><b>${D.n}</b><span class="tag">Level ${l}/5</span></div><div class="mut sm">${D.d} ${c.days} days with you · ${crewWage(c)}g a day${c.unpaid?` · <span class="dn">${c.unpaid} unpaid</span>`:''}</div><div class="sm">${D.eff(l)}</div>${btn('Let go','letgo',c.t,'c')}</div>`;}).join(''):'<p class="mut sm">Nobody yet.</p>';
+ t+=`<h2>Available</h2>`;
+ t+=Object.keys(CREW).filter(k=>!crewOf(k)).map(k=>{const D=CREW[k];return `<div class="card sm"><b>${D.n}</b><div class="mut sm">${D.d} ${D.wage}g a day to start.</div><div class="sm">${D.eff(0)}</div>${btn('Hire','crewHire',k,'c',w.gold<D.fee||list.length>=crewMax(),`${D.fee}g signing fee`)}</div>`;}).join('');
+ return t+btn('← Back to town','go','town','c');
+};
+FEATS.push({ord:6,show:t=>!!S.world.guild&&S.hero.contracts>=1,btn:t=>btn('Hiring Hall','go','crew','',false,'Porters, scouts, clerks, guards')});
+{
+ const _ra=roughAmbush;
+ roughAmbush=function(b){const a=_ra(b);const g=crewOf('guard');if(a&&g&&Math.random()<Math.min(.6,.1+.08*crewLvl(g))){note(`${esc(S.hero.name)}'s bodyguard steps in and the trouble goes away.`,'y');return null;}return a;};
+}
+
+// ---------- chat results as pop-ups (quests, companions) ----------
+{
+ const _qc=qTalkChoose;
+ qTalkChoose=function(i){_qc(i);try{if(S.talk&&S.talk.lines){const q=QS[S.talk.id];popReward(esc((q&&q.npc)||''),S.talk.lines,clamp(2500+S.talk.lines.join(' ').replace(/<[^>]+>/g,'').length*25,3500,6000));}}catch(e){}};
+ const _cv=ACT.cvch;
+ ACT.cvch=function(i){const had=S.cv&&S.cv.res;_cv.call(this,i);if(S.cv&&S.cv.res&&!had){const D=COMP[S.cv.id];popReward(esc(D?D.n:''),S.cv.res,4500);}};
+}
+
 /* ----- a slow start: bodies heal over days, not overnight, until you are properly seasoned ----- */
 const nightRecovery=()=>{const L=S.hero.lvl;return L>=8?1:Math.min(1,.38+.09*(L-1));};
 const _sleepDayRec=sleepDay;
@@ -7440,7 +7629,7 @@ VIEWS.train=function(){
  return s.replace(/(<\/p>)/,'$1'+card);
 };
 if(typeof document!=='undefined'&&typeof window!=='undefined'&&!window.__TQ_TEST){try{render();}catch(e){}}
-if(typeof window!=='undefined')window.TQ={DG,HAB,MONPIC,addXP,wroll,refreshShop,lvCap,rankName,rarGov,keeper,keeperTier,KPJ,makeHeir,lsUse,lsLvl,lsRec,slogHtml,ROUGH,cpic,hasFocus,hprice,nextStep,foldHtml,upDiff,reportText,tele,loadBackup,skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
+if(typeof window!=='undefined')window.TQ={checkDeath,rankIdx,sleepDay,CREW,crewOf,crewLvl,rkTrialReady,rankRaw,genRivals,popReward,forageZone,apprChance,DG,HAB,MONPIC,addXP,wroll,refreshShop,lvCap,rankName,rarGov,keeper,keeperTier,KPJ,makeHeir,lsUse,lsLvl,lsRec,slogHtml,ROUGH,cpic,hasFocus,hprice,nextStep,foldHtml,upDiff,reportText,tele,loadBackup,skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,rkTrialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>
 </html>
