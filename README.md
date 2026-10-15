@@ -164,3 +164,9 @@ Buttons, cards and list rows are now about 20% smaller by default. Menu > Settin
 
 ## Font styles
 Menu > Settings (and title screen settings) has a Font style picker: Default, Easy to read (Atkinson Hyperlegible), Chronicle (IM Fell English with Pirata One headings), Medieval (MedievalSharp), Handwritten (Patrick Hand), Typewriter (Special Elite), Terminal (VT323). Each style has a size scale. Fonts load from Google Fonts and fall back to system fonts offline.
+
+## Companion stories, the heir's letter, cleanup
+- Every companion has a three-chapter personal story (six story types, by role) told in the Town Square, unlocked by bond 2, 3 and 4 and at least 3 days apart. Chapters are fights beside them (the later two against elites), each ends in a choice. Finishing the story gives a keepsake item, a stronger passive and 2 stat points over the story. Their card in the Hero tab shows the story so far. A companion mentions a new chapter after you chat with them.
+- The death screen lists everything that passes on (best gear, friends at the markets, inherited skill traces, hired hands, rank standing, begun stories). The heir starts with a short letter from their predecessor, including whatever killed them.
+- Fixed: companion cards in the party list and tavern still used the old portrait art; they now use the new portraits.
+- Test scripts: `t54`-`t57` cover stories, screen scans (no undefined/NaN), and loading a save from an older build.
