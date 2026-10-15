@@ -101,3 +101,7 @@ The first errand now lives at the top of the Training Yard until it is done: "Ha
 ## Skill ranks and breakthroughs
 
 Skills now climb in ranks: **Drizzle** (Lv 1-2), **Gale** (3-4), **Squall** (5-6), **Tempest** (7-8) and **Cataclysm** (9-10). Use grows a skill, and fighting opponents that really test you (Risky or Deadly) teaches much faster than easy fights. At the top of a rank (Lv 2, 4, 6, 8) a skill stops growing and waits for a **breakthrough**, which you buy with a vestige plus wicks, a larger amount of wicks alone, or a master's lessons for gold. Tomes still teach new skills and sharpen them within a rank. Rank perks: Gale costs 1 less Focus, Squall +15% damage, Tempest a 20% chance to refund half the Focus, Cataclysm +15% more damage and a 30% refund chance.
+
+## A calmer look
+
+Emoji decoration is off by default. The game now shows plain text labels (Gold, Stamina, HP, Focus, wicks) and keeps pictures only where they carry information: the monster portraits, playing cards, dice, slot reels and the roulette wheel. You can switch to the old look with **Icons: Playful** in the Menu or on the title screen's Settings. The Training Yard now has a Back to town button, and dropping an odd job moved to the Journal with a confirmation.

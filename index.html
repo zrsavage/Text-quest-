@@ -95,6 +95,8 @@ textarea{height:110px;font-size:0.75rem}
 .chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}.chips button{padding:8px 2px;font-size:.8125rem;text-align:center}
 @media (prefers-reduced-motion:reduce){.fadein{animation:none}}
 .pc{display:inline-block;min-width:40px;padding:8px 5px;border-radius:7px;background:#f4efe3;color:#15151c;font-weight:700;text-align:center;margin:2px;font-size:1rem;box-shadow:0 1px 0 #0006}.pc.r{color:#c0332b}.pc.back{background:#3a4a8a;color:#9bb0ff}.pcb{background:none;border:2px solid transparent;border-radius:10px;padding:2px;margin:2px;color:inherit;font-family:inherit}.pcb.hold{border-color:var(--acc)}.roul{display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:50%;font-size:1.6rem;font-weight:800;color:#fff;border:3px solid #0006}.roul.red{background:#b3261e}.roul.black{background:#1c1c24}.roul.green{background:#1f7a3a}
+body.calm #nav button span{display:none}
+body.calm .btn small,body.calm .tag{letter-spacing:.01em}
 </style>
 </head>
 <body>
@@ -5935,7 +5937,7 @@ Object.assign(ACT,{
 const deltaTxt=d=>d>0?`<b class="up">+${fmt(d)}g</b>`:d<0?`<b class="dn">${fmt(d)}g</b>`:'<b>±0</b>';
 function betBar(){
  const c=cas(),w=S.world;casClamp();
- return `<div class="card sm"><div class="row2"><b>Bet</b><span style="font-size:1.25rem">${fmt(c.bet)}g</span></div><div class="mut sm">Table limits ${fmt(casMin())}–${fmt(casMax())}g · Purse ${fmt(Math.floor(w.gold))}g</div>
+ return `<div class="card sm"><div class="row2"><b>Bet</b><span style="font-size:1.25rem">${fmt(c.bet)}g</span></div><div class="mut sm">Table limits ${fmt(casMin())} to ${fmt(casMax())} gold · Purse ${fmt(Math.floor(w.gold))}g</div>
  <div class="grid" style="grid-template-columns:repeat(6,1fr);margin-top:6px">${btn('Min','casBet','min','c')}${btn('−','casBet','-','c')}${btn('½','casBet','half','c')}${btn('×2','casBet','x2','c')}${btn('+','casBet','+','c')}${btn('Max','casBet','max','c')}</div></div>`;
 }
 function casNudge(){
@@ -5967,16 +5969,16 @@ VIEWS.cage=function(){
  }
  if(g==='slots'){
   const r=c.sl;
-  s+=`<div class="card" style="text-align:center;font-size:2.4rem">${r?r.r.map(i=>SLOT_SYM[i][0]).join(' '):'❔ ❔ ❔'}${r?`<div style="font-size:1rem">${r.m?`Pays ×${r.m} · `:'No win · '}${deltaTxt(r.delta)}</div>`:''}</div>`;
+  s+=`<div class="card keep" style="text-align:center;font-size:2.4rem">${r?r.r.map(i=>SLOT_SYM[i][0]).join(' '):'❔ ❔ ❔'}${r?`<div style="font-size:1rem">${r.m?`Pays ×${r.m} · `:'No win · '}${deltaTxt(r.delta)}</div>`:''}</div>`;
   s+=betBar()+btn('🎰 Spin','slSpin',undefined,'pri c',w.gold<c.bet||c.bet<casMin());
-  s+=`<div class="card sm mut" style="margin-top:8px">${SLOT_SYM.map(x=>x[0]+'×3 pays ×'+x[2]).join(' · ')} · any two 🍒 pays ×2.</div>`;
+  s+=`<div class="card sm mut keep" style="margin-top:8px">${SLOT_SYM.map(x=>x[0]+'×3 pays ×'+x[2]).join(' · ')} · any two 🍒 pays ×2.</div>`;
   return s+back;
  }
  if(g==='dice'){
   const d=c.dc;
-  if(d)s+=`<div class="card" style="text-align:center;font-size:2.2rem">${d.d.map(x=>'⚀⚁⚂⚃⚄⚅'[x-1]).join(' ')}<div style="font-size:1rem">Total ${d.d[0]+d.d[1]+d.d[2]} · ${d.win?'You win':'You lose'} ${deltaTxt(d.delta)}</div></div>`;
+  if(d)s+=`<div class="card keep" style="text-align:center;font-size:2.2rem">${d.d.map(x=>'⚀⚁⚂⚃⚄⚅'[x-1]).join(' ')}<div style="font-size:1rem">Total ${d.d[0]+d.d[1]+d.d[2]} · ${d.win?'You win':'You lose'} ${deltaTxt(d.delta)}</div></div>`;
   s+=betBar()+`<div class="grid" style="grid-template-columns:repeat(2,1fr)">${btn('Small (4–10) 1:1','dcRoll','small','c',w.gold<c.bet)}${btn('Big (11–17) 1:1','dcRoll','big','c',w.gold<c.bet)}</div>
-  <h3>A number (1:1 per matching die)</h3><div class="grid" style="grid-template-columns:repeat(6,1fr)">${[1,2,3,4,5,6].map(n=>btn('⚀⚁⚂⚃⚄⚅'[n-1],'dcRoll','n'+n,'c',w.gold<c.bet)).join('')}</div>
+  <h3>A number (1:1 per matching die)</h3><div class="grid" style="grid-template-columns:repeat(6,1fr)">${[1,2,3,4,5,6].map(n=>btn('<span class="keep">'+'⚀⚁⚂⚃⚄⚅'[n-1]+'</span>','dcRoll','n'+n,'c',w.gold<c.bet)).join('')}</div>
   <div style="height:6px"></div>${btn('Any triple 33:1','dcRoll','triple','c',w.gold<c.bet)}<p class="sm mut">A triple makes Big and Small lose.</p>`;
   return s+back;
  }
@@ -6468,7 +6470,7 @@ Object.assign(ACT,{
   h.sta-=c;o.p++;
   if(o.p>=j.n2)oddFinish();else note(`${j.ic} ${j.n}: ${o.p}/${j.n2}.`);
  },
- oddQuit(){const h=S.hero;if(!h.odd)return;h.odd=null;note('You drop the job. They will not hold it against you for long.','e');}
+ oddQuit0(){}
 });
 function oddFinish(){
  const h=S.hero,o=h.odd,j=ODD_BY[o.id];
@@ -6499,7 +6501,7 @@ VIEWS.town=function(){
  if(S.oddRes){const r=S.oddRes;S.oddRes=null;b+=`<div class="card" style="border-color:var(--good)"><b>${r.ic} ${r.n}: done</b>${r.lines.map(l=>`<p>${l}</p>`).join('')}</div>`;}
  if(S.walkMsg){b+=`<div class="card">${S.walkMsg.map(l=>`<p>${l}</p>`).join('')}</div>`;S.walkMsg=null;}
  if(off&&!j)b+=`<div class="card" style="border-color:var(--acc)"><div class="row2"><b>${off.ic} ${off.n}</b><span class="tag" style="color:var(--acc)">odd job</span></div><p class="sm"><i>${off.txt}</i></p><div class="mut sm">${off.k==='work'?`Work ${off.n2} time${off.n2>1?'s':''} (${off.sta||1}⚡ each)`:off.k==='visit'?'Take it to '+({shop:'the Market',library:'the Old Library',train:'the Training Yard'}[off.at]):`Wait ${off.n2} night${off.n2>1?'s':''}`}</div><div class="grid" style="margin-top:6px">${btn('Take the job','oddAccept',undefined,'pri c')}${btn('Not now','oddDecline',undefined,'c')}</div></div>`;
- if(j)b+=`<div class="card" style="border-color:var(--acc)"><div class="row2"><b>${j.ic} ${j.n}</b><span class="tag">${j.k==='wait'?'night '+h.odd.p+'/'+j.n2:j.k==='work'?h.odd.p+'/'+j.n2:'errand'}</span></div><div class="mut sm">${j.who}</div>${j.k==='work'?btn('Get to work','oddWork',undefined,'pri c',h.sta<(j.sta||1),(j.sta||1)+'⚡'):j.k==='visit'?`<div class="sm">Go to ${({shop:'the Market',library:'the Old Library',train:'the Training Yard'}[j.at])} to hand it over.</div>`:'<div class="sm">Sleep through the night and the job is done.</div>'}${btn('Drop it','oddQuit',undefined,'c')}</div>`;
+ if(j)b+=`<div class="card" style="border-color:var(--acc)"><div class="row2"><b>${j.ic} ${j.n}</b><span class="tag">${j.k==='wait'?'night '+h.odd.p+'/'+j.n2:j.k==='work'?h.odd.p+'/'+j.n2:'errand'}</span></div><div class="mut sm">${j.who}</div>${j.k==='work'?btn('Get to work','oddWork',undefined,'pri c',h.sta<(j.sta||1),(j.sta||1)+'⚡'):j.k==='visit'?`<div class="sm">Go to ${({shop:'the Market',library:'the Old Library',train:'the Training Yard'}[j.at])} to hand it over.</div>`:'<div class="sm">Sleep through the night and the job is done.</div>'}</div>`;
  b+=btn('🚶 Walk around town','walk',undefined,'c',h.walkDay===h.day||!!S.dg,h.walkDay===h.day?'you have already walked today':'see what turns up · free');
  return t.replace('<div class="grid">',b+'<div class="grid">');
 };
@@ -6583,6 +6585,75 @@ VIEWS.hero=function(){
  return t.replace(/<h2>Skills<\/h2>[\s\S]*?(?=<h2>|$)/,skillsHtml());
 };
 
+/* =====================================================================
+   Calmer look (icons off by default), safer odd-job handling, back buttons
+   ===================================================================== */
+const EMO_RE=/[\p{Extended_Pictographic}️‍⃣]/gu;
+function calmText(s){
+ return s
+  .replace(/^\s*⚡\uFE0F?\s*$/,'Stamina ')
+  .replace(/(\d[\d,.]*)\s*⚡/g,'$1 stamina')
+  .replace(/⚡️?\s*(\d+\s*\/\s*\d+)/g,'Stamina $1')
+  .replace(/💰️?\s*([\d,.kK]+)\s*(?:g|gold)\b/g,'$1 gold')
+  .replace(/💰️?\s*/g,'Gold ')
+  .replace(/Gold\s+([\d,.kK]+)\s+gold/g,'$1 gold')
+  .replace(/❤️?\s*/g,'HP ')
+  .replace(/🔷️?\s*/g,'Focus ')
+  .replace(/(\d[\d,.]*)\s*🕯️?/g,'$1 wicks')
+  .replace(/🕯️?\s*(\d[\d,.]*)/g,'Wicks $1')
+  .replace(/✅️?/g,'✓').replace(/⬜️?/g,'○')
+  .replace(EMO_RE,'')
+  .replace(/[ \t]{2,}/g,' ');
+}
+function calmIcons(){
+ if(typeof document==='undefined'||PRE.playful)return;
+ document.body.classList.add('calm');
+ const roots=['#view','#nav','#top','#modal'].map(s=>document.querySelector(s)).filter(Boolean);
+ roots.forEach(root=>{
+  const tw=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null);const nodes=[];
+  while(tw.nextNode())nodes.push(tw.currentNode);
+  nodes.forEach(n=>{
+   const v=n.nodeValue;if(!v||!/[^\x00- ]/.test(v))return;
+   const p=n.parentElement;if(!p||p.closest('.keep,.pc,.pcb,.roul,svg,textarea,input,script,style'))return;
+   let t=calmText(v);if(t===v)return;
+   if(!n.previousSibling||n.previousSibling.nodeType!==3)t=t.replace(/^\s+/,'');
+   n.nodeValue=t;
+  });
+ });
+}
+const _renderCalm=render;
+render=function(){_renderCalm();calmIcons();};
+if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()=>{});
+// toggle
+ACT.playful=function(){PRE.playful=!PRE.playful;prefSave();if(PRE.playful)document.body.classList.remove('calm');};
+TA.tplay=function(){PRE.playful=!PRE.playful;prefSave();if(PRE.playful)document.body.classList.remove('calm');};
+const _settingsCalm=settingsHtml;
+settingsHtml=function(){return _settingsCalm()+`<div style="height:8px"></div>${btn('Icons: '+(PRE.playful?'Playful':'Minimal'),'playful',undefined,'',false,'emoji decoration throughout the game')}`;};
+const _tvSetCalm=TV.settings;
+TV.settings=function(){return _tvSetCalm().replace(btn('Back','tgo','title','c'),btn('Icons: '+(PRE.playful?'Playful':'Minimal'),'tplay',undefined,'',false,'emoji decoration throughout the game')+'<div style="height:8px"></div>'+btn('Back','tgo','title','c'));};
+// the title lantern becomes a drawn one
+(function(){const t=TV.title;TV.title=function(){return t().replace('<div style="font-size:3rem">🏮</div>','<div style="display:flex;justify-content:center;margin-bottom:4px"><svg width="54" height="64" viewBox="0 0 54 64" aria-hidden="true"><path d="M27 2 V10" stroke="#c9a24a" stroke-width="2"/><rect x="17" y="10" width="20" height="6" rx="2" fill="#7a5c20"/><path d="M14 20 Q8 36 14 50 H40 Q46 36 40 20 Z" fill="#e8a23a" stroke="#7a5c20" stroke-width="2"/><path d="M20 20 Q16 36 20 50 M34 20 Q38 36 34 50" stroke="#7a5c20" stroke-width="1.5" fill="none"/><rect x="17" y="50" width="20" height="6" rx="2" fill="#7a5c20"/><ellipse cx="27" cy="35" rx="4" ry="7" fill="#fff3c4" opacity=".9"/></svg></div>');};})();
+// the training yard always has a way out
+const _trainBack=VIEWS.train;
+VIEWS.train=function(){return _trainBack()+'<div style="height:8px"></div>'+btn('← Back to town','go','town','c');};
+// dropping an odd job is deliberate: it lives in the Journal and asks first
+Object.assign(ACT,{
+ oddQuit(){if(!S.hero.odd)return;S.modal={t:'confirm',a:'oddQuitYes',q:'Drop this odd job? You will lose any progress on it.'};},
+ oddQuitYes(){const h=S.hero;S.modal=null;if(!h.odd)return;h.odd=null;note('You drop the job. They will not hold it against you for long.','e');}
+});
+const _journalCalm=VIEWS.journal;
+VIEWS.journal=function(){
+ let t=_journalCalm();const h=S.hero;
+ if((S.jtab||'quests')==='quests'&&h.odd){
+  const j=ODD_BY[h.odd.id];
+  const prog=j.k==='work'?`${h.odd.p}/${j.n2} done`:j.k==='wait'?`night ${h.odd.p}/${j.n2}`:'errand in progress';
+  const card=`<div class="card"><div class="row2"><b>Odd job: ${j.n}</b><span class="tag">${prog}</span></div><div class="mut sm">${j.who}. Find it on the Town screen under "Around town".</div>${btn('Drop this job','oddQuit',undefined,'c')}</div>`;
+  t=t.replace(/(<p class="mut sm">Active:[^<]*<\/p>)/,'$1'+card);
+  if(!t.includes(card))t+=card;
+ }
+ return t;
+};
+
 /* ----- a slow start: bodies heal over days, not overnight, until you are properly seasoned ----- */
 const nightRecovery=()=>{const L=S.hero.lvl;return L>=8?1:Math.min(1,.38+.09*(L-1));};
 const _sleepDayRec=sleepDay;
@@ -6622,6 +6693,7 @@ VIEWS.train=function(){
  const card=`<div class="card" style="border-color:var(--acc)"><div class="row2"><b>🥖 Haul Mira's flour sacks</b><span class="tag" style="color:var(--acc)">odd job</span></div><div class="mut sm">Mira the Baker needs three loads carried from the cart to the cellar. It counts as training for Strength and Vitality, and she will pay in what she has.</div>${bar(n,3,'sta')}<div class="mut sm">${n}/3 loads</div>${n>=3?btn('💬 Report to Mira','talk','firstchores','good c'):btn('Haul a load','haul',undefined,'pri c',h.sta<2,'2⚡')}</div>`;
  return s.replace(/(<\/p>)/,'$1'+card);
 };
+if(typeof document!=='undefined'&&typeof window!=='undefined'&&!window.__TQ_TEST){try{render();}catch(e){}}
 if(typeof window!=='undefined')window.TQ={skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>
