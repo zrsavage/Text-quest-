@@ -55,3 +55,7 @@ Companions are **procedurally generated**: each generation gets a fresh cast of 
 - Binding a vestige costs wicks and teaches the family's **power**. A duplicate strengthens it. Rank limits how many powers you can hold.
 - **Resonance:** every power lists the essences it works with. If you hold one, the power is 1.75x stronger.
 - **Bloodline memory:** from the second generation on, an heir can reawaken some ancestral powers for wicks, one level weaker. Essences, skills and levels are not inherited.
+
+## Title screen and a slower opening
+
+The game now opens on a title screen: **Begin a New Story**, **Continue** (shows your hero, level, day and generation), **Load** (paste Export text or pick a file) and **Settings** (text size, vibration, tips). A new story eases in through a three-line prologue, then your name, then a single-background chooser that shows one background's details at a time. The Menu has a **Return to title screen** button.
