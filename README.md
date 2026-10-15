@@ -74,3 +74,18 @@ The sleep animation now shows a dark silhouette of wherever you rest: the town's
 ## Materials
 
 There are now about 130 materials instead of 18. Every creature leaves its own parts (a common one and a rarer one), each region has five things to find while exploring or in chests, every dungeon has two finds of its own, and every region boss and dungeon boss leaves a guaranteed trophy. Each has a one-line quip and a source line in the Pack. At the Tinker's Wagon, the creature the parts came from now leaves a mark on the crafted item: wolf parts push attack, bone parts push lifesteal, and so on.
+
+## The big expansion: towns, trade, danger and a long road
+
+- **120 wild monsters** (up from 30): 12 per region, plus native creatures for the roads, the coast, the mines, the frontier, the back-alleys and the Far Shore. Each leaves its own part and has an icon and a vestige family. The Codex only shows what you have met.
+- **Seven towns:** Hollowmere plus Briarhold, Saltmarch, Cragstead, Ironvale, Gildenreach and, much later, Landfall on the Far Shore. Towns are learned from people, not listed. Each has its own market, shops, inn, prices, people, pastimes and local monsters. Travel takes days, with road events, tolls, traders, ambushes and optional escorts.
+- **Trade:** 24 goods with prices that drift, spike and crash with shortages, gluts, festivals, fevers, unrest and booms. You see only the prices you have seen or been told. Carts grow from a backpack to a caravan, and trade rank improves your margins.
+- **Bank:** savings with interest, loans with a credit standing, risky ventures, and debts that your heirs inherit. Branches in every town share one account.
+- **Town life:** 47 pastimes, rotating daily on each notice board, and 56 named people who remember you. Chat, give gifts, earn their trust, and they teach you where things are, what prices are, how monsters behave and where materials come from.
+- **Rough quarters:** every town has a dangerous side you find by wandering. Ambushes, pickpockets and shakedowns. Inside: a fence, a black market (sealed vestiges and rare trophies), smugglers (contraband with real inspection risk), a loan shark whose collectors will find you, the Pit (bet on bouts or fight), and casinos.
+- **Casinos:** roulette, blackjack (3:2, double, split), slots, three-dice, video poker and a higher-or-lower ladder, using in-game gold only. Every screen says plainly that this is entertainment: no real money, purchases or prizes, ever. Table limits and house edges are real.
+- **Living companions:** moods that change how hard they fight, likes and dislikes, errands they ask you to run, and friendships and rivalries you can mend over a drink.
+- **A world that moves:** migrations, floods that expose old dungeons, and overhunting that thins out species you farm. The Town Crier reports it.
+- **The Far Shore:** a late-game outpost by sea, with its own monsters, boss, two dungeons, materials, gear and trade.
+- **A family ledger** with collections across every generation (creatures, materials, vestige families, towns, pastimes, friends, dungeons). Each grants bonuses to every heir. The Journal gains a Field Guide.
+- **Sound** (synthesized, off by default) and **downloadable save files**.

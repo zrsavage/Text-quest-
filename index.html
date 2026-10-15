@@ -3341,7 +3341,7 @@ VIEWS.hunt=function(){
   t+=`<div class="mut sm">Familiarity ${ex}% ${ex<20?'· scouting unlocks at 20%':''}</div>${bar(ex,100,'sta')}
   <div class="grid" style="margin-top:6px">${btn('Hunt','zone',i,'pri',h.sta<FIGHT_COST||!!S.dg,FIGHT_COST+'⚡')}${btn('🧭 Scout','explore',i,'',h.sta<1||!!S.dg||ex<20,ex<20?'at 20% familiarity':'1⚡ · events & secrets')}</div>
   ${knowB(i)?`<div style="margin-top:6px">${btn(knowBN(i)?'Boss: '+z.boss.n:'Something large lairs here','boss',i,'bad',h.sta<BOSS_COST||!!S.dg,BOSS_COST+'⚡ · rare+ drop')}</div>`:''}<div style="margin-top:6px">${btn('⛺ Camp until morning','camp','z'+i,'c',!!S.dg,'rest here · next day')}</div>`;
-  const dgs=LANDMARKS[i].map(l=>l.id).concat(DUNGEONS.filter(d=>d.hidden&&d.zi===i).map(d=>d.id)).filter(id=>w.map.found[id]);
+  const dgs=LANDMARKS[i].map(l=>l.id).concat(DUNGEONS.filter(d=>d.hidden&&d.zi===i&&!d.far).map(d=>d.id)).filter(id=>w.map.found[id]);
   if(dgs.length){t+='<h3>Dungeons</h3>';dgs.forEach(id=>{const D=DG[id],cl=w.map.cleared[id]||0;
    t+=`<div class="item" style="cursor:default"><div><div class="n">${D.ic} ${D.n}</div><div class="s">Lv ${D.lvl}+ · ${D.sz[0]*D.sz[1]} rooms · ${cl?`cleared ×${cl}`:'unexplored'}${h.dgsave[id]?' · <b>in progress</b>':''}</div></div><div style="width:110px">${btn(h.dgsave[id]?'Resume':'Enter','dgEnter',id,'pri c',!!S.dg||(!h.dgsave[id]&&h.sta<3),h.dgsave[id]?'':'3⚡')}</div></div><div style="margin:4px 0 8px">${btn('⛺ Camp at the entrance','camp','d'+id,'c',!!S.dg)}</div>`;});}
   const zq=zoneQuests(i).map(questCard).join('');if(zq)t+='<h3>Wanderers</h3>'+zq;
@@ -3481,7 +3481,7 @@ VIEWS.journal=function(){
   ZONES.forEach((z,i)=>{
    if(!knowZ(i))return;
    const ex=Math.floor(w.map.explore[i]);
-   const ids=LANDMARKS[i].map(l=>l.id).concat(DUNGEONS.filter(d=>d.hidden&&d.zi===i).map(d=>d.id));
+   const ids=LANDMARKS[i].map(l=>l.id).concat(DUNGEONS.filter(d=>d.hidden&&d.zi===i&&!d.far).map(d=>d.id));
    t+=`<div class="card"><div class="row2"><b>${z.ic} ${z.n}</b><span class="tag">${ex}%</span></div>${bar(ex,100,'sta')}${ids.map(id=>{const D=DG[id],f=w.map.found[id];return `<div class="sm" style="margin-top:4px">${f?`${D.ic} <b>${D.n}</b> · Lv ${D.lvl}+ · ${(w.map.cleared[id]||0)?'cleared ×'+w.map.cleared[id]:'unexplored'}`:''}</div>`;}).join('')}</div>`;
   });
   if(w.anc.length)t+=`<div class="card sm">⚰️ <b>Crypt of Heirs</b> · ${w.anc.filter(a=>w.map.flags['echo'+a.gen]).length}/${w.anc.length} echoes at rest</div>`;
@@ -4716,7 +4716,7 @@ const where=()=>T().loc;
 const atHome=()=>where()===HT;
 const tradeLv=()=>{const x=T().tx;let l=0;while(x>=40*(l+1)*(l+1)&&l<7)l++;return l;};
 const spreadF=()=>Math.max(.015,.07-.006*tradeLv());
-const cargoCap=()=>CARTS[T().cart].cap+tradeLv()*4;
+const cargoCap=()=>CARTS[T().cart].cap+tradeLv()*4+((S.world.fam||{}).cargo||0);
 const cargoUsed=()=>{const c=T().cargo;let n=0;for(const g in c)n+=c[g].n*GOODS[g].w;return n;};
 const repOf=id=>(T().rep[id]||0);
 const repMul=id=>1-.0007*clamp(repOf(id),-100,100);
@@ -4874,7 +4874,7 @@ function rollTrip(){
  let p=.30;if(surgeNear(tr.from,tr.to))p*=2;if(tr.guard)p*=.35;
  const r=Math.random();
  if(r<p){
-  const e=makeEnemyHab('highroad',false);
+  const e=makeEnemyHab(routeHab(),false);
   tr.lines.push(`⚔️ <b>${esc(e.name)}</b> blocks the road${tr.guard?' as your escort shifts uneasily':''}!`);
   tr.stage='night';startCombat(e,false,{type:'loc',free:true,ret:'trip',ambush:Math.random()<.35});return;
  }
@@ -4920,9 +4920,9 @@ Object.assign(ACT,{
   const ch=clamp(.25+p.int*.006+p.st.agi*.004,.2,.7);
   tr.pend=null;
   if(Math.random()<ch){tr.lines=['😎 You explain, loudly and with great detail, that the toll was paid by someone else. They are not sure who. They let you go, confused.'];}
-  else{const e=makeEnemyHab('highroad',false);tr.lines=['😬 They did not buy it.'];tr.stage='night';startCombat(e,false,{type:'loc',free:true,ret:'trip'});}
+  else{const e=makeEnemyHab(routeHab(),false);tr.lines=['😬 They did not buy it.'];tr.stage='night';startCombat(e,false,{type:'loc',free:true,ret:'trip'});}
  },
- tripFight(){const tr=S.trip;if(!tr||!tr.pend||tr.pend.k!=='toll')return;tr.pend=null;const e=makeEnemyHab('highroad',false);tr.stage='night';startCombat(e,false,{type:'loc',free:true,ret:'trip'});},
+ tripFight(){const tr=S.trip;if(!tr||!tr.pend||tr.pend.k!=='toll')return;tr.pend=null;const e=makeEnemyHab(routeHab(),false);tr.stage='night';startCombat(e,false,{type:'loc',free:true,ret:'trip'});},
  tripBuy(){
   const tr=S.trip,t=T(),o=tr&&tr.pend;if(!o||o.k!=='offer')return;
   const cost=o.price*o.q;if(S.world.gold<cost){note('Not enough gold.','e');return;}
@@ -5131,10 +5131,10 @@ VIEWS.news=function(){
 VIEWS.map=function(){
  const t=T(),from=where();
  let s=`<h1>🧭 The Roads</h1><p class="mut">Travel takes days, and the road has opinions. An escort costs 25g a day and keeps most trouble away.</p>`;
- const ks=TOWN_IDS.filter(x=>x!==from&&knowT(x));
+ const ks=TOWN_IDS.filter(x=>x!==from&&knowT(x)&&reach(from,x));
  s+=ks.length?ks.map(x=>{const P=TOWNS[x],d=dist(from,x),vis=t.visited&&t.visited[x],surge=surgeNear(from,x);
   return `<div class="card"><div class="row2"><b>${P.ic} ${P.n}</b><span class="tag">${d} days</span></div><div class="mut sm">${vis?P.d:'You know the name and little else.'}</div>${surge?'<div class="dn sm">⚠ The roads there are said to be dangerous right now.</div>':''}
-  <div class="grid" style="margin-top:6px">${btn('Set out','setOut',x+':n','pri c',!!S.dg)}${btn('With escort','setOut',x+':g','c',!!S.dg||S.world.gold<25*d,25*d+'g')}</div></div>`;}).join(''):'<p class="mut">You do not know of anywhere else yet. People talk, though.</p>';
+  ${P.late?`<div style="margin-top:6px">${btn('Book passage','setOut',x+':n','pri c',!!S.dg||S.world.gold<600,'600g ferry')}</div>`:`<div class="grid" style="margin-top:6px">${btn('Set out','setOut',x+':n','pri c',!!S.dg)}${btn('With escort','setOut',x+':g','c',!!S.dg||S.world.gold<25*d,25*d+'g')}</div>`}</div>`;}).join(''):'<p class="mut">You do not know of anywhere else yet. People talk, though.</p>';
  return s+btn('← Back','go','town','c');
 };
 VIEWS.trip=function(){
@@ -5213,7 +5213,7 @@ sleepLoc=function(){
 const _makeHeirM2=makeHeir;
 makeHeir=function(){
  const t=T();
- _makeHeirM2();
+ _makeHeirM2();ensureState();
  for(const id in t.rep)t.rep[id]=Math.round(t.rep[id]*.5);
  if(t.loc!==HT)swapShop(t.loc,HT);
  if(S.trip)S.trip=null;
@@ -5482,7 +5482,7 @@ VIEWS.people=function(){
  return s+btn('← Back','go','town','c');
 };
 Object.assign(ACT,{npcGiftOpen(id){S.giftOpen=S.giftOpen===id?null:id;}});
-FEATS.push({ord:5,show:t=>true,btn:t=>btn('👥 People','go','people','',false,'Who is about?')});
+FEATS.push({ord:5,show:t=>true,btn:t=>btn('👥 People','go','people','',false,'Chat, gifts, friends')});
 
 /* =====================================================================
    PASS 7 / M3c — the rough quarters: fences, black markets, smugglers,
@@ -6013,7 +6013,398 @@ Object.assign(ACT,{goPlace(id){S.screen=PLACE_SCREEN[id];if(id==='den')ACT.casSt
 PLACE_SCREEN.den='cage';
 NAV[0][3].push('cage');
 
-if(typeof window!=='undefined')window.TQ={CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
+/* =====================================================================
+   PASS 7 / M5a — companions with moods, a world that moves, the Far Shore,
+   courier work
+   ===================================================================== */
+// ---------- the Far Shore: a late-game outpost reached by sea ----------
+TOWNS.farshore={n:'Landfall',ic:'🏝️',style:'harbor',late:1,d:'A raw outpost on the far edge of the map, built from wrecks and stubbornness. Everyone here came for something and stayed for the lack of alternatives.',inn:30,pot:1.6,rough:'The Wreck',roughLv:3,hab:'far',
+ produce:['salt','fish','gem'],demand:['grain','medicine','weapon','wine','cloth'],deal:['salt','fish','gem','grain','medicine','weapon','wine','cloth','tools','spice','herb','leather','glass','book'],slots:[2,2,2,2,2.5,2.5],ilOff:8,rar:[20,36,32,12],pm:1.6};
+TOWN_IDS.push('farshore');DIST['saltmarch-farshore']=5;
+ROUGH.farshore={places:['den','dealer','pit'],tier:3,d:'The Wreck is a beached warship the whole outpost drinks, gambles and fights in. Nobody has ever filed a complaint, because the complaints desk is a barrel.'};
+NPCS.farshore=[
+ ['harl','Harbormaster Harl','Harbormaster','⚓','gruff','n','gold','Looks like a lighthouse that took up smoking.'],
+ ['tess','Tess Wreckpicker','Salvager','🛠️','bubbly','c','mat','Sells you a plank. Tells you it is a ship.'],
+ ['moth','Mother Tide','Priestess','🌊','formal','p','pot','Blesses ships, sailors and the occasional rumor.'],
+ ['ghast','Ghast','Hunter','🏹','cold','b','mat','Hunts things you have only had nightmares about.'],
+ ['bellam','Bellamy','Trader','💼','wry','m','gold','Buys at noon, sells at night, apologizes never.'],
+ ['sparrow','Sparrow','Courier','🕊️','bubbly','p','talk','Has been to every shore. Has sworn off boats. Is on one now.'],
+ ['kettle','Cookpot Kettle','Cook','🍲','warm','n','gold','Boils a stew that is mostly rumor and fish.'],
+ ['voss','Old Voss','Wreck-Keeper','🚢','wry','b','talk','Lives in a hull. Is slowly becoming a hull.']
+];
+NPCS.farshore.forEach(a=>{NPC_BY[a[0]]={id:a[0],n:a[1],role:a[2],ic:a[3],trait:a[4],teach:a[5],like:a[6],intro:a[7],town:'farshore'};});
+D('wreck','Wreck Salvage','🛠️','Pry useful things out of other people\'s disasters.',['farshore'],{sta:2,skill:'str',base:{gold:1.2,mat:2,st:{str:.3,vit:.3}},win:['You pry loose a crate of something expensive. The wreck groans like it has opinions.'],fail:['A beam falls. Nobody is surprised.'],hurt:.12});
+D('tidewatch','Tide Watch','🌊','Watch the water for things that should not be in it.',['farshore'],{sta:1,skill:'int',base:{xp:.7,tip:1,gold:.4},win:['The water does something unusual. You write it down.'],fail:['The water does nothing. You write that down.']});
+D('beachcomb','Beachcombing','🐚','Walk the strand and be patient.',['farshore'],{sta:1,skill:'agi',base:{mat:3,gold:.4},win:['Every tide leaves a little more than you expect.'],fail:['A crab holds your boot hostage for an hour.']});
+D('stormchase','Storm Chasing','⛈️','Stand on a headland and take it personally.',['farshore'],{sta:2,skill:'vit',base:{st:{vit:.6,agi:.3},xp:.9},win:['You stand in the storm until it respects you.'],fail:['The storm does not.'],hurt:.15});
+D('bonfire','Bonfire Tales','🔥','Sit with the people who stayed.',['farshore'],{sta:0,skill:null,base:{tip:1,xp:.3},win:['Somebody tells a story about a ship that sailed backwards. The stars appear to agree.']});
+DOINGS.slice(-5).forEach(d=>{DOING_BY[d.id]=d;});
+['temple','bath','fortune','perform','fountain'].forEach(id=>{if(!DOING_BY[id].towns.includes('farshore'))DOING_BY[id].towns.push('farshore');});
+// the two dungeons and the lord of the shore
+const BOSSF='Tidecrown Shard';
+DGMAT.wreck=['Salvaged Rigging','Wreck Barnacle'];DGMAT.lanternspire=['Cold Wick','Sun-Starved Moss'];
+BOSSD.wreck="Admiral's Ghost Compass";BOSSD.lanternspire='The Last Light';
+Object.assign(MATQ,{'Salvaged Rigging':'Still smells of a very long afternoon in a very bad sea.','Wreck Barnacle':'A fossil that never got the memo.','Cold Wick':'It has been burning for nobody for a long time.','Sun-Starved Moss':'Pale, sad, and wildly overpriced.',"Admiral's Ghost Compass":'It points to wherever he left his hat.','The Last Light':'The one lantern nobody asked for. Brighter than it should be.',[BOSSF]:'The shore\'s emperor lost a piece of his crown. He will want it back.'});
+['Salvaged Rigging','Wreck Barnacle','Cold Wick','Sun-Starved Moss',"Admiral's Ghost Compass",'The Last Light',BOSSF].forEach(n=>{MT[n]=5;MATK[n]='delve';});
+MATK[BOSSF]=MATK["Admiral's Ghost Compass"]=MATK['The Last Light']='trophy';
+MATSRC['Salvaged Rigging']=MATSRC['Wreck Barnacle']='found in The Leviathan Wreck';MATSRC['Cold Wick']=MATSRC['Sun-Starved Moss']='found in The Sunless Lantern';
+MATSRC["Admiral's Ghost Compass"]='trophy of The Drowned Admiral';MATSRC['The Last Light']='trophy of The Lantern Who Waits';MATSRC[BOSSF]='trophy of The Tide-Crowned Emperor';
+DUNGEONS.push(
+ {id:'wreck',n:'The Leviathan Wreck',ic:'🚢',zi:5,lvl:72,sz:[6,6],diff:1,key:true,secret:true,hidden:true,far:true,leg:'tidecrown',
+  desc:'A warship the size of a village, nose-down on the strand. Something large still sleeps in the hold.',
+  flav:['The hull creaks like a lullaby.','Water runs uphill here, quietly, in the dark.'],
+  lore:['A log entry, dated tomorrow.','The ship\'s bell, ringing by itself, for someone who never boarded.'],
+  mon:[['Brine Wraith',1,1.4,.9,'ash'],['Pale Mariner',1.2,1.4,1,'ahp'],['Coral Horror',1.5,1.3,1.2,'ahs'],['Storm Eel',1,1.5,.8,'ax']],
+  kw:'First Mate of the Deep',boss:{n:'The Drowned Admiral',hp:1.2,atk:1.2,def:1.3,pat:'ahbsh',pat2:'xhxd',intro:'A figure in a greatcoat turns, and the sea in the room turns with him.'}},
+ {id:'lanternspire',n:'The Sunless Lantern',ic:'🏮',zi:5,lvl:88,sz:[7,6],diff:1,key:true,secret:true,hidden:true,far:true,leg:'sunwick',
+  desc:'A lighthouse at the end of the world, lit by something that is not fire.',
+  flav:['The beam turns inward.','Moths made of salt flutter to the light and become part of it.'],
+  lore:['The keeper\'s journal: "I stopped counting the nights. They stopped counting me."','A lamp that has been lit longer than the world has been dark.'],
+  mon:[['Lantern Eater',1.3,1.4,1,'ads'],['Hollow Pilgrim',1.1,1.3,1.1,'cas'],['Crown Guard',1.5,1.4,1.7,'ahb'],['Sunless Hound',1.2,1.5,1,'aah']],
+  kw:'Keeper of the Wick',boss:{n:'The Lantern Who Waits',hp:1.3,atk:1.3,def:1.4,pat:'ahbsh',pat2:'xcxh',intro:'It has been waiting for a long time. It would like to know if you are the one.'}}
+);
+DUNGEONS.forEach(d=>{DG[d.id]=d;});
+LEGENDS.push({k:'tidecrown',n:"Admiral's Tidecrown",slot:'helm',il:82,b:{def:1.7,hp:1.6},fx:{dodge:10,lifesteal:7,vit:14},dg:'wreck',lore:'The sea took its owner. It did not take the hat.'},{k:'sunwick',n:'Wick of the Last Light',slot:'amulet',il:98,b:{int:1.4,hp:1.2},fx:{crit:14,maxfocus:24,regen:9},dg:'lanternspire',lore:'Warm. Not from fire. Do not look at it for long.'});
+HAB.far.boss={n:'The Tide-Crowned Emperor',hp:1.3,atk:1.3,def:1.4,pat:'ahbsh'};
+ARCHX['the tide-crowned emperor']='serpent';ARCHX['the drowned admiral']='undead';ARCHX['the lantern who waits']='eye';
+MONFAM['The Tide-Crowned Emperor']='tide';
+// no part of the main hunting screen lists these
+const _trophyForM5=trophyFor;
+trophyFor=function(e){if(e.tier==='b'&&e.hab==='far')return BOSSF;return _trophyForM5(e);};
+const farOK=()=>S.hero.lvl>=45&&S.hero.contracts>=48;
+const reach=(a,b)=>{if(a===b)return false;const la=TOWNS[a].late,lb=TOWNS[b].late;if(la||lb)return (a==='saltmarch'&&b==='farshore'&&farOK())||(a==='farshore'&&b==='saltmarch');return true;};
+const _TM5=T;
+T=function(){const t=_TM5();TOWN_IDS.forEach(id=>{if(!t.mult[id]){t.mult[id]={};GOOD_IDS.concat(['lotus','rum','seals']).forEach(g=>{t.mult[id][g]=goodTarget(id,g);});}});return t;};
+const _tipPoolM5=tipPool;
+tipPool=function(){
+ const L=_tipPoolM5().filter(e=>!(e[0]==='t'&&TOWNS[e[1]].late)&&!(e[0]==='m'&&TOWNS[e[1]].late&&!knowT(e[1])));
+ if(where()==='saltmarch'&&farOK()&&!knowT('farshore'))L.push(['t','farshore']);
+ return L;
+};
+const _giveTipM5=giveTip;
+giveTip=function(){
+ const r=_giveTipM5();
+ return r;
+};
+// ferry fare
+const _setOutM5=ACT.setOut;
+ACT.setOut=function(p){
+ const [to]=p.split(':'),from=where();
+ if((TOWNS[to]&&TOWNS[to].late||TOWNS[from].late)){
+  if(!reach(from,to)||!knowT(to))return;
+  if(S.world.gold<600){note('The ferry costs 600g.','e');return;}
+  S.world.gold-=600;
+  S.trip={from,to,total:dist(from,to),d:0,stage:'day',guard:false,lines:[`🚢 You pay 600g for passage to ${TOWNS[to].n}. The captain says the sea is calm. The sea has not been told.`],pend:null};
+  S.screen='trip';return;
+ }
+ return _setOutM5(p);
+};
+// habitats & the far shore outskirts
+const _outskirtsM5=VIEWS.outskirts;
+VIEWS.outskirts=function(){
+ let s=_outskirtsM5();
+ if(where()!=='farshore')return s;
+ const w=S.world,h=S.hero,fam=T().farFam||0;
+ let ex=`<div class="card"><div class="row2"><b>🏝️ The Far Shore</b><span class="tag">familiarity ${fam}</span></div>`;
+ if(fam>=40)ex+=`<div style="margin-top:6px">${btn('Challenge: something wears a crown here','habBoss','far','bad c',h.sta<BOSS_COST||!!S.dg,BOSS_COST+'⚡')}</div>`;
+ const ds=['wreck','lanternspire'].filter(id=>w.map.found[id]);
+ if(ds.length)ex+='<h3>Dungeons</h3>'+ds.map(id=>{const D2=DG[id],cl=w.map.cleared[id]||0;return `<div class="item" style="cursor:default"><div><div class="n">${D2.ic} ${D2.n}</div><div class="s">Lv ${D2.lvl}+ · ${cl?'cleared ×'+cl:'unexplored'}</div></div><div style="width:110px">${btn(h.dgsave[id]?'Resume':'Enter','dgEnter',id,'pri c',!!S.dg||(!h.dgsave[id]&&h.sta<3))}</div></div>`;}).join('');
+ ex+='</div>';
+ return s.replace(btn('← Back to town','go','town','c'),ex+btn('← Back to town','go','town','c'));
+};
+Object.assign(ACT,{
+ habBoss(id){
+  const h=S.hero;if(h.sta<BOSS_COST){note('Too tired for a boss.','e');return;}
+  const e=makeEnemyHab(id,true);seeMon(e);S.enc={zi:e.zi,boss:true,e,hab:id};S.screen='enc';
+ }
+});
+const _fightM5=ACT.fight;
+ACT.fight=function(){const en=S.enc;if(en&&en.hab&&en.boss){S.enc=null;startCombat(en.e,true,{type:'loc',ret:'outskirts',again:en.hab});return;}_fightM5();};
+const _victoryM5=victory;
+victory=function(){
+ const e=S.cb&&S.cb.e;
+ _victoryM5();
+ if(e&&e.hab==='far'&&S.res){
+  const t=T();t.farFam=(t.farFam||0)+(e.tier==='b'?10:2);
+  const f=t.farFam,w=S.world;
+  if(f>=15&&!w.map.found.wreck){w.map.found.wreck=1;S.res.lines.push('🗺️ A fisherman\'s scrawl and the lay of the tide lead you to <b>The Leviathan Wreck</b>.');}
+  if(f>=45&&!w.map.found.lanternspire){w.map.found.lanternspire=1;S.res.lines.push('🗺️ At night, a beam turns across the water where there is no lighthouse. You mark <b>The Sunless Lantern</b>.');}
+ }
+};
+// ---------- the world that moves ----------
+EVK.push(
+ ()=>{const zi=ri(0,5),z=ZONES[zi],m=pick(z.mon);const fam=coreFam(m.n);return{kind:'migration',zi,fam,mult:1,left:ri(8,14),txt:`Migration: ${cap1(fam)}-kin are on the move through ${z.n}. Hunters report more of them than usual.`};},
+ ()=>{const cands=DUNGEONS.filter(d=>!d.dyn&&!d.far&&!S.world.map.found[d.id]&&d.zi<=rankIdx(S.hero.contracts)+1);if(!cands.length)return{kind:'rain',mult:1,left:5,txt:'Rain: a week of cold rain. Nobody is pleased.'};const d=pick(cands);return{kind:'flood',reveal:d.id,mult:1,left:ri(6,10),txt:`Flood: the river rose and fell, and left old stonework showing near ${ZONES[d.zi].n}. Someone says it is ${d.n}.`};}
+);
+const _envWeightM5=envWeight;
+envWeight=function(name){
+ let w=_envWeightM5(name);const t=S.world&&S.world.t;if(!t)return w;
+ const fam=coreFam(name);
+ t.ev.forEach(e=>{if(e.kind==='migration'&&e.fam===fam)w*=3;});
+ const pr=(t.press||{})[name]||0;w*=1/(1+pr/22);
+ return w;
+};
+const _victoryM5b=victory;
+victory=function(){
+ const e=S.cb&&S.cb.e;
+ _victoryM5b();
+ if(e&&e.base){const t=T();t.press=t.press||{};t.press[e.base]=(t.press[e.base]||0)+(e.pack?2:1);
+  if(t.press[e.base]===30)t.news.unshift({c:t.clock,t:`Thinning: hunters say there are far fewer ${e.base}s around than there were.`});}
+};
+const _sleepDayM5=sleepDay;
+sleepDay=function(){
+ _sleepDayM5();
+ const t=T();if(t.press)for(const k in t.press){t.press[k]*=.96;if(t.press[k]<.5)delete t.press[k];}
+ t.ev.forEach(e=>{if(e.kind==='flood'&&e.reveal&&!e.shown)e.shown=0;});
+ companionDaily();
+};
+// the crier reveals what the flood uncovered
+const _newsM5=VIEWS.news;
+VIEWS.news=function(){
+ const t=T();t.ev.forEach(e=>{if(e.kind==='flood'&&e.reveal&&!S.world.map.found[e.reveal]){S.world.map.found[e.reveal]=1;note(`🗺️ Marked on your map: ${DG[e.reveal].n}.`,'y');}});
+ return _newsM5();
+};
+// ---------- companions that live ----------
+const LIKES=['hunt','dungeon','travel','trade','rest','coin'];
+const LIKEN={hunt:'a good hunt',dungeon:'dungeons',travel:'new roads',trade:'a profitable deal',rest:'a proper night\'s rest',coin:'a little gambling'};
+function likeOf(id){let x=0;for(let i=0;i<id.length;i++)x=(x*31+id.charCodeAt(i))>>>0;return[LIKES[x%6],LIKES[(x>>3)%6===x%6?(x%6+1)%6:(x>>3)%6]];}
+const moodOf=id=>{const c=S.world.comp[id];if(!c)return 60;if(c.mood==null)c.mood=60;return c.mood;};
+function moodMult(id){const m=moodOf(id);return m>=80?1.08:m>=60?1.03:m<=15?.85:m<=30?.92:1;}
+const moodWord=m=>m>=80?'Delighted':m>=60?'Content':m>=40?'Steady':m>=25?'Restless':'Fed up';
+function moodTick(kind,n){
+ const w=S.world,h=S.hero;if(!h.party)return;
+ h.party.forEach(id=>{const c=w.comp[id];if(!c)return;const[l,d]=likeOf(id);
+  if(c.mood==null)c.mood=60;
+  if(kind===l)c.mood=Math.min(100,c.mood+(n||2));else if(kind===d)c.mood=Math.max(0,c.mood-(n||2));});
+}
+function companionDaily(){
+ const w=S.world,h=S.hero,t=T();
+ if(!h.party)return;
+ const pairs=compPairs();
+ h.party.forEach(id=>{const c=w.comp[id];if(!c)return;
+  if(c.mood==null)c.mood=60;
+  c.mood+= c.mood>60?-1:c.mood<60?1:0;
+  const p=pairs.find(q=>(q.a===id||q.b===id)&&h.party.includes(q.a===id?q.b:q.a));
+  if(p)c.mood=clamp(c.mood+(p.k==='friend'?1:-2),0,100);
+  if(!c.err&&Math.random()<.04&&c.mood>=35)c.err=makeErrand(id);
+ });
+}
+function compPairs(){
+ const w=S.world,t=T();
+ if(t.pairGen!==w.gen||!t.pairs){
+  const ids=castIds().filter(id=>w.comp[id]||w.meet[id]||true);t.pairGen=w.gen;t.pairs=[];
+  const sh=shuffle(ids);if(sh.length>=4){t.pairs.push({a:sh[0],b:sh[1],k:'rival'},{a:sh[2],b:sh[3],k:'friend'});}
+ }
+ return t.pairs;
+}
+function makeErrand(id){
+ const h=S.hero,t=tierOf(h.lvl);
+ if(Math.random()<.5){const m=pick(ZPRIM[clamp(t,0,5)]),n=ri(3,6);return{k:'bring',m,n,txt:`wants ${n} ${m} for something they will not explain.`};}
+ const L=TOWN_IDS.filter(x=>knowT(x)&&x!==HT&&!TOWNS[x].late);
+ if(L.length){const x=pick(L);return{k:'visit',town:x,txt:`has always wanted to see ${TOWNS[x].n}. Take them there.`};}
+ const m=pick(ZPRIM[clamp(t,0,5)]);return{k:'bring',m,n:4,txt:`wants 4 ${m}.`};
+}
+Object.assign(ACT,{
+ errDone(id){
+  const w=S.world,c=w.comp[id];if(!c||!c.err)return;const e=c.err;
+  if(e.k==='bring'){if((w.mats[e.m]||0)<e.n){note('You do not have enough of that.','e');return;}w.mats[e.m]-=e.n;if(!w.mats[e.m])delete w.mats[e.m];}
+  else if(e.k==='visit'){if(where()!==e.town||!S.hero.party.includes(id)){note(`They need to be in your party in ${TOWNS[e.town].n}.`,'e');return;}}
+  c.mood=Math.min(100,(c.mood||60)+30);c.bx=(c.bx||0)+30;
+  const it=genItem(Math.max(1,S.hero.lvl+ri(0,3)),rollRarity([20,45,28,7]));addItem(it);
+  note(`${COMP[id].ic} ${COMP[id].n} is delighted. They press ${it.name} into your hands.`,'y');c.err=null;
+ },
+ mediate(p){
+  const [a,b]=p.split(':'),t=T(),w=S.world;if(w.gold<40)return;
+  const pr=compPairs().find(q=>q.a===a&&q.b===b);if(!pr||pr.k!=='rival')return;
+  w.gold-=40;pr.k='friend';[a,b].forEach(id=>{if(w.comp[id])w.comp[id].mood=Math.min(100,(w.comp[id].mood||60)+15);});
+  note(`🍻 You sit ${COMP[a].n} and ${COMP[b].n} down over a drink. It goes badly, then well. They are friends now, against all odds.`,'y');
+ }
+});
+const _buildPartyM5=buildParty;
+buildParty=function(){const out=_buildPartyM5();out.forEach(u=>{if(!u.guest){u.atk=Math.round(u.atk*moodMult(u.id));}});return out;};
+const _partyM5=VIEWS.party;
+VIEWS.party=function(){
+ let s=_partyM5();
+ const w=S.world,h=S.hero,pairs=compPairs();
+ s=s.replace(/<h2>Not yet met[\s\S]*?(?=<h2>|$)/,'');
+ const act=(h.party||[]).concat(castIds().filter(id=>w.comp[id]&&!h.party.includes(id)));
+ if(!act.length)return s;
+ let life=`<h2>Companion life</h2><p class="mut sm">Moods change how hard they fight. They like certain things, and rub each other the wrong way.</p>`;
+ life+=act.map(id=>{const c=w.comp[id],[l,d]=likeOf(id),m=moodOf(id);
+  const pr=pairs.find(q=>(q.a===id||q.b===id)&&(w.comp[q.a===id?q.b:q.a]));
+  const other=pr?COMP[pr.a===id?pr.b:pr.a]:null;
+  return `<div class="card sm"><div class="row2"><b>${COMP[id].ic} ${COMP[id].n}</b><span class="tag">${moodWord(m)} · ${m}</span></div>${bar(m,100,m>=60?'xp':'hp')}
+  <div class="mut">Likes ${LIKEN[l]}. Dislikes ${LIKEN[d]}.${other?` ${pr.k==='friend'?'Good friends with':'Rivals with'} ${other.n}.`:''}</div>
+  ${c.err?`<div style="margin-top:4px">💬 ${COMP[id].n} ${c.err.txt}</div>${c.err.k==='bring'?btn('Hand it over','errDone',id,'pri c',(w.mats[c.err.m]||0)<c.err.n,`${c.err.n} ${c.err.m}`):btn('Ask if we are there','errDone',id,'pri c',where()!==c.err.town||!h.party.includes(id))}`:''}
+  ${pr&&pr.k==='rival'&&h.party.includes(pr.a)&&h.party.includes(pr.b)&&pr.a===id?btn('Settle it over a drink','mediate',pr.a+':'+pr.b,'c',w.gold<40,'40g'):''}</div>`;}).join('');
+ return life+s;
+};
+// moods react to what you do
+const _victoryM5c=victory;
+victory=function(){
+ const ctx=S.cb&&S.cb.ctx;_victoryM5c();
+ if(ctx)moodTick(ctx.type==='dg'?'dungeon':'hunt',1);
+};
+const _arriveM5=arrive;
+arrive=function(to){
+ _arriveM5(to);
+ moodTick('travel',3);
+ const w=S.world;(S.hero.party||[]).forEach(id=>{const c=w.comp[id];if(c&&c.err&&c.err.k==='visit'&&c.err.town===to){note(`${COMP[id].ic} ${COMP[id].n} looks around ${TOWNS[to].n} with shining eyes. (Tap "Ask" in your party screen.)`,'y');}});
+ // parcels
+ const h=S.hero,cr=h.courier;
+ if(cr&&cr.to===to){const late=T().clock>cr.dl,pay=late?Math.round(cr.pay*.5):cr.pay;w.gold+=pay;addRep(to,late?0:2);h.courier=null;note(`📜 You hand over the parcel in ${TOWNS[to].n}${late?' (late; they dock your pay)':''}. +${fmt(pay)}g.`,late?'':'g');}
+};
+const _sleepM5=sleepDay;
+sleepDay=function(){_sleepM5();moodTick('rest',1);};
+const _tsellM5=ACT.tsell;
+ACT.tsell=function(p){const g0=S.world.gold;_tsellM5(p);if(S.world.gold>g0)moodTick('trade',1);};
+const _casSpin=['slSpin','dcRoll','rSpin'];
+_casSpin.forEach(k=>{const o=ACT[k];ACT[k]=function(a){const g0=S.world.gold;o(a);if(S.world.gold!==g0)moodTick('coin',1);};});
+// ---------- courier work ----------
+function courierJobs(){
+ const t=T(),town=where(),seed=(t.clock*13+town.length)%97;let r=seed+3;
+ const rnd=()=>{r=(r*48271)%2147483647;return r/2147483647;};
+ const dests=TOWN_IDS.filter(x=>x!==town&&knowT(x)&&reach(town,x)&&!TOWNS[x].late).sort(()=>rnd()-.5).slice(0,2);
+ return dests.map(x=>({to:x,pay:Math.round(dist(town,x)*38+S.hero.lvl*9),dl:t.clock+dist(town,x)+3}));
+}
+Object.assign(ACT,{
+ courierTake(i){const h=S.hero;if(h.courier)return;const j=courierJobs()[+i];if(!j)return;h.courier=j;note(`📜 You take a sealed parcel bound for ${TOWNS[j.to].n}. It weighs nothing and makes you nervous.`);},
+ courierDrop(){const h=S.hero;if(!h.courier)return;h.courier=null;addRep(where(),-3);note('You hand the parcel back. The postmaster sighs for a long time.','e');}
+});
+const _doingsM5=VIEWS.doings;
+VIEWS.doings=function(){
+ let s=_doingsM5();const h=S.hero;
+ const jobs=courierJobs();
+ let c='';
+ if(h.courier)c=`<div class="card"><b>📜 Parcel for ${TOWNS[h.courier.to].n}</b><div class="mut sm">Pays ${fmt(h.courier.pay)}g, due in ${Math.max(0,h.courier.dl-T().clock)} days.</div>${btn('Give it back','courierDrop',undefined,'c')}</div>`;
+ else if(jobs.length)c='<h2>Courier work</h2>'+jobs.map((j,i)=>`<div class="card sm"><div class="row2"><b>📜 To ${TOWNS[j.to].n}</b><span class="tag">${dist(where(),j.to)} days</span></div><div class="mut">Pays ${fmt(j.pay)}g if delivered by day ${j.dl-T().clock} from now.</div>${btn('Take the parcel','courierTake',i,'c')}</div>`).join('');
+ return s.replace(btn('← Back','go','town','c'),c+btn('← Back','go','town','c'));
+};
+
+/* =====================================================================
+   PASS 7 / M5b — Field Guide, Family ledger, sound, backups, small flavor
+   ===================================================================== */
+function routeHab(){const t=S.trip;return t&&(TOWNS[t.to].late||TOWNS[t.from].late)?'sea':'highroad';}
+// ---------- the family ledger: collections and what they give your heirs ----------
+const seenMon=()=>{const b=S.world.best||{};return codexEntries().filter(e=>b[e.name]&&(b[e.name].seen||b[e.name].k>0)).length;};
+function vestFams(){
+ const w=S.world,h=S.hero,s=new Set(Object.keys(w.pbook||{}));
+ (h.corebag||[]).forEach(c=>s.add(c.f));Object.keys(h.powers||{}).forEach(f=>s.add(f));
+ w.know.vf=w.know.vf||{};s.forEach(f=>w.know.vf[f]=1);return Object.keys(w.know.vf).length;
+}
+const COLLS=[
+ {id:'mon',ic:'📕',n:'Creatures recorded',cur:seenMon,tot:()=>codexEntries().length},
+ {id:'mat',ic:'🧶',n:'Materials found',cur:()=>Object.keys(S.world.seenMat||{}).length,tot:()=>Object.keys(MATQ).length},
+ {id:'ves',ic:'🔹',n:'Vestige families held',cur:vestFams,tot:()=>Object.keys(POW).length},
+ {id:'town',ic:'🧭',n:'Towns visited',cur:()=>Object.keys(T().visited||{}).length,tot:()=>TOWN_IDS.length},
+ {id:'doing',ic:'📌',n:'Pastimes tried',cur:()=>Object.keys(T().done||{}).length,tot:()=>DOINGS.length},
+ {id:'npc',ic:'💞',n:'Friends made',cur:()=>Object.keys(NPC_BY).filter(id=>aff(id).a>=3).length,tot:()=>Object.keys(NPC_BY).length},
+ {id:'dg',ic:'🏰',n:'Dungeons cleared',cur:()=>Object.keys(S.world.map.cleared).length,tot:()=>DUNGEONS.filter(d=>!d.dyn).length}
+];
+const MSTEPS=[
+ {f:.2,r:{xpf:1},t:'+1% XP'},{f:.4,r:{goldf:2},t:'+2% gold'},{f:.6,r:{dropf:2},t:'+2% loot'},{f:.8,r:{hp:2},t:'+2% max HP'},{f:1,r:{xpf:2,goldf:3,dropf:3,hp:3,cargo:10},t:'+2% XP, +3% gold, +3% loot, +3% HP, +10 cargo'}
+];
+function famRefresh(){
+ const w=S.world,fb={xpf:0,goldf:0,dropf:0,hp:0,cargo:0,n:0};
+ COLLS.forEach(c=>{const cur=c.cur(),tot=c.tot();MSTEPS.forEach(s=>{if(cur>=Math.ceil(tot*s.f)){for(const k in s.r)fb[k]+=s.r[k];fb.n++;}});});
+ w.fam=fb;return fb;
+}
+const _PM5=P;
+P=function(){
+ const p=_PM5(),fb=(S.world&&S.world.fam)||null;
+ if(fb){p.xpf+=fb.xpf;p.goldf+=fb.goldf;p.dropf+=fb.dropf;if(fb.hp)p.maxhp=Math.round(p.maxhp*(1+fb.hp/100));}
+ return p;
+};
+const _sleepDayM5b=sleepDay;
+sleepDay=function(){_sleepDayM5b();try{const o=(S.world.fam||{}).n||0,f=famRefresh();if(f.n>o)note(`🏛️ Your family ledger fills in a little more. Bloodline bonuses grow (${f.n} milestones).`,'y');}catch(e){}};
+function legacyHtml(){
+ const w=S.world,h=S.hero,t=T(),fb=famRefresh();
+ let s=`<h2>🏛️ House ${esc(h.fam)}</h2><p class="mut sm">Everything the family has seen, done and become, across every life. Each collection grants permanent bonuses that every heir inherits.</p>`;
+ s+=`<div class="card sm">Generation <b>${w.gen}</b> · Best ancestor Lv <b>${w.bestLevel||h.lvl}</b> · Family wealth <b>${fmt(Math.floor(w.gold+bk().bal))}g</b>${bk().debt>0.5?` (owing ${fmt(Math.ceil(bk().debt))}g)`:''}<br>Trade standing: <b>${TRADE_T[tradeLv()]}</b> · Bloodline bonuses: <b>${fb.n}</b> milestones</div>`;
+ s+=`<div class="card sm"><b>Bloodline bonuses so far</b><br>${fb.xpf?`+${fb.xpf}% XP · `:''}${fb.goldf?`+${fb.goldf}% gold · `:''}${fb.dropf?`+${fb.dropf}% loot · `:''}${fb.hp?`+${fb.hp}% max HP · `:''}${fb.cargo?`+${fb.cargo} cargo`:''}${fb.n?'':'<span class="mut">None yet. Explore, meet people and collect things.</span>'}</div>`;
+ s+=COLLS.map(c=>{const cur=c.cur(),tot=c.tot();
+  return `<div class="card sm"><div class="row2"><b>${c.ic} ${c.n}</b><span class="tag">${cur} / ${tot}</span></div>${bar(cur,tot,'xp')}<div class="mut" style="font-size:.75rem">${MSTEPS.map(m=>(cur>=Math.ceil(tot*m.f)?'✅':'⬜')+' '+Math.ceil(tot*m.f)+' → '+m.t).join('<br>')}</div></div>`;}).join('');
+ const L=t.ledger||{},cs=L.cas||{won:0,lost:0,rounds:0};
+ s+=`<h3>The Family Ledger</h3><div class="card sm">Pastimes enjoyed: ${L.doings||0}<br>Goods sold at market: ${fmt(Math.round(t.sales||0))}g<br>Casino rounds played: ${cs.rounds} (won ${fmt(cs.won)}g, lost ${fmt(cs.lost)}g)<br>Best pit streak: ${S.pitStreak||0}</div>`;
+ s+=`<h3>Hall of Ancestors</h3>`+(w.anc.length?w.anc.slice().reverse().map(a=>`<div class="card sm">⚰️ <b>${esc(a.name)}</b> (Gen ${a.gen}) · Lv ${a.lvl} · ${a.contracts} contracts<br><span class="mut">${esc(a.cause)}</span></div>`).join(''):'<p class="mut sm">No one has fallen yet. They will.</p>');
+ return s;
+}
+// ---------- the field guide ----------
+function guideHtml(){
+ const w=S.world,h=S.hero,known=m=>!!(w.seenMat&&w.seenMat[m])||!!(w.know.ms&&w.know.ms[m]);
+ const mats=Object.keys(MATQ).filter(known).sort((a,b)=>((MT[a]||0)-(MT[b]||0))||a.localeCompare(b));
+ let s=`<h2>🔧 Field Guide</h2><p class="mut sm">A notebook of what you have found and what you have been told. Ask the right people and the notebook gets better.</p><h3>Materials</h3>`;
+ s+=mats.length?mats.map(m=>`<div class="card sm"><b>${esc(m)}</b> <span class="mut">(${ZONES[clamp(MT[m]||0,0,5)].n.replace(/^The /,'')})</span><div class="mut"><i>${MATQ[m]}</i></div><div class="mut" style="font-size:.75rem;opacity:.75">${MATSRC[m]||''}</div></div>`).join(''):'<p class="mut sm">You have not picked anything up yet.</p>';
+ const fam=Object.keys(w.know.vf||{});
+ s+=`<h3>Vestige families</h3>`;
+ s+=fam.length?fam.map(f=>{const d=POW[f],mons=Object.keys(MONFAM).filter(n=>MONFAM[n]===f&&w.best[n]&&(w.best[n].seen||w.best[n].k>0));return `<div class="card sm"><b>${d.ic} ${cap1(f)}</b> <span class="mut">${d.n}</span><div class="mut">Works with ${d.w.map(id=>ESSX[id].n).join(', ')}.${mons.length?' Seen from: '+mons.slice(0,5).join(', ')+'.':''}</div></div>`;}).join(''):'<p class="mut sm">You have not held a vestige yet.</p>';
+ return s;
+}
+const _journalM5=VIEWS.journal;
+VIEWS.journal=function(){
+ const tab=S.jtab||'quests';
+ const tabs=[['quests','📜 Quests'],['places','🗺️ Places'],['best','📕 Codex'],['guide','🔧 Guide'],['perks','🏘️ Perks'],['legacy','🏛️ Family']];
+ const bar2=`<div class="grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:8px">${tabs.map(x=>btn(x[1],'jtab',x[0],tab===x[0]?'pri c':'c')).join('')}</div>`;
+ if(tab==='guide'||tab==='legacy')return `<h1>📖 Journal</h1>${bar2}${tab==='guide'?guideHtml():legacyHtml()}`;
+ return _journalM5().replace(/<div class="grid" style="grid-template-columns:repeat\(2,1fr\);margin-bottom:8px">[\s\S]*?<\/div>/,bar2);
+};
+// ---------- sound (synthesized, off until you turn it on) ----------
+const SFX={ctx:null};
+const sndOn=()=>S&&S.set?!!S.set.sound:!!PRE.sound;
+function tone(f,d,type,vol,at){
+ try{
+  if(!SFX.ctx){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;SFX.ctx=new AC();}
+  const c=SFX.ctx,o=c.createOscillator(),g=c.createGain(),t0=c.currentTime+(at||0);
+  o.type=type||'sine';o.frequency.setValueAtTime(f,t0);g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(vol||.08,t0+.01);g.gain.exponentialRampToValueAtTime(.0001,t0+d);
+  o.connect(g);g.connect(c.destination);o.start(t0);o.stop(t0+d+.02);
+ }catch(e){}
+}
+function sfx(n){
+ if(!sndOn())return;
+ if(n==='tick')tone(520,.05,'square',.03);
+ else if(n==='coin'){tone(880,.08,'triangle',.07);tone(1320,.14,'triangle',.07,.07);}
+ else if(n==='win'){[523,659,784,1047].forEach((f,i)=>tone(f,.18,'triangle',.07,i*.09));}
+ else if(n==='lose'){[392,330,262].forEach((f,i)=>tone(f,.22,'sawtooth',.05,i*.12));}
+ else if(n==='level'){[392,523,659,784,1047].forEach((f,i)=>tone(f,.16,'triangle',.08,i*.07));}
+ else if(n==='chime'){[659,523,392].forEach((f,i)=>tone(f,.5,'sine',.06,i*.35));}
+ else if(n==='hit')tone(140,.1,'square',.07);
+}
+if(typeof document!=='undefined')document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-a]');if(b&&!b.disabled)sfx('tick');},true);
+const _victoryM5s=victory;victory=function(){_victoryM5s();sfx('win');};
+const _dieM5=die;die=function(c){_dieM5(c);sfx('lose');};
+const _playSleepM5=playSleep;playSleep=function(d){_playSleepM5(d);sfx('chime');};
+const _addXPM5=addXP;addXP=function(n){const r=_addXPM5(n);if(r.some(l=>/Level/.test(l)))sfx('level');return r;};
+['slSpin','dcRoll','rSpin','hlCash','vpDraw'].forEach(k=>{const o=ACT[k];if(!o)return;ACT[k]=function(a){const g0=S.world.gold;o(a);sfx(S.world.gold>g0?'coin':'hit');};});
+ACT.sndtog=function(){S.set.sound=!S.set.sound;if(S.set.sound)sfx('coin');};
+TA.tsnd=function(){PRE.sound=!PRE.sound;prefSave();if(PRE.sound)sfx('coin');};
+const _settingsM5=settingsHtml;
+settingsHtml=function(){return _settingsM5()+`<div style="height:8px"></div>${btn('Sound: '+(S.set.sound?'ON':'OFF'),'sndtog',undefined,'',false,'small synthesized effects')}`;};
+const _tvSettings=TV.settings;
+TV.settings=function(){return _tvSettings().replace(btn('Back','tgo','title','c'),btn('Sound: '+(PRE.sound?'ON':'OFF'),'tsnd',undefined,'',false,'small synthesized effects')+'<div style="height:8px"></div>'+btn('Back','tgo','title','c'));};
+const _newGameSet=ACT.start;
+ACT.start=function(){_newGameSet();if(S&&S.set&&PRE.sound)S.set.sound=true;};
+// ---------- backups ----------
+Object.assign(ACT,{
+ dlsave(){
+  try{const d=btoa(unescape(encodeURIComponent(JSON.stringify(S))));const b=new Blob([d],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='hollowmere-'+S.hero.fam+'-gen'+S.world.gen+'.txt';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},600);note('Save file downloaded. Keep it somewhere safe.','g');}
+  catch(e){note('Could not download. Use Export instead.','e');}
+ }
+});
+const _menuM5=VIEWS.menu;
+VIEWS.menu=function(){return _menuM5()+`<h2>Backup</h2>${btn('⬇️ Download save file','dlsave',undefined,'c',false,'load it later from the title screen')}`;};
+// ---------- a little more flavor ----------
+AMB.push(
+ 'A man is trying to sell a cow a hat. The cow is considering it.','Someone has painted a door on a wall. A crowd of people are politely knocking.','A woman says the moon is cheaper in the next town.','A child asks a guard how big monsters are. The guard says "about this" and gets it wrong by a lot.',
+ 'A very old man is winning at chess against a pigeon.','Two merchants argue about the price of a pebble. It is a beautiful pebble.','A bard tunes his lute and then, in a fit of honesty, apologizes in advance.','A dog is wearing a tiny cape. No one has asked about the cape.',
+ 'A cart overturns. Several hundred turnips go for an unplanned stroll.','Someone has lost a sock and is looking for it with great emotion.','A man asks you, in great confidence, whether you have seen his wife. You have not. He seems relieved.','The baker\'s cat has joined the guard. It is a corporal now.',
+ 'A preacher shouts about the end of the world on a barrel. Someone offers him a pie. He accepts, and the end of the world is postponed.','A stranger sells you directions. The directions are to where you already are.','A pair of lovers bicker over who loves who more. The pigeons are taking sides.','The mayor\'s statue has been given a mustache overnight. Nobody knows. Everyone knows.',
+ 'A drunk explains the secret of life to a lamppost. The lamppost seems unimpressed.','A boy is trying to sell water to a fish.','Someone is shouting "FRESH BREAD." It is a very old brick.','A guard asks you to move along. You were not doing anything. He says that is the problem.'
+);
+const POTQ={hp1:'Tastes like hope and mild cough syrup.',hp2:'Fizzy, bright, and absolutely not a soft drink.',hp3:'A swallow of sunrise. May cause delusions of invincibility.'};
+const _buyPotM5=ACT.buyPot;
+ACT.buyPot=function(id){const g0=S.world.gold;_buyPotM5(id);if(S.world.gold<g0&&POTQ[id])note(`🧪 ${POTQ[id]}`);};
+
+if(typeof window!=='undefined')window.TQ={reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>
 </html>
