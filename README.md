@@ -48,9 +48,10 @@ Companions are **procedurally generated**: each generation gets a fresh cast of 
 - **Essences:** joining the guild awakens a first essence (more at Bronze and Gold rank). You are offered three random ones. Each grants a skill and a scaling bonus, and certain pairs form a **confluence** with extra bonuses.
 - **Monster cores:** once you have an essence, kills can leave cores (elites and bosses far more often). Cores deepen an essence's attunement, capped by guild rank. Heirs awaken their own essences.
 
-### Spirit coins, cores and powers (reworked)
+### Wicks, vestiges and powers
 
-- **Spirit coins** drop from monsters once you have an essence (far more from elites and bosses). They deepen essence attunement and can reroll the essences offered at an awakening.
-- **Cores** are specific to a monster family (beast, undead, frost, fire, golem, spider, and so on) and grade with the monster's tier. Absorbing one teaches that family's **power**. A duplicate core strengthens it. Rank limits how many powers you can hold.
-- **Resonance:** every power lists the essences it works with. If you hold one, the power is 1.75x stronger, and the core screen tells you when a core suits your build.
-- **Bloodline memory:** the best level of every power an ancestor mastered is remembered. From the second generation on, an heir can reawaken a few of them (more over generations) for spirit coins, one level weaker. Essences, skills and levels are not inherited.
+- **Wicks** are the lantern-light monsters leave behind once you have an essence. They are scarce: normal kills rarely drop one, elites more often, bosses almost always. They deepen essences, bind vestiges and reroll essence offers.
+- **Vestiges** are rare fragments of a monster family. There are 26 families (beast, wolf, boar, vermin, stag, bird, undead, wraith, leech, spider, slime, golem, knight, troll, imp, goblin, tree, sprite, eye, maw, mimic, crab, archer, dragon, frost, fire). Grade follows the monster's tier, and the rarer families (mimic, maw, dragon, troll, knight, eye) drop far less often.
+- Binding a vestige costs wicks and teaches the family's **power**. A duplicate strengthens it. Rank limits how many powers you can hold.
+- **Resonance:** every power lists the essences it works with. If you hold one, the power is 1.75x stronger.
+- **Bloodline memory:** from the second generation on, an heir can reawaken some ancestral powers for wicks, one level weaker. Essences, skills and levels are not inherited.

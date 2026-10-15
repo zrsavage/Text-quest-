@@ -3497,7 +3497,7 @@ function render(){
  if(S.screen==='convo'&&!S.cv)S.screen='tavern';
  const sc=S.screen,h=S.hero,p=P();
  top.style.display=sc==='death'?'none':'block';
- top.innerHTML=`<div class="row"><span><b>${esc(h.name)}</b> Lv ${h.lvl}</span><span>💰 <b>${fmt(S.world.gold)}</b></span>${S.world.spirit||(h.ess&&h.ess.length)?`<span>🪙 <b>${S.world.spirit||0}</b></span>`:''}<span>⚡ <b>${h.sta}/${p.maxsta}</b></span><span>${envIcons()} Day <b>${h.day}</b></span></div>${bar(h.hp,p.maxhp,'hp')}<div class="row"><span>❤ ${h.hp}/${p.maxhp}</span><span>XP ${h.xp}/${xpNeed(h.lvl)}</span></div>`;
+ top.innerHTML=`<div class="row"><span><b>${esc(h.name)}</b> Lv ${h.lvl}</span><span>💰 <b>${fmt(S.world.gold)}</b></span>${S.world.spirit||(h.ess&&h.ess.length)?`<span>🕯️ <b>${S.world.spirit||0}</b></span>`:''}<span>⚡ <b>${h.sta}/${p.maxsta}</b></span><span>${envIcons()} Day <b>${h.day}</b></span></div>${bar(h.hp,p.maxhp,'hp')}<div class="row"><span>❤ ${h.hp}/${p.maxhp}</span><span>XP ${h.xp}/${xpNeed(h.lvl)}</span></div>`;
  view.innerHTML=hintHtml(sc)+VIEWS[sc]();
  const showNav=!['combat','death','enc','bgpick'].includes(sc);
  nav.style.display=showNav?'flex':'none';
@@ -3871,7 +3871,7 @@ const CONF=[
 const essOf=()=>{const h=S&&S.hero;if(!h)return[];return h.ess=h.ess||[];};
 const essSlots=()=>{const h=S.hero;return(S.world.guild?1:0)+(h.contracts>=10?1:0)+(h.contracts>=32?1:0);};
 const essCap=()=>2+rankIdx(S.hero.contracts);
-/* ----- powers: a core taken from a monster family teaches its power. Powers resonate with the essences they work with. ----- */
+/* ----- powers: a vestige taken from a monster family teaches its power. Powers resonate with the essences they work with. ----- */
 const POW={
  beast:{n:"Predator's Instinct",ic:'🐺',e:{crit:1.2,atk:.02},w:['shadow','wind']},
  bird:{n:'Gale Wings',ic:'🦅',e:{dodge:1.5},w:['wind','fortune']},
@@ -3884,11 +3884,28 @@ const POW={
  eye:{n:'Evil Sight',ic:'👁️',e:{crit:1.5,xpf:1.5},w:['shadow','war']},
  dragon:{n:'Dragonheart',ic:'🐉',e:{atk:.04,maxhp:.02},w:['flame','war']},
  frost:{n:'Rime Skin',ic:'❄️',e:{def:.03,dodge:.5},w:['stone','life']},
- fire:{n:'Ember Core',ic:'🌋',e:{atk:.04},w:['flame','blood']}
+ fire:{n:'Ember Heart',ic:'🌋',e:{atk:.04},w:['flame','blood']},
+ wolf:{n:'Pack Hunter',ic:'🐕',e:{atk:.03,dodge:.5},w:['blood','war'],r:.9},
+ boar:{n:'Thick Hide',ic:'🐗',e:{maxhp:.04,def:.02},w:['stone','life'],r:1},
+ vermin:{n:'Scavenger',ic:'🐀',e:{goldf:4,dropf:1},w:['fortune','shadow'],r:1.1},
+ stag:{n:'Antlered Grace',ic:'🦌',e:{dodge:1,maxhp:.02,regen:1},w:['wind','life'],r:.7},
+ troll:{n:'Regrowth',ic:'🧌',e:{regen:2,maxhp:.02},w:['life','war'],r:.5},
+ knight:{n:'Oathbound',ic:'🛡️',e:{def:.03,xpf:1.5},w:['war','stone'],r:.5},
+ wraith:{n:'Wail',ic:'👻',e:{dodge:1.2,lifesteal:.5},w:['shadow','wind'],r:.7},
+ leech:{n:'Leechhold',ic:'🪱',e:{lifesteal:1.2},w:['blood','life'],r:.8},
+ crab:{n:'Shell Plating',ic:'🦀',e:{def:.035},w:['stone','flame'],r:.8},
+ mimic:{n:'Greed',ic:'🎁',e:{goldf:5,dropf:3},w:['fortune','shadow'],r:.3},
+ archer:{n:'Steady Aim',ic:'🏹',e:{crit:1.6},w:['shadow','wind'],r:.8},
+ goblin:{n:'Cunning',ic:'👺',e:{dropf:2.5,goldf:2},w:['fortune','war'],r:1},
+ sprite:{n:'Wild Magic',ic:'✨',e:{xpf:2,atk:.02},w:['flame','life'],r:.7},
+ maw:{n:'Hunger',ic:'🕳️',e:{lifesteal:.8,atk:.03},w:['blood','war'],r:.4}
 };
+for(const k in POW)if(POW[k].r==null)POW[k].r=({dragon:.4,eye:.5,golem:.8,tree:.8,slime:1,beast:1,bird:1,undead:1,spider:.9,imp:.9,frost:.8,fire:.8})[k]||1;
+const FAMRE=[['mimic',/mimic/],['maw',/maw|void/],['wraith',/wraith|ghost|shade/],['leech',/leech/],['crab',/crab/],['archer',/archer/],['troll',/troll|yeti/],['knight',/knight|warden/],['wolf',/wolf|hound/],['boar',/boar/],['vermin',/\brat\b|rat king|swarm/],['stag',/stag/],['goblin',/goblin/],['sprite',/sprite/]];
 const RES=1.75;
 function coreFam(name){
  const k=monKind(name);if(k.frost)return'frost';if(k.fire)return'fire';
+ const n=name.toLowerCase();for(const [f,re] of FAMRE)if(re.test(n))return f;
  const a=archOf(name);return POW[a]?a:(k.undead?'undead':'beast');
 }
 const powOf=()=>{const h=S&&S.hero;if(!h)return{};return h.powers=h.powers||{};};
@@ -3896,7 +3913,9 @@ const powSlots=()=>1+Math.floor(rankIdx(S.hero.contracts)/2);
 const powRes=f=>POW[f].w.filter(id=>essOf().some(x=>x.id===id));
 const powMax=5;
 const inhSlots=()=>Math.min(4,Math.floor(S.world.gen/2));
-const attuneCost=a=>6*a*a+4;
+const attuneCost=a=>12*a*a+8;
+const absorbCost=(cur,g)=>cur?15*(cur+1):12*g*g;
+const inheritCost=lv=>20*lv;
 const confluences=()=>{const ids=essOf().map(x=>x.id);return CONF.filter(c=>ids.includes(c.a)&&ids.includes(c.b));};
 function essBonus(){
  const b={};
@@ -3918,19 +3937,20 @@ P=function(){
  if(b.goldf)p.goldf+=b.goldf;if(b.dropf)p.dropf+=b.dropf;if(b.xpf)p.xpf+=b.xpf;if(b.regen)p.regen+=Math.round(b.regen);
  return p;
 };
-// monster cores and spirit coins: stronger monsters leave more of both
+// monster vestiges and wicks: stronger monsters leave more of both
 const _victoryK=victory;
 victory=function(){
  const c=S.cb,e=c&&c.e,h=S.hero,w=S.world;
  _victoryK();
  if(!e||!S.res)return;
  if(essOf().length){
-  const sc={n:.3,e:.8,b:1}[e.tier]*(e.pack?1.3:1);
-  if(Math.random()<sc){const n=Math.max(1,Math.round(({n:ri(1,2),e:ri(3,5),b:ri(10,16)}[e.tier])*(1+e.lvl/25)));w.spirit=(w.spirit||0)+n;S.res.lines.push(`🪙 +${n} spirit coin${n>1?'s':''}`);}
-  const ch={n:.05,e:.22,b:.85}[e.tier]*(e.pack?1.3:1),g=e.tier==='b'?3:e.tier==='e'?2:1;
+  const sc={n:.05,e:.25,b:1}[e.tier]*(e.pack?1.3:1);
+  if(Math.random()<sc){const n=Math.max(1,Math.round(({n:1,e:ri(1,3),b:ri(4,7)}[e.tier])*(1+e.lvl/25)));w.spirit=(w.spirit||0)+n;S.res.lines.push(`🕯️ +${n} wick${n>1?'s':''}`);}
+  const f=coreFam(e.base||e.name),g=e.tier==='b'?3:e.tier==='e'?2:1;
+  const ch={n:.003,e:.02,b:.16}[e.tier]*(e.pack?1.3:1)*POW[f].r*(1+e.lvl/60);
   if(Math.random()<ch){
-   const f=coreFam(e.base||e.name);h.corebag=h.corebag||[];
-   if(h.corebag.length<30){h.corebag.push({f,g});S.res.lines.push(`💠 <b>${POW[f].ic} ${cap1(f)} core</b> (grade ${g}) <span class="mut">— ${POW[f].n}</span>`);}
+   h.corebag=h.corebag||[];
+   if(h.corebag.length<30){h.corebag.push({f,g});S.res.lines.push(`🔹 <b>${POW[f].ic} ${cap1(f)} vestige</b> (grade ${g}) <span class="mut">— ${POW[f].n}</span>`);}
   }
  }
 };
@@ -3959,52 +3979,54 @@ Object.assign(ACT,{
   const w=S.world,x=essOf().find(y=>y.id===id);if(!x||x.a>=essCap())return;const c=attuneCost(x.a);if((w.spirit||0)<c)return;
   w.spirit-=c;x.a++;note(`${ESSX[id].ic} Your ${ESSX[id].n} essence deepens (attunement ${x.a}).`,'y');
  },
- essReroll(){const h=S.hero,w=S.world;if(!h.essOffer||(w.spirit||0)<5)return;w.spirit-=5;const keep=essOf().map(x=>x.id);h.essOffer=ESS.filter(x=>!keep.includes(x.id)&&!h.essOffer.includes(x.id)).sort(()=>Math.random()-.5).slice(0,3).map(x=>x.id);if(h.essOffer.length<3)essOffer();},
+ essReroll(){const h=S.hero,w=S.world;if(!h.essOffer||(w.spirit||0)<10)return;w.spirit-=10;const keep=essOf().map(x=>x.id);h.essOffer=ESS.filter(x=>!keep.includes(x.id)&&!h.essOffer.includes(x.id)).sort(()=>Math.random()-.5).slice(0,3).map(x=>x.id);if(h.essOffer.length<3)essOffer();},
  pwAbsorb(i){
   const h=S.hero,pw=powOf(),c=(h.corebag||[])[+i];if(!c)return;
-  const cur=pw[c.f]||0;
+  const cur=pw[c.f]||0,cost=absorbCost(cur,c.g);
   if(!cur&&Object.keys(pw).length>=powSlots()){note('Your body can hold no more powers. Forget one first.','e');return;}
   if(cur>=powMax){note('That power is as strong as it can get.','e');return;}
+  if((S.world.spirit||0)<cost){note(`You need ${cost} wicks to bind that vestige.`,'e');return;}
+  S.world.spirit-=cost;
   pw[c.f]=Math.min(powMax,cur?Math.max(cur+1,c.g):c.g);h.corebag.splice(+i,1);
   const m=powRes(c.f);
   note(`${POW[c.f].ic} <b>${POW[c.f].n}</b> ${cur?'strengthens':'awakens'} (level ${pw[c.f]}).${m.length?' It resonates with your '+m.map(id=>ESSX[id].n).join(' and ')+' essence.':''}`,'y');
  },
  pwForget(f){const pw=powOf();if(pw[f]){delete pw[f];note(`You let ${POW[f].n} go.`);}},
  pwInherit(f){
-  const h=S.hero,w=S.world,pb=w.pbook||{},pw=powOf(),lv=Math.max(1,(pb[f]||0)-1),cost=12*lv;
+  const h=S.hero,w=S.world,pb=w.pbook||{},pw=powOf(),lv=Math.max(1,(pb[f]||0)-1),cost=inheritCost(lv);
   if(!pb[f]||pw[f]||(h.inh||0)>=inhSlots()||Object.keys(pw).length>=powSlots()||(w.spirit||0)<cost)return;
   w.spirit-=cost;pw[f]=lv;h.inh=(h.inh||0)+1;note(`${POW[f].ic} Your bloodline remembers. <b>${POW[f].n}</b> stirs in you (level ${lv}).`,'y');
  }
 });
 function powHtml(){
  const h=S.hero,w=S.world,pw=powOf(),keys=Object.keys(pw),sl=powSlots(),bag=h.corebag||[];
- let t=`<h2>🪙 Spirit & Powers</h2><p class="mut sm">Spirit coins fall from monsters and deepen essences. Cores fall too, and each teaches the power of its monster family. A power resonates with the essences it works with and grows far stronger. Powers held: ${keys.length}/${sl}.</p><div class="card sm">🪙 <b>${w.spirit||0}</b> spirit coins</div>`;
+ let t=`<h2>🕯️ Wicks & Vestiges</h2><p class="mut sm">Wicks are the lantern-light left behind by monsters. They deepen essences and bind vestiges. A vestige is a rare fragment of a monster family, and each teaches the power of its monster family. A power resonates with the essences it works with and grows far stronger. Powers held: ${keys.length}/${sl}.</p><div class="card sm">🕯️ <b>${w.spirit||0}</b> wicks</div>`;
  keys.forEach(f=>{const d=POW[f],m=powRes(f);
   t+=`<div class="card"><div class="row2"><b>${d.ic} ${d.n}</b><span class="tag">Lv ${pw[f]}/${powMax}</span></div><div class="mut sm">Works with: ${d.w.map(id=>`${ESSX[id].ic} ${ESSX[id].n}${m.includes(id)?' ✓':''}`).join(', ')}</div><div class="sm ${m.length?'up':'mut'}">${m.length?`Resonating with ${m.map(id=>ESSX[id].n).join(' and ')}: effect ×${RES}.`:'No resonance. Awaken a matching essence to strengthen it.'}</div>${btn('Let it go','pwForget',f,'')}</div>`;});
  if(bag.length){
-  t+=`<h3>Cores carried</h3>`+bag.map((c,i)=>{const d=POW[c.f],cur=pw[c.f]||0,full=!cur&&keys.length>=sl,m=powRes(c.f);
-   return `<div class="card sm"><b>${d.ic} ${cap1(c.f)} core</b> <span class="tag">grade ${c.g}</span><br><span class="mut">${d.n}. Works with ${d.w.map(id=>ESSX[id].n).join(', ')}.</span>${m.length?` <span class="up">Good for you: resonates with ${m.map(id=>ESSX[id].n).join(' and ')}.</span>`:''}${btn(cur?'Strengthen '+d.n:'Absorb',  'pwAbsorb',i,'',full||cur>=powMax,full?'no free power slot':cur?`Lv ${cur} → ${Math.min(powMax,Math.max(cur+1,c.g))}`:`Lv ${c.g}`)}</div>`;}).join('');
+  t+=`<h3>Vestiges carried</h3>`+bag.map((c,i)=>{const d=POW[c.f],cur=pw[c.f]||0,full=!cur&&keys.length>=sl,m=powRes(c.f);
+   return `<div class="card sm"><b>${d.ic} ${cap1(c.f)} vestige</b> <span class="tag">grade ${c.g}</span><br><span class="mut">${d.n}. Works with ${d.w.map(id=>ESSX[id].n).join(', ')}.</span>${m.length?` <span class="up">Good for you: resonates with ${m.map(id=>ESSX[id].n).join(' and ')}.</span>`:''}${btn(cur?'Strengthen '+d.n:'Absorb',  'pwAbsorb',i,'',full||cur>=powMax||(w.spirit||0)<absorbCost(cur,c.g),full?'no free power slot':`🕯️ ${absorbCost(cur,c.g)} · `+(cur?`Lv ${cur} → ${Math.min(powMax,Math.max(cur+1,c.g))}`:`Lv ${c.g}`))}</div>`;}).join('');
  }
  const pb=w.pbook||{},pk=Object.keys(pb);
  if(pk.length&&inhSlots()>0){
-  t+=`<h3>Bloodline memory</h3><p class="mut sm">Powers your ancestors mastered. Your heir may reawaken ${inhSlots()} of them (${h.inh||0} used) for spirit coins, one level weaker.</p>`+pk.map(f=>{const lv=Math.max(1,pb[f]-1),cost=12*lv;
-   return `<div class="card sm"><b>${POW[f].ic} ${POW[f].n}</b> <span class="mut">best ancestral Lv ${pb[f]}</span>${btn(pw[f]?'Already known':'Reawaken at Lv '+lv,'pwInherit',f,'',!!pw[f]||(h.inh||0)>=inhSlots()||keys.length>=sl||(w.spirit||0)<cost,`🪙 ${cost}`)}</div>`;}).join('');
+  t+=`<h3>Bloodline memory</h3><p class="mut sm">Powers your ancestors mastered. Your heir may reawaken ${inhSlots()} of them (${h.inh||0} used) for wicks, one level weaker.</p>`+pk.map(f=>{const lv=Math.max(1,pb[f]-1),cost=inheritCost(lv);
+   return `<div class="card sm"><b>${POW[f].ic} ${POW[f].n}</b> <span class="mut">best ancestral Lv ${pb[f]}</span>${btn(pw[f]?'Already known':'Reawaken at Lv '+lv,'pwInherit',f,'',!!pw[f]||(h.inh||0)>=inhSlots()||keys.length>=sl||(w.spirit||0)<cost,`🕯️ ${cost}`)}</div>`;}).join('');
  }else if(pk.length)t+=`<p class="mut sm">Your ancestors left powers behind. The bloodline will be able to reawaken them from the second generation on.</p>`;
  return t;
 }
 function essHtml(){
  const h=S.hero,own=essOf(),slots=essSlots();
- let t=`<h2>💠 Essences</h2><p class="mut sm">Essences awaken in you at the guild and shape who you become. Each grants a skill and a bonus, and certain pairs form a confluence. Spirit coins deepen them, and monster cores teach powers that resonate with them. Your heirs awaken their own essences but can inherit ancestral powers.</p>`;
+ let t=`<h2>💠 Essences</h2><p class="mut sm">Essences awaken in you at the guild and shape who you become. Each grants a skill and a bonus, and certain pairs form a confluence. Wicks deepen them, and monster vestiges teach powers that resonate with them. Your heirs awaken their own essences but can inherit ancestral powers.</p>`;
  if(!slots){return t+`<div class="card sm mut">Join the ${GUILD} to awaken your first essence.</div>`;}
  own.forEach(x=>{const d=ESSX[x.id],cap=essCap();
-  t+=`<div class="card"><div class="row2"><b>${d.ic} ${d.n}</b><span class="tag">Attunement ${x.a}/${cap}</span></div><div class="mut sm">${d.d}</div>${x.a<cap?btn('Attune deeper','essAbsorb',x.id,'',(S.world.spirit||0)<attuneCost(x.a),`🪙 ${attuneCost(x.a)}`):'<div class="mut sm">Rank more contracts to attune further.</div>'}</div>`;});
+  t+=`<div class="card"><div class="row2"><b>${d.ic} ${d.n}</b><span class="tag">Attunement ${x.a}/${cap}</span></div><div class="mut sm">${d.d}</div>${x.a<cap?btn('Attune deeper','essAbsorb',x.id,'',(S.world.spirit||0)<attuneCost(x.a),`🕯️ ${attuneCost(x.a)}`):'<div class="mut sm">Rank more contracts to attune further.</div>'}</div>`;});
  const cf=confluences();
  if(cf.length)t+=cf.map(c=>`<div class="card sm">✨ <b>${c.n}</b> <span class="mut">(${ESSX[c.a].n} + ${ESSX[c.b].n})</span><br>${c.d}</div>`).join('');
  if(own.length<slots){
   if(h.essOffer&&h.essOffer.length){
    t+=`<div class="card"><b>An essence stirs. Choose one to awaken:</b></div>`+h.essOffer.map(id=>{const d=ESSX[id];
     const hint=CONF.filter(c=>(c.a===id&&own.some(o=>o.id===c.b))||(c.b===id&&own.some(o=>o.id===c.a))).map(c=>c.n);
-    return `<div class="card"><b>${d.ic} ${d.n}</b><div class="mut sm">${d.d}</div>${hint.length?`<div class="sm" style="color:var(--acc)">Forms confluence: ${hint.join(', ')}</div>`:''}${btn('Awaken '+d.n,'essPick',id,'pri')}</div>`;}).join('')+btn('Reroll choices','essReroll',undefined,'',(S.world.spirit||0)<5,'🪙 5');
+    return `<div class="card"><b>${d.ic} ${d.n}</b><div class="mut sm">${d.d}</div>${hint.length?`<div class="sm" style="color:var(--acc)">Forms confluence: ${hint.join(', ')}</div>`:''}${btn('Awaken '+d.n,'essPick',id,'pri')}</div>`;}).join('')+btn('Reroll choices','essReroll',undefined,'',(S.world.spirit||0)<10,'🕯️ 10');
   }else t+=btn('💠 Awaken an essence','essOpen',undefined,'pri',false,`${slots-own.length} slot${slots-own.length>1?'s':''} open`);
  }else if(own.length<3)t+=`<div class="card sm mut">Another essence will stir at ${own.length===1?'Bronze rank (10 contracts)':'Gold rank (32 contracts)'}.</div>`;
  return t+(own.length?powHtml():'');
@@ -4018,7 +4040,7 @@ VIEWS.hero=function(){const t=_heroEss();if((S.htab||'stats')!=='stats')return t
 HINTS.push({id:'ess',scr:['town','hero','guild'],when:()=>S.world.guild&&essOf().length<essSlots(),t:'An essence is ready to awaken in you. Open the Hero tab and choose one. Each grants a skill and shapes your build.'});
 HINTS.push({id:'chore',scr:['town'],when:()=>S.world.gen===1&&!S.hero.qd.firstchores,t:'You own nothing yet. Mira the Baker has honest work for anyone willing, in the Town Square. It does not involve fighting.'});
 
-if(typeof window!=='undefined')window.TQ={POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
+if(typeof window!=='undefined')window.TQ={absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>
 </html>
