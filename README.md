@@ -33,3 +33,11 @@ Companions can't be bought. You meet them naturally (tavern regulars who notice 
 
 ## A new cast every generation
 Companions are **procedurally generated**: each generation gets a fresh cast of 14, built from 17 role archetypes (tank, healer, pyromancer, marksman, monk, hexcaster, and more) with random names, personalities and tones, ability names, passives, traits, stat variance, trial and personal quests, and a drawn portrait. They are placed in tavern, dungeon and quest slots. When you fall, your companions retire; those you bonded with (bond 3+) become **Veterans** who pass a share of their gifts on to your heirs, and your heir meets a brand-new cast and earns their trust all over again.
+
+## Backgrounds, paths, seasons, estate and bounties
+- **Backgrounds:** each life starts as a Soldier, Scholar, Thief, Hunter, Acolyte, Noble, Farmhand or Wanderer (stats, a free skill, a perk). Repeating one builds a **family tradition** (+5% potency per past generation, max +25%).
+- **Paths:** at level 10 choose Bladeborn, Arcanist or Warden. The skills you master through use ("discipline") feed it, with new tiers at levels 20 and 30.
+- **Time, seasons and weather:** the time of day follows your stamina, seasons last 30 days, and weather is rolled every morning. They change which creatures appear, elemental damage, loot and XP, and fog hides enemy danger.
+- **Estate (a gold sink your heirs inherit):** housing tiers, 7 kinds of staff, 4 businesses, and training grounds (dojos, an academy, barracks).
+- **Bounty board:** the guild posts hunts for specific creatures from your Codex, including Notorious elites that start turning up once you accept. Bounty rank grows with marks.
+- **Mobile:** auto-battle, text size, vibration, battle speed, contextual tips (not a tutorial), and installable offline files (`manifest.webmanifest`, `sw.js`, icons) when hosted on GitHub Pages or similar.
