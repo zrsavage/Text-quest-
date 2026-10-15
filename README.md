@@ -11,3 +11,9 @@ A mobile-first, text-based RPG in a single file. Open `index.html` in any browse
 - **37 side quests** with branching choices, wilderness wanderers, quest-specific events, and lasting **town perks** that carry to your heirs.
 - **Crypt of Heirs**: fight echoes of your dead ancestors for permanent bloodline blessings.
 - Bestiary (+1% damage per 10 kills of a species), timed buffs/curses, 30 hand-made legendaries (12 dungeon-exclusive), procedural gear with well over 100k combinations, skills, guild contracts and ranks, and the Tinker's Wagon.
+
+## Party, relics and power spikes
+- **14 companions** with distinct roles (tank, healer, rogue, pyromancer, cryomancer, alchemist, bard, berserker, assassin, paladin, druid, necromancer, archer, automaton). They fight automatically, and you can queue **Orders** to fire their specials. They level with you and have bond levels and personal quests.
+- **Synergies**: pairings like Tank + Healer or Pyromancer + Cryomancer grant party-wide bonuses, and combat combos (Conflagration, Shatter, Toxic Burst, marks, stuns) reward mixing statuses.
+- **17 relics** (two slots, kept by heirs). Some combinations trivialize content on purpose, such as the Prism of Synergy with the Ember Heart.
+- **Challenge** setting (Story to Nightmare) and the endless **Abyss Stair**, which scales from your own level, absorb power creep.

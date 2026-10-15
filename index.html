@@ -227,7 +227,7 @@ function newWorld(){return{gold:0,inv:[],mats:{},pots:{hp1:0,hp2:0,hp3:0},gen:1,
 function newHero(name,fam,gen){
  const w=S.world,fl=(w.map&&w.map.flags)||{},f=gen>1?Math.min(.5,.1*(gen-1)+.02*Object.keys(fl).filter(k=>k.startsWith('echo')).length+(fl.ancestors?.05:0)):0,st={};
  STATS.forEach(k=>st[k]=3+Math.floor((w.legacy[k]||0)*f));
- return{name,fam,gen,lvl:1,xp:0,st,pts:0,hp:1,day:1,sta:1,tc:0,kills:0,contracts:0,equip:{},skills:{},active:[],q:{},qd:{},fl:{},fx:[],dgc:{},dgsave:{},pz:0};
+ return{name,fam,gen,lvl:1,xp:0,st,pts:0,hp:1,day:1,sta:1,tc:0,kills:0,contracts:0,equip:{},skills:{},active:[],q:{},qd:{},fl:{},fx:[],dgc:{},dgsave:{},pz:0,party:[],rel:[]};
 }
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}}
 function load(){try{const t=localStorage.getItem(SAVE_KEY);return t?JSON.parse(t):null;}catch(e){return null;}}
@@ -258,6 +258,9 @@ function P(){
  if(am)p.atk=Math.round(p.atk*(1+am));if(dm)p.def=Math.round(p.def*(1+dm));
  hm+=wf('healer')?.05:0;if(hm)p.maxhp=Math.round(p.maxhp*(1+hm));
  if(wf('orphan'))p.goldf+=5;if(wf('pip'))p.dropf+=5;if(wf('bard'))p.xpf+=5;
+ if(h.party&&h.party.length){const sy=synFx();p.def=Math.round(p.def*(1+partyPass('def')));p.crit+=partyPass('crit');p.dodge+=partyPass('dodge')+(sy.dodge||0);p.regen+=Math.round(partyPass('regen')+(sy.regen||0));p.lifesteal+=partyPass('lifesteal')+(sy.lifesteal||0);p.xpf+=partyPass('xpf')+(sy.xpf||0);p.critdmg+=(sy.critdmg||0)+partyPass('critdmg');if(sy.atkm)p.atk=Math.round(p.atk*(1+sy.atkm));}
+ if(h.rel&&h.rel.length){if(rel('crown')){p.thorns+=40;p.lifesteal+=3;}if(rel('gambler'))p.crit+=12;if(rel('sunstone')){p.xpf+=25;p.goldf+=25;}if(rel('guildseal'))p.maxsta+=3;}
+ p.crit=clamp(p.crit,0,80);p.dodge=clamp(p.dodge,0,50);p.lifesteal=clamp(p.lifesteal,0,30);
  return p;
 }
 function catchMult(){
@@ -365,9 +368,9 @@ function makeEnemy(zi,boss,forceEl){
  if(el)lvl=Math.min(lvl+1,zmax+1);
  const hm={n:1,e:1.9,b:3.6}[tier]*(early?.55:1),am={n:1,e:1.3,b:1.5}[tier]*(early?.5:1);
  const base=14+13*lvl+.6*lvl*lvl;
- const hp=Math.round(base*tpl.hp*hm);
+ const hp=Math.round(base*tpl.hp*hm*dm());
  return{name:(el?pick(['Alpha','Ravenous','Ancient','Frenzied'])+' ':'')+tpl.n,base:tpl.n,lvl,tier,zi,
-  hp,max:hp,atk:Math.round((2.5+2.4*lvl+.08*lvl*lvl)*1.35*tpl.atk*am),def:Math.round((2+1.3*lvl)*tpl.def),
+  hp,max:hp,atk:Math.round((2.5+2.4*lvl+.08*lvl*lvl)*1.35*tpl.atk*am*dm()),def:Math.round((2+1.3*lvl)*tpl.def),
   pat:tpl.pat,pi:0,stun:0,poison:0,pd:0,buff:0};
 }
 function danger(e){
@@ -375,120 +378,20 @@ function danger(e){
  const avg=e.pat.split('').reduce((a,t)=>a+PAT_MULT[t],0)/e.pat.length;
  const hd=Math.max(1,p.atk*(1-mit(e.def,h.lvl)))*(1+p.crit/100*(p.critdmg/100-1));
  const ed=Math.max(1,e.atk*avg*(1-mit(p.def,e.lvl)))*(1-p.dodge/100);
- const r=(h.hp/ed)/(e.hp/hd);
+ const pd2=partyDanger(hd,ed);const r=(h.hp/pd2[1])/(e.hp/pd2[0]);
  return r>=3?['Easy','var(--good)',1]:r>=1.8?['Fair','var(--acc)',2]:r>=1.15?['Risky','#ff9a3c',3]:['Deadly','var(--bad)',4];
 }
 
 /* ---------------- combat ---------------- */
 function say(t,c){S.cb.log.push({t,c:c||''});if(S.cb.log.length>60)S.cb.log.shift();}
 function healHero(n){const h=S.hero,m=P().maxhp;const b=h.hp;h.hp=Math.min(m,h.hp+n);return h.hp-b;}
-function startCombat(e,boss,ctx){
- const h=S.hero,p=P();
- if(!(ctx&&ctx.free))h.sta-=boss?BOSS_COST:FIGHT_COST;
- S.cb={e,boss,ctx:ctx||{type:'hunt'},log:[],turn:1,focus:Math.floor(p.maxfocus/2),panel:null,hb:{atk:0,atkT:0,def:0,defT:0,poison:0,pd:0,stun:0,weak:0},over:false};
- say(`${e.tier==='b'?'👑':e.tier==='e'?'⭐':'⚔️'} ${esc(e.name)} (Lv ${e.lvl}) appears!`,'y');
- if(e.intro)say(`<i>${e.intro}</i>`);
- S.screen='combat';
-}
-function strike(mult,o){
- o=o||{};const p=P(),c=S.cb,e=c.e,h=S.hero;
- let b=(o.magic?(p.int*2.6+p.atk*.35):p.atk)*mult*rnd(.9,1.1)*(1+c.hb.atk)*(1+bestBonus(e.base))*(c.hb.weak>0?.75:1);
- const crit=!o.nocrit&&Math.random()*100<p.crit;if(crit)b*=p.critdmg/100;
- const d=Math.max(1,Math.round(b*(1-mit(e.def,h.lvl)*(1-(o.pierce||0)))));
- e.hp=Math.max(0,e.hp-d);
- let ls=0;if(p.lifesteal)ls=healHero(Math.round(d*p.lifesteal/100));
- say(`${o.label||'You hit'} ${esc(e.name)} for <b>${d}</b>${crit?' 💥 CRIT':''}${ls?` (+${ls} HP)`:''}`);
- return d;
-}
-function castSkill(id){
- const c=S.cb,h=S.hero,p=P(),e=c.e,l=h.skills[id],s=SK[id];
- if(c.focus<s.c){say('Not enough Focus!','e');return false;}
- c.focus-=s.c;
- switch(id){
-  case 'power':strike(1.6+.15*(l-1),{label:'💪 Power Strike hits'});break;
-  case 'flurry':for(let i=0;i<3&&e.hp>0;i++)strike(.6+.06*(l-1),{label:'🗡️ Flurry cuts'});break;
-  case 'bash':strike(1+.1*(l-1),{label:'🛡️ Shield Bash hits'});if(Math.random()<(50+8*l)/100){e.stun=1;say(`${esc(e.name)} is stunned!`,'g');}break;
-  case 'mend':{const n=healHero(Math.round(p.maxhp*(.22+.05*(l-1))+p.int*2));say(`💚 Mend restores ${n} HP.`,'g');break;}
-  case 'venom':strike(.8+.08*(l-1),{label:'🐍 Venom Stab hits'});e.poison=3;e.pd=Math.max(1,Math.round(p.atk*.35*(1+.1*(l-1))));say(`${esc(e.name)} is poisoned!`,'g');break;
-  case 'cry':c.hb.atk=.3+.05*(l-1);c.hb.atkT=3;say('📣 Battle Cry! Attack up for 3 turns.','g');break;
-  case 'fire':strike(2+.2*(l-1),{magic:1,pierce:.5,label:'🔥 Fireball scorches'});break;
-  case 'iron':c.hb.def=.5+.1*(l-1);c.hb.defT=3;say('🪨 Iron Skin! Defense up for 3 turns.','g');break;
-  case 'bite':{const d=strike(1.3+.12*(l-1),{label:'🧛 Vampiric Bite tears'});const n=healHero(Math.round(d*.5));if(n)say(`You drain ${n} HP.`,'g');break;}
-  case 'exec':strike(1.2+(1-e.hp/e.max)*(2+.4*(l-1)),{label:'☠️ Execute strikes'});break;
-  case 'meteor':strike(4+.5*(l-1),{magic:1,label:'☄️ Meteor crashes into'});break;
- }
- return true;
-}
-function enemyTurn(){
- const c=S.cb,e=c.e,h=S.hero,p=P();
- if(e.poison>0){e.hp=Math.max(0,e.hp-e.pd);e.poison--;say(`☠ ${esc(e.name)} takes ${e.pd} poison damage.`);if(e.hp<=0)return;}
- if(e.stun>0){e.stun--;say(`💫 ${esc(e.name)} is stunned and loses its turn!`,'g');return;}
- if(e.pat2&&!e.ph&&e.hp<=e.max*.5){e.ph=1;e.pat=e.pat2;e.pi=0;say(`💢 ${esc(e.name)} ENRAGES! Its attacks change.`,'e');}
- const tk=e.pat[e.pi%e.pat.length];e.pi++;
- if(tk==='r'){const n=Math.round(e.max*.12);e.hp=Math.min(e.max,e.hp+n);say(`💚 ${esc(e.name)} recovers ${n} HP.`);return;}
- if(tk==='b'){e.buff=3;say(`🔥 ${esc(e.name)} rages! Its attacks grow stronger.`,'e');return;}
- const mult=PAT_MULT[tk]*(e.buff>0?1.3:1);
- if(e.buff>0)e.buff--;
- if(Math.random()*100<p.dodge){say(`💨 You dodge ${esc(e.name)}'s attack!`,'g');return;}
- const def=p.def*(1+c.hb.def);
- let d=e.atk*mult*rnd(.9,1.1)*(1-mit(def,e.lvl));
- if(c.guard)d*=.45;
- d=Math.max(1,Math.round(d));
- h.hp-=d;
- say(`${esc(e.name)} ${tk==='h'?'smashes':'hits'} you for <b>${d}</b>${c.guard?' (guarded)':''}.`,'e');
- if(p.thorns){const t=Math.round(d*p.thorns/100);if(t>0){e.hp=Math.max(0,e.hp-t);say(`🌵 Thorns deal ${t} back.`,'g');}}
- if(tk==='d'){const n=Math.round(d*.6);e.hp=Math.min(e.max,e.hp+n);say(`🩸 ${esc(e.name)} drains ${n} HP from you.`,'e');}
- if(tk==='c'){c.hb.weak=3;say('🌑 A curse saps your strength!','e');}
- if(tk==='p'){c.hb.poison=3;c.hb.pd=Math.max(1,Math.round(e.atk*.12));say('☠ You are poisoned!','e');}
- if(tk==='s'&&Math.random()<.4){c.hb.stun=1;say('💫 You are stunned!','e');}
-}
-function checkDeath(){
- const h=S.hero;if(h.hp>0)return true;
- for(const s of SLOTS){const it=h.equip[s];if(it&&it.sp==='phoenix'){delete h.equip[s];h.hp=Math.round(P().maxhp*.5);say('🔥 The Ring of Second Chances burns away — you rise again!','y');note('The Ring of Second Chances saved your life, and crumbled.','y');return true;}}
- die(`slain by ${S.cb?S.cb.e.name:'the wilds'}`);return false;
-}
-function afterPlayer(){
- const c=S.cb,h=S.hero,p=P();
- if(c.e.hp<=0)return victory();
- enemyTurn();
- if(c.e.hp<=0)return victory();
- if(!checkDeath())return;
- if(c.hb.poison>0){h.hp-=c.hb.pd;c.hb.poison--;say(`☠ Poison burns you for ${c.hb.pd}.`,'e');if(!checkDeath())return;}
- if(p.regen){const n=healHero(p.regen);if(n)say(`🌿 You regenerate ${n} HP.`,'g');}
- c.focus=Math.min(p.maxfocus,c.focus+2);
- if(c.hb.atkT>0&&--c.hb.atkT===0)c.hb.atk=0;
- if(c.hb.defT>0&&--c.hb.defT===0)c.hb.def=0;
- if(c.hb.weak>0)c.hb.weak--;
- c.turn++;c.guard=false;c.panel=null;
-}
-function playerAct(type,arg){
- const c=S.cb;if(!c||c.over)return;
- const h=S.hero,p=P(),e=c.e;
- c.guard=false;
- if(c.hb.stun>0){c.hb.stun=0;say('💫 You are stunned and cannot act!','e');return afterPlayer();}
- if(type==='atk'){strike(1);c.focus=Math.min(p.maxfocus,c.focus+1);}
- else if(type==='guard'){c.guard=true;c.focus=Math.min(p.maxfocus,c.focus+3);say('🛡️ You brace yourself.');}
- else if(type==='skill'){if(!castSkill(arg))return;}
- else if(type==='pot'){
-  const w=S.world,po=POTS[arg];if(!w.pots[arg])return;
-  if(h.hp>=p.maxhp){say('You are already at full health.');return;}
-  w.pots[arg]--;const n=healHero(Math.max(po.min,Math.round(p.maxhp*po.pct)));say(`🧪 ${po.n}: +${n} HP.`,'g');
- }
- else if(type==='flee'){
-  if(c.boss){say('You cannot flee from a boss!','e');return;}
-  const ch=hasSpecial('runner')?100:clamp(45+p.st.agi*.6-e.lvl*.4,15,90);
-  if(Math.random()*100<ch){c.over=true;fleeOK();return;}
-  say('You fail to get away!','e');
- }
- afterPlayer();
-}
 function die(cause){
  const h=S.hero,w=S.world;
  S.death={name:h.name,fam:h.fam,lvl:h.lvl,day:h.day,cause,contracts:h.contracts,kills:h.kills,gen:h.gen,gold:w.gold};
  w.anc.push({name:h.name,gen:h.gen,lvl:h.lvl,day:h.day,cause,contracts:h.contracts});
  w.bestLevel=Math.max(w.bestLevel,h.lvl);
  STATS.forEach(k=>w.legacy[k]=Math.max(w.legacy[k]||0,Math.floor(h.st[k])));
- S.cb=null;S.enc=null;S.res=null;S.dg=null;S.pz=null;S.ev=null;S.talk=null;S.screen='death';
+ S.cb=null;S.enc=null;S.res=null;S.dg=null;S.pz=null;S.ev=null;S.talk=null;S.dl=null;S.screen='death';
 }
 const FIRST=['Ash','Briar','Cade','Dara','Edda','Finn','Garrick','Hana','Ivo','Juna','Kellan','Lysa','Marek','Nia','Orin','Petra','Quill','Rhea','Soren','Tamsin','Ulric','Vera','Wren','Yara'];
 function makeHeir(){
@@ -496,7 +399,7 @@ function makeHeir(){
  SLOTS.forEach(s=>{if(old.equip[s])w.inv.push(old.equip[s]);});
  w.gen++;
  S.hero=newHero(pick(FIRST),old.fam,w.gen);
- S.hero.contracts=Math.floor(old.contracts*.4);
+ S.hero.contracts=Math.floor(old.contracts*.4);S.hero.party=(old.party||[]).slice();S.hero.rel=(old.rel||[]).slice();
  S.hero.hp=P().maxhp;S.hero.sta=P().maxsta;
  w.board=[];if(w.guild)refreshBoard();refreshShop();
  S.death=null;S.screen='town';
@@ -619,7 +522,7 @@ const ACT={
   const h=S.hero,w=S.world,c=h.active[+i];if(!c||!contractDone(c))return;
   if(c.type==='gather')w.mats[c.target]-=c.n;
   const before=rankIdx(h.contracts),rb=1+rankIdx(h.contracts)*.05;
-  const gold=Math.round(c.gold*rb),xp=Math.round(c.xp*catchMult());
+  const gold=Math.round(c.gold*rb*(wf('guildfav')?1.1:1)*(rel('guildseal')?1.25:1)),xp=Math.round(c.xp*catchMult());
   w.gold+=gold;h.contracts++;h.pts+=2;h.active.splice(+i,1);
   const z=ZONES[c.zi],it=genItem(z.max-ri(0,2),rollRarity(c.q===2?[0,10,60,30]:[10,55,28,7]));
   const r=addItem(it);
@@ -1201,7 +1104,8 @@ function ensureState(){
  const w=S.world,h=S.hero;
  w.map=w.map||{};w.map.explore=w.map.explore||[0,0,0,0,0,0];w.map.found=w.map.found||{};
  w.map.lore=w.map.lore||{};w.map.cleared=w.map.cleared||{};w.map.flags=w.map.flags||{};
- w.best=w.best||{};
+ w.best=w.best||{};w.comp=w.comp||{};w.relics=w.relics||{};w.delve=w.delve||{best:0,who:''};
+ h.party=h.party||[];h.rel=h.rel||[];S.set=S.set||{autosell:false};if(S.set.diff==null)S.set.diff=1;S.easy=S.easy||0;if(S.dl===undefined)S.dl=null;S.htab=S.htab||'stats';
  h.q=h.q||{};h.qd=h.qd||{};h.fl=h.fl||{};h.fx=h.fx||[];h.dgc=h.dgc||{};h.dgsave=h.dgsave||{};h.pz=h.pz||0;
  if(S.dg===undefined)S.dg=null;if(S.pz===undefined)S.pz=null;if(S.ev===undefined)S.ev=null;if(S.talk===undefined)S.talk=null;
  if(S.pz&&S.pz.d&&S.pz.d.show)S.pz.d.show=false;
@@ -1373,6 +1277,7 @@ function genDungeon(D){
  mand.forEach(t=>{const r=pool.pop();if(r)r.t=t;});
  const wts=[['fight',30],['treasure',12],['trap',12],['puzzle',12],['shrine',5],['rest',5],['lore',6],['npc',6],['empty',8]];if(N>=12)wts.push(['elite',5]);
  pool.forEach(r=>{r.t=wts[wroll(wts.map(x=>x[1]))][0];});
+ if(D.ally&&S.world.comp&&!S.world.comp[D.ally]){const nr=rooms.filter(r=>r.t==='npc'),cand=nr.length?nr:rooms.filter(r=>r.t==='fight');if(cand.length){const r=pick(cand);r.t='npc';r.ally=D.ally;}}
  rooms.forEach(r=>{
   if(r.t==='empty'&&r.dist>0)r.d=1;
   if(r.t==='treasure'||r.t==='vault'){r.tr=Math.random()<.35;r.mm=r.t==='treasure'&&Math.random()<.07;}
@@ -1397,9 +1302,9 @@ function buildDgEnemy(D,kind,o){
  else if(kind==='elite'){tpl=mk(pick(D.mon));tpl.n=pick(['Elder','Dread','Savage','Ancient'])+' '+tpl.n;tier='e';}
  else tpl=mk(pick(D.mon));
  const hm={n:1,e:1.5,b:2.1}[tier]*D.diff*1.05,am={n:1,e:1.15,b:1.25}[tier]*D.diff*1.05;
- const base=14+13*L+.6*L*L,hp=Math.round(base*tpl.hp*hm);
+ const base=14+13*L+.6*L*L,hp=Math.round(base*tpl.hp*hm*dm());
  return{name:tpl.n,base:tpl.n,lvl:L,tier,zi:D.zi,hp,max:hp,
-  atk:Math.round((2.5+2.4*L+.08*L*L)*1.35*tpl.atk*am),def:Math.round((2+1.3*L)*tpl.def),
+  atk:Math.round((2.5+2.4*L+.08*L*L)*1.35*tpl.atk*am*dm()),def:Math.round((2+1.3*L)*tpl.def),
   pat:tpl.pat,pat2:tpl.pat2||null,pi:0,stun:0,poison:0,pd:0,buff:0,dg:D.id,intro:kind==='boss'?D.boss.intro:null};
 }
 const dgRoom=()=>S.dg.rooms[S.dg.pos];
@@ -1407,6 +1312,7 @@ const dgSay=l=>{S.dg.msg=Array.isArray(l)?l:[l];};
 function dgNb(r,d){const dg=S.dg,x=r.x+DIRS[d][0],y=r.y+DIRS[d][1];return(x>=0&&x<dg.W&&y>=0&&y<dg.H)?dg.rooms[y*dg.W+x]:null;}
 function enterRoom(r){
  const D=getD(S.dg.id);
+ if(rel('compass'))Object.keys(DIRS).forEach(d=>{if(r.ex[d]===3){const nb=dgNb(r,d);r.ex[d]=1;nb.ex[OPP[d]]=1;}});
  if(['fight','elite','key','boss'].includes(r.t)&&!r.d&&!r.e)r.e=buildDgEnemy(D,r.t==='fight'?'n':r.t);
  if(r.t==='boss'&&!r.d)dgSay(`<i>${D.boss.intro}</i>`);
 }
@@ -1441,6 +1347,7 @@ function completeDungeon(D){
  if(D.leg&&Math.random()<(firstW?1:.2*(1+p.dropf/100))){
   const def=LEGENDS.find(l=>l.k===D.leg);if(def){const it=genLegend(def);const r=addItem(it);lines.push(`🌟 <b>LEGENDARY!</b> ${rarName(it)}${r==='full'?' — pack full, sold':''}`);note(`Legendary from ${D.n}: ${it.name}!`,'y');}
  }
+ if(D.relic)lines.push(...addRelic(D.relic));
  if(D.dyn&&D.anc){w.map.flags['echo'+D.anc.gen]=1;lines.push(`🩸 <b>${esc(D.anc.name)}'s echo rests.</b> Heirs inherit +2% more of the bloodline's stats.`);}
  h.active.forEach(c=>{if(c.type==='dungeon'&&c.dg===D.id)c.prog=1;});
  qEvent('clear',{id:D.id});
@@ -1451,12 +1358,13 @@ function completeDungeon(D){
 function victory(){
  const c=S.cb,e=c.e,h=S.hero,w=S.world,p=P();c.over=true;
  const ctx=c.ctx||{type:'hunt'},mult={n:1,e:2.2,b:6}[e.tier],lines=[],dgx=ctx.type==='dg'?1.15:1;
- const gold=Math.round((4+e.lvl*3.2)*mult*dgx*rnd(.8,1.2)*(1+p.goldf/100));
- const xp=Math.round((10+e.lvl*3.2)*mult*dgx*clamp(1-(h.lvl-e.lvl)*.08,.1,1.5)*(1+p.xpf/100)*catchMult());
+ const gold=Math.round((4+e.lvl*3.2)*mult*dgx*rnd(.8,1.2)*(1+p.goldf/100)*dr());
+ const xp=Math.round((10+e.lvl*3.2)*mult*dgx*clamp(1-(h.lvl-e.lvl)*.08,.1,1.5)*(1+p.xpf/100)*catchMult()*dr());
  w.gold+=gold;lines.push(`💰 +${gold} gold`);lines.push(`✨ +${xp} XP`);
  lines.push(...addXP(xp));
+ lines.push(...partyReward(xp));
  h.kills++;w.kills++;
- const z=ZONES[e.zi],ch=({n:.16,e:.6,b:1}[e.tier])*(1+p.dropf/100)*(ctx.type==='dg'?1.3:1);
+ const z=ZONES[e.zi],ch=({n:.16,e:.6,b:1}[e.tier])*(1+p.dropf/100)*(ctx.type==='dg'?1.3:1)*dr();
  if(Math.random()<ch){
   const ws={n:[60,28,9,3],e:[30,40,22,8],b:[0,20,55,25]}[e.tier];
   const it=genItem(e.lvl+ri(0,2),rollRarity(ws,1+p.dropf/200));
@@ -1484,6 +1392,8 @@ function victory(){
  if(!w.guild&&w.kills>=GUILD_KILLS){w.guild=true;refreshBoard();lines.push(`🏮 <b>The ${GUILD} has noticed you!</b> Visit them in town.`);note(`The ${GUILD} now accepts you.`,'y');}
  if(e.tier==='b')lines.push(`👑 ${esc(e.name)} has fallen!`);
  fxTick();
+ {const lost=(c.hp0-h.hp)/p.maxhp;if(e.tier==='n'&&lost<.1)S.easy=(S.easy||0)+1;else if(lost>.3)S.easy=0;
+  if(S.easy>=15){S.easy=0;lines.push('💡 You are crushing everything. Feeling too strong? Raise the <b>Challenge</b> in the Menu for tougher enemies and better rewards, or try the Abyss Stair.');}}
  let done=false;
  if(ctx.type==='dg'&&S.dg){
   const dg=S.dg,r=dg.rooms[ctx.room];
@@ -1494,12 +1404,19 @@ function victory(){
    if(r.t==='boss'){lines.push(...completeDungeon(getD(dg.id)));done=true;}
   }
  }
+ if(ctx.type==='delve'&&S.dl){
+  const f=S.dl.f,bonus=Math.round((20+f*12)*(1+f*.06)*dr());w.gold+=bonus;lines.push(`🌀 Floor ${f} cleared. +${bonus} gold`);
+  lines.push(...delveMilestone(f));
+  if(e.tier==='b'){const it=genItem(e.lvl+ri(1,3),rollRarity([0,0,45,55],1+p.dropf/200));const r=addItem(it);lines.push(`🎁 ${rarName(it)} <span class="mut">(${RAR[it.rar].n}, Lv ${it.il})</span>${r==='full'?' — pack full, sold':''}`);}
+  S.dl.f++;healHero(Math.round(p.maxhp*.08));
+ }
  S.res={lines,zi:e.zi,boss:c.boss,name:e.name,lvl:e.lvl,ctx,done};
  S.screen='result';S.cb=null;
 }
 function fleeOK(){
  const c=S.cb,ctx=c.ctx||{};note(`You escaped from ${c.e.name}.`);S.cb=null;
  if(ctx.type==='dg'&&S.dg){if(!ctx.camp&&S.dg.hist.length)S.dg.pos=S.dg.hist.pop();S.screen='dungeon';}
+ else if(ctx.type==='delve'&&S.dl)S.screen='delve';
  else S.screen='hunt';
 }
 
@@ -1641,7 +1558,7 @@ Object.assign(ACT,{
   if(S.dg){S.screen='dungeon';return;}
   if(h.dgsave[id]){S.dg=h.dgsave[id];delete h.dgsave[id];S.screen='dungeon';return;}
   if(h.sta<3){note('You need 3 stamina to delve.','e');return;}
-  h.sta-=3;S.dg=genDungeon(D);S.dg.msg=[`You step into <b>${D.n}</b>. ${esc(D.desc)}`];S.screen='dungeon';
+  h.sta-=3;S.dg=genDungeon(D);enterRoom(S.dg.rooms[S.dg.pos]);S.dg.msg=[`You step into <b>${D.n}</b>. ${esc(D.desc)}`];S.screen='dungeon';
  },
  dgLeave(){
   const dg=S.dg,h=S.hero;if(dg.pos!==dg.start)return;
@@ -1665,7 +1582,7 @@ Object.assign(ACT,{
   const dg=S.dg,r=dgRoom(),D=getD(dg.id);if(r.d||r.opened)return;
   const L=D.lvl;let trap=r.tr,smash=false;const vault=r.t==='vault';
   const lines=[];
-  if(mode==='pick'){if(Math.random()*100<chkChance('agi',1,L)){trap=false;lines.push('🔓 You deftly pick the lock.');}else lines.push('🔧 The lock fights back.');}
+  if(mode==='pick'){if(Math.random()*100<chkChance('agi',1,L)+partyPass('pick')*100){trap=false;lines.push('🔓 You deftly pick the lock.');}else lines.push('🔧 The lock fights back.');}
   if(mode==='smash'){if(Math.random()*100<chkChance('str',0,L)){trap=false;smash=true;lines.push('💥 You smash the chest open. Something inside breaks.');}else{trap=r.tr;lines.push('💥 The chest holds. You hurt your hands.');const d=trapHit(.25);lines.push(`💔 −${d} HP`);}}
   if(r.mm){r.t='elite';r.e=buildDgEnemy(D,'elite',{mimic:true});dgSay([...lines,'🦷 <b>It is a mimic!</b>']);return;}
   if(trap){const d=trapHit(1);lines.push(`⚠️ A trap springs! −${d} HP`);}
@@ -1677,7 +1594,7 @@ Object.assign(ACT,{
   const dg=S.dg,r=dgRoom(),D=getD(dg.id),L=D.lvl;if(r.d)return;
   let ok,lines=[];
   if(mode==='dodge')ok=Math.random()*100<chkChance('agi',0,L);
-  else if(mode==='disarm')ok=Math.random()*100<chkChance('int',1,L);
+  else if(mode==='disarm')ok=Math.random()*100<chkChance('int',1,L)+partyPass('disarm')*100;
   else{ok=true;const d=trapHit(.5);lines.push(`🛡️ You power through. −${d} HP`);}
   if(mode!=='brace'){if(ok)lines.push('✅ You get past safely.');else{const d=trapHit(1);lines.push(`💥 You trigger it! −${d} HP`);}}
   const x=Math.round((10+L*3.2)*.5*catchMult());lines.push(`✨ +${x} XP`);lines.push(...addXP(x));
@@ -1691,21 +1608,21 @@ Object.assign(ACT,{
   else if(mode==='blood'){const d=Math.max(1,Math.round(P().maxhp*.2));h.hp=Math.max(1,h.hp-d);lines.push(`🩸 −${d} HP`,addFx('fury'));}
   r.d=1;qEvent('room',{t:'shrine'});dgSay(lines);
  },
- dgRest(){const r=dgRoom();if(r.d)return;const h=S.hero;const n=healHero(Math.round(P().maxhp*.45));h.fx=h.fx.filter(f=>f.id!=='curse');r.d=1;dgSay([`⛲ You rest by the water. +${n} HP, and any curse washes away.`]);},
+ dgRest(){const r=dgRoom();if(r.d)return;const h=S.hero;const n=healHero(Math.round(P().maxhp*(.45+partyPass('restheal'))));h.fx=h.fx.filter(f=>f.id!=='curse');r.d=1;dgSay([`⛲ You rest by the water. +${n} HP, and any curse washes away.`]);},
  dgLore(){
   const dg=S.dg,r=dgRoom(),D=getD(dg.id);if(r.d)return;
   const t=D.lore[r.lo%D.lore.length];S.world.map.lore[D.id+':'+r.lo]=1;
-  const x=Math.round((10+D.lvl*3.2)*.4*catchMult());r.d=1;
+  const x=Math.round((10+D.lvl*3.2)*.4*catchMult()*(1+partyPass('lore')));r.d=1;
   dgSay([`📜 <i>${esc(t)}</i>`,`✨ +${x} XP`,...addXP(x)]);
  },
  dgNpc(){
   const dg=S.dg,r=dgRoom(),D=getD(dg.id);if(r.d)return;
-  S.ev={zi:D.zi,kind:'ev',def:DGE[r.ne],res:null,dgroom:r.i};S.screen='explore';
+  S.ev={zi:D.zi,kind:'ev',def:(r.ally&&!S.world.comp[r.ally])?allyEventDef(r.ally):DGE[r.ne],res:null,dgroom:r.i};S.screen='explore';
  },
  dgPz(){const dg=S.dg,r=dgRoom(),D=getD(dg.id);if(r.d)return;startPuzzle(r.pz,D,r.i);},
  dgSearch(){
   const dg=S.dg,r=dgRoom();if(r.sr)return;r.sr=1;
-  const p=P(),chance=clamp(30+(p.st.int+p.st.agi)*.8,25,85);
+  const p=P(),chance=clamp(30+(p.st.int+p.st.agi)*.8+(partyPass('search')+(synFx().search||0))*100,25,95);
   let found=false;
   Object.keys(DIRS).forEach(d=>{if(r.ex[d]===3&&Math.random()*100<chance+15){const n=dgNb(r,d);r.ex[d]=1;n.ex[OPP[d]]=1;found=true;dgSay(`🔍 <b>You discover a hidden passage to the ${DNAME[d]}!</b>`);}});
   if(!found){if(Math.random()<.2){const g=Math.round((10+getD(dg.id).lvl*3)*.5);S.world.gold+=g;dgSay(`🔍 You find ${g} gold in a crack.`);}else dgSay('🔍 You search thoroughly, but find nothing.');}
@@ -1740,6 +1657,482 @@ Object.assign(ACT,{
   else S.rumor=pick(['The regulars swear the Hollow Library is real, but no one has found it.','Someone says the guild hall has a secret vault. Most say it\'s a story.','"Your family has done this before," the barkeep says, without looking up.','An old soldier tells of a ring that burns once, and only for the worthy.'])+` (−${cost}g)`;
  },
  sqback(){S.screen='town';}
+});
+
+/* =====================================================================
+   EXPANSION D — PARTY, RELICS, SYNERGY, DIFFICULTY, ABYSS
+   ===================================================================== */
+const DIFF=[{n:'Story',m:.8,r:.8},{n:'Normal',m:1,r:1},{n:'Hard',m:1.3,r:1.25},{n:'Nightmare',m:1.7,r:1.6}];
+const dIdx=()=>(S&&S.set&&S.set.diff!=null)?S.set.diff:1;
+const dm=()=>DIFF[dIdx()].m, dr=()=>DIFF[dIdx()].r;
+const rel=id=>!!(S&&S.hero&&S.hero.rel&&S.hero.rel.includes(id));
+const UNDEAD=/Skeleton|Ghoul|Wraith|Bone|Skull|Marrow|Rib Cage|Echo|Shade|Revenant|Drowned|Restless|Grave|Ghost|Hand|Acolyte|Thrall|Lurker/i;
+const BOND=[0,12,40,90,160];
+
+/* ----- relics: build-defining finds ----- */
+const RELICS={
+ echo:{n:'Echo Stone',ic:'🔁',d:'Damaging skills have a 35% chance to fire a second time for free.'},
+ emberheart:{n:'Ember Heart',ic:'❤️‍🔥',d:'Burn deals triple damage. Fire damage +10%.'},
+ frost:{n:'Frostbound Locket',ic:'🧊',d:'Chill lasts 2 turns longer and chilled enemies deal 35% less damage.'},
+ fang:{n:'Venom Fang',ic:'🐍',d:'Poison stacks higher and ticks 50% harder.'},
+ banner:{n:"Warlord's Banner",ic:'🚩',d:'Companions deal +35% damage. You deal +10%.'},
+ oak:{n:'Heart of Oak',ic:'🌳',d:'Companions have +40% HP and healing on them is 25% stronger.'},
+ packleader:{n:'Pack Leader\'s Collar',ic:'🐺',d:'Your party can hold one more companion.'},
+ hourglass:{n:'Hourglass of Haste',ic:'⏳',d:'Every second turn you strike an extra time for free.'},
+ crown:{n:'Crown of Thorns',ic:'👑',d:'Reflect +40% of damage taken and gain +3% lifesteal.'},
+ philo:{n:"Philosopher's Stone",ic:'🔮',d:'Potions heal 60% more, and have a 25% chance not to be consumed.'},
+ lastbreath:{n:'Last Breath',ic:'🕯️',d:'Once per fight, when you would die you survive and heal 30% instead.'},
+ gambler:{n:"Gambler's Coin",ic:'🪙',d:'+12% crit chance. Crits restore 2 Focus.'},
+ mirror:{n:'Mirror Shard',ic:'🪞',d:'Skills cost 1 less Focus (min 1). +1 Focus per turn.'},
+ sunstone:{n:'Sunstone',ic:'☀️',d:'+25% XP and +25% gold.'},
+ compass:{n:'Void Compass',ic:'🧭',d:'Reveals every room of a dungeon and exposes hidden passages.'},
+ guildseal:{n:"Guildmaster's Seal",ic:'🏅',d:'+25% contract gold and +3 stamina.'},
+ prism:{n:'Prism of Synergy',ic:'💎',d:'All party synergies and combo bonuses are doubled, and you deal +15% damage.'}
+};
+const RELIC_OF={warren:'gambler',cellar:'philo',mosshollow:'oak',weaver:'fang',chapel:'frost',bonewright:'echo',forge:'emberheart',spire:'hourglass',glacier:'mirror',observatory:'compass',bastion:'banner',library:'lastbreath',crypt:'crown'};
+const ALLY_OF={warren:'zephyr',cellar:'venn',weaver:'thorn',chapel:'seraph',bonewright:'mortis',forge:'ember',glacier:'rime',spire:'nyx'};
+Object.keys(RELIC_OF).forEach(k=>DG[k].relic=RELIC_OF[k]);
+Object.keys(ALLY_OF).forEach(k=>DG[k].ally=ALLY_OF[k]);
+function addRelic(id){
+ const w=S.world;if(w.relics[id])return [`🔮 You find another ${RELICS[id].n}, but you already have one. (+1 stat point)`].concat((S.hero.pts+=1,[]));
+ w.relics[id]=1;note(`Relic found: ${RELICS[id].n}!`,'y');
+ return [`⚡ <b>POWER SPIKE!</b> ${RELICS[id].ic} <b>${RELICS[id].n}</b> — ${RELICS[id].d}`];
+}
+
+/* ----- companions ----- */
+// hp/atk/def are multipliers on the party baseline. pass = passive bonuses while in your party.
+const COMP={
+ brom:{n:'Brom Ironhide',ic:'🛡️',role:'Tank',hp:1.9,atk:.7,def:1.8,from:'Hire at the Tavern',intro:'A scarred shieldbearer, leaning on the bar. "Looking for someone to stand in front of you?"',
+  basic:['Shield Bash','Hits the enemy; 25% chance to stun.'],spec:['Shield Wall','Taunts the enemy and cuts all damage the party takes by 30% for 2 turns.',4],pass:{def:.10},passd:'You gain +10% defense.'},
+ lyssa:{n:'Lyssa the Novice',ic:'✨',role:'Healer',hp:1,atk:.6,def:.9,from:"Sister Valeria's quest",intro:'A shy novice with a heavy book.',
+  basic:['Mending Light','Heals the most wounded ally for 18% of their max HP, or smites if nobody is hurt.'],spec:['Prayer','Heals the whole party for 18% and cleanses poison, stun and curses.',5],pass:{regen:2},passd:'You regenerate 2 HP per turn.'},
+ kael:{n:'Kael Quickfingers',ic:'🗡️',role:'Rogue',hp:.9,atk:1.15,def:.8,from:'Hire at the Tavern',intro:'A lean figure flips a knife. "I work cheap. Mostly."',
+  basic:['Quick Slash','A fast strike with high crit chance.'],spec:['Backstab','230% damage with huge crit chance, and causes bleeding.',3],pass:{crit:5,pick:.15},passd:'+5% crit. Better at picking locks.'},
+ ember:{n:'Ember Ashvale',ic:'🔥',role:'Pyromancer',hp:.85,atk:1.15,def:.7,from:'Rescue her in the Smoldering Forge',intro:'A soot-streaked apprentice, locked in a slag cage.',
+  basic:['Firebolt','Magic fire that sets the enemy ablaze.'],spec:['Inferno','A massive fireball, 220% damage, with strong burning.',5],pass:{xpf:3},passd:'+3% XP.'},
+ rime:{n:'Rime Frostwhisper',ic:'❄️',role:'Cryomancer',hp:.85,atk:1.05,def:.8,from:'Free her in the Glacier Tomb',intro:'A woman frozen in ice, awake and furious.',
+  basic:['Frost Shard','Magic ice that chills the enemy.'],spec:['Deep Freeze','Stuns the enemy and chills it hard.',5],pass:{critdmg:10},passd:'+10% crit damage.'},
+ venn:{n:'Venn Corkwright',ic:'⚗️',role:'Alchemist',hp:.9,atk:.8,def:.8,from:'Find him in the Old Millstone Cellar',intro:'A cellar-dwelling alchemist, surrounded by bubbling flasks.',
+  basic:['Poison Flask','Throws a poisonous flask; poison stacks.'],spec:['Elixir Toss','Heals you for 22% and boosts your attack for 3 turns.',4],pass:{potion:.25},passd:'Potions heal 25% more.'},
+ orla:{n:'Orla the Skald',ic:'🎺',role:'Bard',hp:1,atk:.6,def:.9,from:'Hire at the Tavern',intro:'A bard with a battered horn. "Songs for a coin, glory for free!"',
+  basic:['Rousing Tune','Heals you for 6% and restores 1 Focus.'],spec:['War Chant','The whole party deals +30% damage for 3 turns.',5],pass:{xpf:5},passd:'+5% XP.'},
+ gorm:{n:'Gorm Bloodhowl',ic:'🪓',role:'Berserker',hp:1.4,atk:1.3,def:.7,from:'Hire at the Tavern',intro:'A massive axeman, laughing at a joke only he heard.',
+  basic:['Rampage','A heavy, reckless swing.'],spec:['Bloodrage','+50% damage for 3 turns, but he takes 30% more damage.',5],pass:{lifesteal:2},passd:'You gain +2% lifesteal.'},
+ nyx:{n:'Nyx Shadowstep',ic:'🌑',role:'Assassin',hp:.8,atk:1.2,def:.7,from:'Rescue her from Harpy Spire',intro:'A shadow detaches from the wall. "You are not the one I was waiting for. You will do."',
+  basic:['Shadow Stab','A high-crit strike from the dark.'],spec:['Mark for Death','The enemy takes +25% damage from everyone for 3 turns.',3],pass:{crit:3,search:.25},passd:'+3% crit. Finds secret passages.'},
+ seraph:{n:'Seraph Dawnguard',ic:'⚜️',role:'Paladin',hp:1.6,atk:.9,def:1.5,from:'Free him in the Drowned Chapel',intro:'A paladin kneeling in the flooded pews, sword across his knees.',
+  basic:['Holy Strike','Holy damage (extra vs. the undead).'],spec:['Aegis','Gives you a barrier worth 20% of your max HP.',5],pass:{def:.05},passd:'Takes 30% of the hits aimed at you. +5% defense.'},
+ thorn:{n:'Thorn Greenmantle',ic:'🌿',role:'Druid',hp:1.1,atk:.8,def:.9,from:'Free her in Spiderqueen\'s Lair',intro:'A woman cocooned in silk, humming to the vines.',
+  basic:['Thorn Lash','A bleeding lash of vines.'],spec:['Regrowth','The whole party regenerates 7% each turn for 3 turns.',5],pass:{restheal:.2,regen:1},passd:'Rests heal more. +1 regen.'},
+ mortis:{n:'Mortis Gravewright',ic:'💀',role:'Necromancer',hp:.8,atk:1,def:.7,from:"Bargain in the Bonewright's Vault",intro:'A pale figure sorting bones. "You are rude. Fortunately, so am I."',
+  basic:['Death Bolt','Drains life from the enemy.'],spec:['Raise Thrall','Summons a thrall that attacks for 4 turns.',6],pass:{lifesteal:1,lore:1},passd:'+1% lifesteal. Lore rooms give double XP.'},
+ zephyr:{n:'Zephyr Longshot',ic:'🏹',role:'Archer',hp:.85,atk:1.1,def:.7,from:'Rescue her in the Rat Warren',intro:'An archer tied to a chair, strangely cheerful. "Rats! I hate rats."',
+  basic:['Arrow','A precise shot with good crit chance.'],spec:['Volley','Three quick shots at 65% each.',4],pass:{dodge:5},passd:'+5% dodge.'},
+ cogsworth:{n:'Cogsworth Mk. I',ic:'⚙️',role:'Automaton',hp:1.3,atk:.9,def:1.3,from:"Hob's wagon-wheel quest",intro:'A clockwork helper that whirs and salutes.',
+  basic:['Spark Cannon','A burst of arcane sparks.'],spec:['Overclock','Reduces every ally\'s cooldowns by 2 and hits for 140%.',5],pass:{disarm:.4,search:.1},passd:'Disarms traps and finds secrets.'}
+};
+const COMPIDS=Object.keys(COMP);
+const HIRE=['brom','kael','orla','gorm'];
+
+/* ----- synergies ----- */
+const SYN=[
+ {n:'Frontline',d:'Tank + Healer: party takes 10% less damage, healing +20%.',t:(h,a)=>a('brom','seraph')&&a('lyssa','thorn','venn'),e:{pdr:.1,healx:.2}},
+ {n:'Steam',d:'Pyromancer + Cryomancer: fire and ice damage +25%.',t:(h)=>h('ember')&&h('rime'),e:{tagx:{fire:.25,ice:.25}}},
+ {n:'Shadow & Steel',d:'Rogue + Assassin: +30% crit damage.',t:(h)=>h('kael')&&h('nyx'),e:{critdmg:30}},
+ {n:'Venom Alchemy',d:'Alchemist + any poison source: poison hits 50% harder.',t:(h,a,sk)=>h('venn')&&(sk.venom||h('thorn')||h('mortis')),e:{poisonx:.5}},
+ {n:'Holy Light',d:'Healer + Paladin: healing +25%, damage taken −5%.',t:(h)=>h('lyssa')&&h('seraph'),e:{healx:.25,pdr:.05}},
+ {n:'War Band',d:'Berserker + Bard: everyone deals +15% damage.',t:(h)=>h('gorm')&&h('orla'),e:{atkm:.15}},
+ {n:'Green Death',d:'Druid + Alchemist/Necromancer: DoTs +30%, +2 regen.',t:(h,a)=>h('thorn')&&a('venn','mortis'),e:{poisonx:.3,regen:2}},
+ {n:'Open Road',d:'Archer + Rogue/Assassin/Automaton: +6% dodge, better at secrets.',t:(h,a)=>h('zephyr')&&a('kael','nyx','cogsworth'),e:{dodge:6,search:.2}},
+ {n:'Blood & Bone',d:'Necromancer + bleeder: thralls hit 50% harder, +2% lifesteal.',t:(h,a)=>h('mortis')&&a('kael','thorn','gorm'),e:{thrallx:.5,lifesteal:2}},
+ {n:'Clockwork Mage',d:'Automaton + Pyromancer/Archer: special cooldowns −1.',t:(h,a)=>h('cogsworth')&&a('ember','zephyr'),e:{cdr:1}},
+ {n:'Arcana',d:'Bard + Pyro/Cryo: all magic damage +20%.',t:(h,a)=>h('orla')&&a('ember','rime'),e:{tagx:{magic:.2}}},
+ {n:'Full Party',d:'Three or more companions: +5% XP.',t:(h,a,sk,ids)=>ids.length>=3,e:{xpf:5}}
+];
+function synList(){
+ const h=S.hero,ids=(h&&h.party)||[],has=x=>ids.includes(x),any=(...xs)=>xs.some(has),sk=(h&&h.skills)||{};
+ return SYN.filter(s=>s.t(has,any,sk,ids));
+}
+function synFx(){
+ const f={};
+ synList().forEach(s=>{for(const k in s.e){if(k==='tagx'){f.tagx=f.tagx||{};for(const t in s.e.tagx)f.tagx[t]=(f.tagx[t]||0)+s.e.tagx[t];}else f[k]=(f[k]||0)+s.e[k];}});
+ if(rel('prism'))for(const k in f){if(k==='tagx'){for(const t in f.tagx)f.tagx[t]*=2;}else f[k]*=2;}
+ return f;
+}
+const bondOf=id=>(S.world.comp[id]&&S.world.comp[id].bond)||1;
+function partyPass(key){
+ const h=S.hero;let v=0;
+ ((h&&h.party)||[]).forEach(id=>{const d=COMP[id];if(d&&d.pass&&d.pass[key])v+=d.pass[key]*(1+.12*(bondOf(id)-1));});
+ return v;
+}
+const maxParty=()=>2+(rankIdx(S.hero.contracts)>=4?1:0)+(rel('packleader')?1:0);
+function recruit(id){
+ const w=S.world,h=S.hero;
+ if(w.comp[id])return [];
+ w.comp[id]={lvl:Math.max(1,h.lvl-1),xp:0,bx:0,bond:1};
+ const lines=[`🤝 <b>${COMP[id].ic} ${COMP[id].n}</b> (${COMP[id].role}) joins your cause!`];
+ if(h.party.length<maxParty()){h.party.push(id);lines.push('They join your party.');}
+ else lines.push('Your party is full; they wait in your roster (Hero → Party).');
+ note(`${COMP[id].n} joined you.`,'y');return lines;
+}
+function bondRecalc(id){const cs=S.world.comp[id];let b=1;BOND.forEach((t,i)=>{if(cs.bx>=t)b=i+1;});cs.bond=b;}
+function bondUp(id){
+ const cs=S.world.comp[id];if(!cs||cs.bond>=5)return[];
+ cs.bx=BOND[cs.bond];bondRecalc(id);
+ return [`💞 Bond with ${COMP[id].n} deepens to <b>level ${cs.bond}</b>.${cs.bond>=3?' Their special recharges faster.':''}`];
+}
+function partyReward(xp){
+ const h=S.hero,w=S.world,lines=[];
+ h.party.forEach(id=>{
+  const cs=w.comp[id];if(!cs)return;
+  cs.xp+=Math.round(xp*.6);cs.bx+=1;
+  while(cs.lvl<h.lvl+2&&cs.xp>=Math.round(xpNeed(cs.lvl)*.8)){cs.xp-=Math.round(xpNeed(cs.lvl)*.8);cs.lvl++;lines.push(`⭐ ${COMP[id].n} reaches level ${cs.lvl}.`);}
+  const ob=cs.bond;bondRecalc(id);if(cs.bond>ob)lines.push(`💞 Bond with ${COMP[id].n} deepens to level ${cs.bond}!`);
+ });
+ return lines;
+}
+function buildParty(){
+ const h=S.hero,w=S.world,out=[];
+ (h.party||[]).slice(0,maxParty()).forEach(id=>{
+  const cs=w.comp[id];if(!cs)return;const D=COMP[id],L=Math.max(1,Math.min(cs.lvl,h.lvl+2));
+  const max=Math.round((30+L*8)*D.hp*(rel('oak')?1.4:1));
+  out.push({id,lvl:L,hp:max,max,atk:Math.round((2+L*1.2)*D.atk),def:Math.round((1+L*.7)*D.def),cd:0,down:false,rage:0});
+ });
+ return out;
+}
+function allyUnit(id){return S.cb.party.find(u=>u.id===id);}
+function cdVal(u){const cs=COMP[u.id].spec[2],b=bondOf(u.id),sy=synFx();return Math.max(2,cs-(b>=3?1:0)-(sy.cdr||0));}
+function healUnit(u,n){const sy=synFx();n=Math.round(n*(1+(sy.healx||0)+(rel('oak')?.25:0)));const b=u.hp;u.hp=Math.min(u.max,u.hp+n);return u.hp-b;}
+function healAllies(frac,heroFrac){
+ const c=S.cb,p=P(),sy=synFx(),hx=1+(sy.healx||0)+(rel('oak')?.25:0);let tot=0;
+ const hh=healHero(Math.round(p.maxhp*(heroFrac==null?frac:heroFrac)*hx));
+ c.party.forEach(u=>{if(!u.down)tot+=healUnit(u,u.max*frac);});
+ return hh+tot;
+}
+function applyPoison(e,dmg){e.poison=3;e.pd=Math.max(e.pd||0,dmg)+Math.round(dmg*.25);e.pn=Math.min(5+(rel('fang')?2:0),(e.pn||0)+1);}
+function applyBurn(e,d,t){e.burn=Math.max(e.burn||0,t);e.bd=Math.max(e.bd||0,d);}
+function applyChill(e,t){e.chill=Math.max(e.chill||0,t+(rel('frost')?2:0));}
+function applyBleed(e,d){e.bleed=3;e.bld=Math.max(e.bld||0,d);}
+function tryStun(e,ch){if(Math.random()<ch*(e.tier==='b'?.4:1)){e.stun=1;return true;}return false;}
+function comboMult(e,tags,crit){
+ const sy=synFx(),pr=rel('prism')?2:1;let m=1;const msgs=[];
+ if(e.mark>0)m*=1+.25*pr;
+ if(e.stun>0)m*=1.3;
+ if(tags.includes('fire')&&e.burn>0){m*=1+.6*pr;e.burn=0;msgs.push('🔥 CONFLAGRATION! The flames flare!');}
+ if(crit&&e.chill>0){m*=1+.5*pr;e.chill=0;msgs.push('❄️ SHATTER! The frozen foe cracks!');}
+ if(tags.includes('poison')&&e.poison>0&&(e.pn||0)>=3){m*=1+.4*pr;e.pn=1;msgs.push('☠️ TOXIC BURST!');}
+ if(tags.includes('holy')&&UNDEAD.test(e.name)){m*=1.35;msgs.push('✨ The unholy burns!');}
+ if(!tags.includes('bleed')&&tags.includes('phys')&&e.bleed>0)m*=1.1;
+ if(sy.tagx)tags.forEach(t=>{if(sy.tagx[t])m*=1+sy.tagx[t];});
+ if(rel('emberheart')&&tags.includes('fire'))m*=1.1;
+ msgs.forEach(x=>say(x,'y'));
+ return m;
+}
+const firstName=D=>D.n.split(' ')[0];
+function allyHit(u,mult,o){
+ o=o||{};const c=S.cb,e=c.e,sy=synFx(),D=COMP[u.id];
+ let b=u.atk*mult*rnd(.9,1.1)*(c.pb.dmg>0?1.3:1)*(rel('banner')?1.35:1)*(1+(sy.atkm||0))*(u.rage>0?1.5:1)*(1+.1*(bondOf(u.id)-1));
+ const crit=Math.random()*100<(o.crit||6);if(crit)b*=1.6+(sy.critdmg||0)/100+partyPass('critdmg')/100;
+ b*=comboMult(e,o.tags||['phys'],crit);
+ const d=Math.max(1,Math.round(b*(1-mit(e.def,u.lvl)*(1-(o.pierce||(o.tags&&o.tags.includes('magic')?.3:0))))));
+ e.hp=Math.max(0,e.hp-d);
+ say(`${D.ic} ${firstName(D)} ${o.label||'hits'} ${esc(e.name)} for <b>${d}</b>${crit?' 💥':''}`);
+ return d;
+}
+function partyHurt(){const p=P(),c=S.cb;return S.hero.hp<p.maxhp*.6||c.party.some(u=>!u.down&&u.hp<u.max*.55);}
+function companionAct(u){
+ const c=S.cb,e=c.e,h=S.hero,p=P(),D=COMP[u.id],sy=synFx(),f=firstName(D);
+ const forced=c.q[u.id];delete c.q[u.id];
+ const ready=u.cd<=0;
+ let useSpec=false;
+ if(ready){
+  if(forced)useSpec=true;
+  else switch(u.id){
+   case 'brom':case 'gorm':case 'ember':case 'rime':case 'kael':case 'zephyr':case 'cogsworth':case 'orla':case 'thorn':useSpec=u.id==='thorn'?partyHurt():true;break;
+   case 'lyssa':useSpec=partyHurt();break;
+   case 'venn':useSpec=h.hp<p.maxhp*.7||c.turn===1;break;
+   case 'nyx':useSpec=!(e.mark>0);break;
+   case 'seraph':useSpec=!(c.pb.barrier>0)&&h.hp<p.maxhp*.9;break;
+   case 'mortis':useSpec=!(c.thrall&&c.thrall.t>0);break;
+  }
+ }
+ if(useSpec){u.cd=cdVal(u);
+  say(`${D.ic} <b>${f}: ${D.spec[0]}!</b>`,'y');
+  switch(u.id){
+   case 'brom':c.pb.wall=2;c.pb.taunt=2;break;
+   case 'lyssa':{const n=healAllies(.18);if(S.cb.hb.poison)c.hb.poison=0;c.hb.stun=0;c.hb.weak=0;say(`✨ The party is healed for ${n} total.`,'g');break;}
+   case 'kael':allyHit(u,2.3,{crit:40,tags:['phys','bleed'],label:'backstabs'});applyBleed(e,Math.round(u.atk*.3));say(`🩸 ${esc(e.name)} is bleeding!`,'g');break;
+   case 'ember':allyHit(u,2.2,{tags:['fire','magic'],label:'engulfs'});applyBurn(e,Math.round(u.atk*.5),4);say(`🔥 ${esc(e.name)} is burning fiercely!`,'g');break;
+   case 'rime':allyHit(u,1.5,{tags:['ice','magic'],label:'freezes'});if(tryStun(e,1))say(`💫 ${esc(e.name)} is frozen solid!`,'g');applyChill(e,3);break;
+   case 'venn':{const n=healHero(Math.round(p.maxhp*.22*(1+(sy.healx||0))));c.hb.atk=Math.max(c.hb.atk,.2);c.hb.atkT=3;say(`⚗️ You recover ${n} HP and your attacks quicken.`,'g');break;}
+   case 'orla':c.pb.dmg=3;say('🎺 The whole party fights with fury!','g');break;
+   case 'gorm':u.rage=3;allyHit(u,1.8,{label:'cleaves'});break;
+   case 'nyx':e.mark=3;allyHit(u,.8,{crit:30,tags:['phys','shadow'],label:'strikes'});say(`🎯 ${esc(e.name)} is marked!`,'g');break;
+   case 'seraph':c.pb.barrier=Math.round(p.maxhp*.2);say(`🛡️ A holy barrier shields you (${c.pb.barrier}).`,'g');break;
+   case 'thorn':c.pb.regen={t:3,pct:.07};say('🌿 Healing vines wrap the party.','g');break;
+   case 'mortis':c.thrall={t:4,atk:Math.round(u.atk*(.8+(sy.thrallx||0))),by:u.id};say('💀 A thrall claws out of the ground.','g');break;
+   case 'zephyr':for(let i=0;i<3&&e.hp>0;i++)allyHit(u,.65,{crit:20,pierce:.2,label:'shoots'});break;
+   case 'cogsworth':c.party.forEach(x=>{if(x.id!=='cogsworth')x.cd=Math.max(0,x.cd-2);});allyHit(u,1.4,{tags:['magic'],label:'blasts'});break;
+  }
+  return;
+ }
+ // basic actions
+ switch(u.id){
+  case 'brom':allyHit(u,1,{label:'bashes'});if(tryStun(e,.25))say(`💫 ${esc(e.name)} reels!`,'g');break;
+  case 'lyssa':{let w=null,best=.65;if(h.hp/p.maxhp<best){w='hero';best=h.hp/p.maxhp;}c.party.forEach(x=>{if(!x.down&&x.hp/x.max<best){w=x;best=x.hp/x.max;}});
+   if(w==='hero'){const n=healHero(Math.round(p.maxhp*.1*(1+(sy.healx||0))));say(`✨ ${f} heals you for ${n}.`,'g');}
+   else if(w){const n=healUnit(w,w.max*.1);say(`✨ ${f} heals ${firstName(COMP[w.id])} for ${n}.`,'g');}
+   else allyHit(u,.9,{tags:['holy','magic'],label:'smites'});break;}
+  case 'kael':allyHit(u,1.1,{crit:18,label:'slashes'});break;
+  case 'ember':allyHit(u,1,{tags:['fire','magic'],label:'scorches'});applyBurn(e,Math.round(u.atk*.3),3);break;
+  case 'rime':allyHit(u,1,{tags:['ice','magic'],label:'chills'});applyChill(e,2);break;
+  case 'venn':allyHit(u,.7,{tags:['poison'],label:'splashes'});applyPoison(e,Math.round(u.atk*.4));break;
+  case 'orla':{const n=healHero(Math.round(p.maxhp*.06));c.focus=Math.min(p.maxfocus,c.focus+1);say(`🎺 ${f} plays a rousing tune (+${n} HP, +1 Focus).`,'g');break;}
+  case 'gorm':allyHit(u,1.3,{label:'rampages into'});break;
+  case 'nyx':allyHit(u,1,{crit:25,tags:['phys','shadow'],label:'stabs'});break;
+  case 'seraph':allyHit(u,1,{tags:['holy','phys'],label:'smites'});break;
+  case 'thorn':allyHit(u,.9,{tags:['phys','bleed'],label:'lashes'});applyBleed(e,Math.round(u.atk*.25));break;
+  case 'mortis':{const d=allyHit(u,1,{tags:['shadow','magic'],label:'drains'});const n=healUnit(u,d*.3);break;}
+  case 'zephyr':allyHit(u,1,{crit:20,pierce:.2,label:'shoots'});break;
+  case 'cogsworth':allyHit(u,.9,{tags:['magic'],label:'fires sparks at'});break;
+ }
+}
+function partyTurn(){
+ const c=S.cb,e=c.e;
+ if(c.pb.regen&&c.pb.regen.t>0){const n=healAllies(c.pb.regen.pct);c.pb.regen.t--;if(n)say(`🌿 Vines mend the party (+${n}).`,'g');}
+ for(const u of c.party){if(e.hp<=0)break;if(!u.down)companionAct(u);}
+ if(c.thrall&&c.thrall.t>0&&e.hp>0){
+  const d=Math.max(1,Math.round(c.thrall.atk*rnd(.9,1.1)*(1-mit(e.def,S.hero.lvl))));e.hp=Math.max(0,e.hp-d);say(`💀 The thrall claws ${esc(e.name)} for ${d}.`);c.thrall.t--;
+ }
+}
+function pickTarget(){
+ const c=S.cb,alive=c.party.filter(u=>!u.down);if(!alive.length)return 'hero';
+ const w=[3];alive.forEach(u=>w.push(c.pb.taunt>0&&u.id==='brom'?14:.5));
+ const i=wroll(w);return i===0?'hero':alive[i-1];
+}
+function hurtHero(d){
+ const c=S.cb,h=S.hero;
+ if(c.pb.barrier>0){const a=Math.min(c.pb.barrier,d);c.pb.barrier-=a;d-=a;say(`🛡️ Your barrier absorbs ${a}.`,'g');}
+ if(d>0)h.hp-=d;return d;
+}
+
+/* ----- combat (replaces originals) ----- */
+const SKT={power:['phys'],flurry:['phys'],bash:['phys','guard'],venom:['phys','poison'],fire:['fire','magic'],bite:['phys','shadow'],exec:['phys'],meteor:['fire','magic']};
+function strike(mult,o){
+ o=o||{};const p=P(),c=S.cb,e=c.e,h=S.hero,sy=synFx();
+ let b=(o.magic?(p.int*2.6+p.atk*.35):p.atk)*mult*rnd(.9,1.1)*(1+c.hb.atk)*(1+bestBonus(e.base))*(c.hb.weak>0?.75:1)*(c.pb.dmg>0?1.3:1)*(rel('banner')?1.1:1)*(rel('prism')?1.15:1);
+ const crit=!o.nocrit&&Math.random()*100<p.crit;
+ if(crit){b*=p.critdmg/100;if(rel('gambler'))c.focus=Math.min(p.maxfocus,c.focus+2);}
+ b*=comboMult(e,o.tags||(o.magic?['magic']:['phys']),crit);
+ const d=Math.max(1,Math.round(b*(1-mit(e.def,h.lvl)*(1-(o.pierce||0)))));
+ e.hp=Math.max(0,e.hp-d);
+ let ls=0;if(p.lifesteal)ls=healHero(Math.round(d*p.lifesteal/100));
+ say(`${o.label||'You hit'} ${esc(e.name)} for <b>${d}</b>${crit?' 💥 CRIT':''}${ls?` (+${ls} HP)`:''}`);
+ return d;
+}
+const skillCost=id=>Math.max(1,SK[id].c-(rel('mirror')?1:0));
+function castSkill(id,free){
+ const c=S.cb,h=S.hero,p=P(),e=c.e,l=h.skills[id],s=SK[id];
+ if(!free){if(c.focus<skillCost(id)){say('Not enough Focus!','e');return false;}c.focus-=skillCost(id);}
+ const T=SKT[id];
+ switch(id){
+  case 'power':strike(1.6+.15*(l-1),{label:'💪 Power Strike hits',tags:T});break;
+  case 'flurry':for(let i=0;i<3&&e.hp>0;i++)strike(.6+.06*(l-1),{label:'🗡️ Flurry cuts',tags:T});break;
+  case 'bash':strike(1+.1*(l-1),{label:'🛡️ Shield Bash hits',tags:T});if(tryStun(e,(50+8*l)/100))say(`${esc(e.name)} is stunned!`,'g');break;
+  case 'mend':{const n=healHero(Math.round(p.maxhp*(.22+.05*(l-1))+p.int*2));say(`💚 Mend restores ${n} HP.`,'g');if(c.party.length){const t=healAllies(.12*(1+(l-1)*.2),0);if(t)say(`💚 Your companions are mended too (+${t}).`,'g');}break;}
+  case 'venom':strike(.8+.08*(l-1),{label:'🐍 Venom Stab hits',tags:T});applyPoison(e,Math.max(1,Math.round(p.atk*.35*(1+.1*(l-1)))));say(`${esc(e.name)} is poisoned!`,'g');break;
+  case 'cry':c.hb.atk=.3+.05*(l-1);c.hb.atkT=3;say('📣 Battle Cry! Attack up for 3 turns.','g');break;
+  case 'fire':strike(2+.2*(l-1),{magic:1,pierce:.5,label:'🔥 Fireball scorches',tags:T});applyBurn(e,Math.round(p.int*.8+p.atk*.1),3);break;
+  case 'iron':c.hb.def=.5+.1*(l-1);c.hb.defT=3;say('🪨 Iron Skin! Defense up for 3 turns.','g');break;
+  case 'bite':{const d=strike(1.3+.12*(l-1),{label:'🧛 Vampiric Bite tears',tags:T});const n=healHero(Math.round(d*.5));if(n)say(`You drain ${n} HP.`,'g');break;}
+  case 'exec':strike(1.2+(1-e.hp/e.max)*(2+.4*(l-1)),{label:'☠️ Execute strikes',tags:T});break;
+  case 'meteor':strike(4+.5*(l-1),{magic:1,label:'☄️ Meteor crashes into',tags:T});applyBurn(e,Math.round(p.int*1.2+p.atk*.15),3);break;
+ }
+ return true;
+}
+function enemyTurn(){
+ const c=S.cb,e=c.e,h=S.hero,p=P(),sy=synFx();
+ if(e.poison>0){const d=Math.round(e.pd*(rel('fang')?1.5:1)*(1+(sy.poisonx||0)));e.hp=Math.max(0,e.hp-d);e.poison--;if(!e.poison){e.pn=0;e.pd=0;}say(`☠ ${esc(e.name)} takes ${d} poison damage.`);}
+ if(e.burn>0&&e.hp>0){const d=Math.round(e.bd*(rel('emberheart')?3:1)*(1+(sy.poisonx||0)*.5));e.hp=Math.max(0,e.hp-d);e.burn--;if(!e.burn)e.bd=0;say(`🔥 ${esc(e.name)} burns for ${d}.`);}
+ if(e.bleed>0&&e.hp>0){const d=Math.round(e.bld);e.hp=Math.max(0,e.hp-d);e.bleed--;if(!e.bleed)e.bld=0;say(`🩸 ${esc(e.name)} bleeds for ${d}.`);}
+ if(e.hp<=0)return;
+ if(e.stun>0){e.stun--;say(`💫 ${esc(e.name)} is stunned and loses its turn!`,'g');return;}
+ if(e.pat2&&!e.ph&&e.hp<=e.max*.5){e.ph=1;e.pat=e.pat2;e.pi=0;say(`💢 ${esc(e.name)} ENRAGES! Its attacks change.`,'e');}
+ const tk=e.pat[e.pi%e.pat.length];e.pi++;
+ if(tk==='r'){const n=Math.round(e.max*.12);e.hp=Math.min(e.max,e.hp+n);say(`💚 ${esc(e.name)} recovers ${n} HP.`);return;}
+ if(tk==='b'){e.buff=3;say(`🔥 ${esc(e.name)} rages! Its attacks grow stronger.`,'e');return;}
+ const mult=PAT_MULT[tk]*(e.buff>0?1.3:1)*(e.chill>0?(rel('frost')?.65:.75):1);
+ if(e.buff>0)e.buff--;
+ let tgt=pickTarget();
+ if(tgt==='hero'){const sr=c.party.find(u=>u.id==='seraph'&&!u.down);if(sr&&Math.random()<.3){tgt=sr;say('⚜️ Seraph steps in front of you!','g');}}
+ const wallm=(c.pb.wall>0?.7:1)*(1-Math.min(.5,sy.pdr||0));
+ if(tgt==='hero'){
+  if(Math.random()*100<p.dodge){say(`💨 You dodge ${esc(e.name)}'s attack!`,'g');return;}
+  const def=p.def*(1+c.hb.def);
+  let d=e.atk*mult*rnd(.9,1.1)*(1-mit(def,e.lvl))*wallm;
+  if(c.guard)d*=.45;
+  d=Math.max(1,Math.round(d));
+  const taken=hurtHero(d);
+  say(`${esc(e.name)} ${tk==='h'?'smashes':'hits'} you for <b>${d}</b>${c.guard?' (guarded)':''}.`,'e');
+  if(p.thorns&&taken>0){const t=Math.round(taken*p.thorns/100);if(t>0){e.hp=Math.max(0,e.hp-t);say(`🌵 Thorns deal ${t} back.`,'g');}}
+  if(tk==='d'){const n=Math.round(d*.6);e.hp=Math.min(e.max,e.hp+n);say(`🩸 ${esc(e.name)} drains ${n} HP from you.`,'e');}
+  if(tk==='c'){c.hb.weak=3;say('🌑 A curse saps your strength!','e');}
+  if(tk==='p'){c.hb.poison=3;c.hb.pd=Math.max(1,Math.round(e.atk*.12));say('☠ You are poisoned!','e');}
+  if(tk==='s'&&Math.random()<.4){c.hb.stun=1;say('💫 You are stunned!','e');}
+ }else{
+  const u=tgt,D=COMP[u.id];
+  let d=e.atk*mult*rnd(.9,1.1)*(1-mit(u.def,e.lvl))*wallm*(u.rage>0?1.3:1);
+  d=Math.max(1,Math.round(d));u.hp-=d;
+  say(`${esc(e.name)} ${tk==='h'?'smashes':'hits'} ${D.ic} ${firstName(D)} for <b>${d}</b>.`,'e');
+  if(tk==='d'){const n=Math.round(d*.6);e.hp=Math.min(e.max,e.hp+n);}
+  if(u.hp<=0){u.hp=0;u.down=true;say(`💔 ${D.n} is down!`,'e');}
+ }
+}
+function checkDeath(){
+ const h=S.hero;if(h.hp>0)return true;
+ for(const s of SLOTS){const it=h.equip[s];if(it&&it.sp==='phoenix'){delete h.equip[s];h.hp=Math.round(P().maxhp*.5);say('🔥 The Ring of Second Chances burns away — you rise again!','y');note('The Ring of Second Chances saved your life, and crumbled.','y');return true;}}
+ if(S.cb&&rel('lastbreath')&&!S.cb.lb){S.cb.lb=true;h.hp=Math.round(P().maxhp*.3);say('🕯️ <b>Last Breath!</b> You refuse to fall.','y');return true;}
+ die(`slain by ${S.cb?S.cb.e.name:'the wilds'}`);return false;
+}
+function afterPlayer(){
+ const c=S.cb,h=S.hero,p=P(),e=c.e;
+ if(e.hp<=0)return victory();
+ if(rel('hourglass')&&c.turn%2===0){say('⏳ The hourglass spills time.','y');strike(.8,{label:'⏳ Hourglass strike hits'});if(e.hp<=0)return victory();}
+ partyTurn();
+ if(e.hp<=0)return victory();
+ enemyTurn();
+ if(e.hp<=0)return victory();
+ if(!checkDeath())return;
+ if(c.hb.poison>0){h.hp-=c.hb.pd;c.hb.poison--;say(`☠ Poison burns you for ${c.hb.pd}.`,'e');if(!checkDeath())return;}
+ if(p.regen){const n=healHero(p.regen);if(n)say(`🌿 You regenerate ${n} HP.`,'g');}
+ c.focus=Math.min(p.maxfocus,c.focus+2+(rel('mirror')?1:0));
+ if(c.hb.atkT>0&&--c.hb.atkT===0)c.hb.atk=0;
+ if(c.hb.defT>0&&--c.hb.defT===0)c.hb.def=0;
+ if(c.hb.weak>0)c.hb.weak--;
+ c.party.forEach(u=>{if(u.cd>0)u.cd--;if(u.rage>0)u.rage--;});
+ ['dmg','wall','taunt'].forEach(k=>{if(c.pb[k]>0)c.pb[k]--;});
+ if(e.chill>0)e.chill--;if(e.mark>0)e.mark--;
+ c.turn++;c.guard=false;c.panel=null;
+}
+function playerAct(type,arg){
+ const c=S.cb;if(!c||c.over)return;
+ const h=S.hero,p=P(),e=c.e;
+ c.guard=false;
+ if(c.hb.stun>0){c.hb.stun=0;say('💫 You are stunned and cannot act!','e');return afterPlayer();}
+ if(type==='atk'){strike(1);c.focus=Math.min(p.maxfocus,c.focus+1);}
+ else if(type==='guard'){c.guard=true;c.focus=Math.min(p.maxfocus,c.focus+3);say('🛡️ You brace yourself.');}
+ else if(type==='skill'){
+  if(!castSkill(arg))return;
+  if(rel('echo')&&e.hp>0&&['power','flurry','bash','venom','fire','bite','exec','meteor'].includes(arg)&&Math.random()<.35){say('🔁 <b>Echo Stone!</b> The skill fires again.','y');castSkill(arg,true);}
+ }
+ else if(type==='pot'){
+  const w=S.world,po=POTS[arg];if(!w.pots[arg])return;
+  if(h.hp>=p.maxhp){say('You are already at full health.');return;}
+  const free=rel('philo')&&Math.random()<.25;if(!free)w.pots[arg]--;
+  const n=healHero(Math.round(Math.max(po.min,p.maxhp*po.pct)*(1+partyPass('potion')+(rel('philo')?.6:0))));
+  say(`🧪 ${po.n}: +${n} HP${free?' (not consumed!)':''}.`,'g');
+ }
+ else if(type==='flee'){
+  if(c.boss){say('You cannot flee from a boss!','e');return;}
+  const ch=hasSpecial('runner')?100:clamp(45+p.st.agi*.6-e.lvl*.4,15,90);
+  if(Math.random()*100<ch){c.over=true;fleeOK();return;}
+  say('You fail to get away!','e');
+ }
+ afterPlayer();
+}
+function startCombat(e,boss,ctx){
+ const h=S.hero,p=P();
+ if(!(ctx&&ctx.free))h.sta-=boss?BOSS_COST:FIGHT_COST;
+ ['burn','bd','chill','mark','bleed','bld','pn'].forEach(k=>{if(e[k]==null)e[k]=0;});
+ const party=buildParty();
+ if(party.length&&!e.scaled){e.scaled=1;e.hp=e.max=Math.round(e.max*(1+.14*party.length));}
+ S.cb={e,boss,ctx:ctx||{type:'hunt'},log:[],turn:1,focus:Math.floor(p.maxfocus/2),panel:null,hb:{atk:0,atkT:0,def:0,defT:0,poison:0,pd:0,stun:0,weak:0},pb:{dmg:0,wall:0,taunt:0,regen:null,barrier:0},party,q:{},thrall:null,lb:false,hp0:h.hp,over:false};
+ say(`${e.tier==='b'?'👑':e.tier==='e'?'⭐':'⚔️'} ${esc(e.name)} (Lv ${e.lvl}) appears!`,'y');
+ if(party.length)say(`Your party: ${party.map(u=>COMP[u.id].ic+' '+firstName(COMP[u.id])).join(', ')}`);
+ if(e.intro)say(`<i>${e.intro}</i>`);
+ S.screen='combat';
+}
+function partyDanger(hd,ed){const n=S.hero.party?S.hero.party.length:0;return[hd*(1+.35*n),ed*(1-.05*n)];}
+
+/* ----- ally events and quests glue ----- */
+function allyEventDef(id){
+ const D=COMP[id];
+ return{id:'ally_'+id,t:D.intro,ch:[
+  {l:`Free them and invite them along`,o:{t:`${D.n} grins. "I thought you'd never ask."`,comp:id,xp:.4}},
+  {l:'Leave them for now',o:{t:'You can always come back. If the dungeon lets you.'}}]};
+}
+const _applyOut=applyOut;
+applyOut=function(o,zi,qid){
+ const out=_applyOut(o,zi,qid);
+ if(o.comp)out.push(...recruit(o.comp));
+ if(o.relic)out.push(...addRelic(o.relic));
+ if(o.bond)out.push(...bondUp(o.bond));
+ return out;
+};
+
+/* ----- personal quests ----- */
+const PQ=(id,comp,npcLine,steps)=>Q(id,Object.assign({npc:COMP[comp].n,w:'town',req:{comp,bond:2}},{offer:T_(npcLine),steps}));
+PQ('c_brom','brom',"Brom stares at his battered shield. \"My old company died holding a ford. The ones who led them are still out there. Help me kill three of their elites.\"",[{k:'kill',n:3,tier:'e',j:'Defeat 3 elite monsters with Brom.',tk:T_('Brom breathes out slowly. "It is a little lighter now."',CH('Stand with him','He nods. "You are my captain."',{bond:'brom',xp:1,pts:1}),CH('Offer him a trophy','He pockets it with reverence.',{bond:'brom',item:2}))}]);
+PQ('c_lyssa','lyssa',"Lyssa twists her sleeve. \"I left the temple in disgrace. If I bring four Bone Dust from the Catacombs for the burial rite... maybe they'd forgive me.\"",[{k:'gather',m:'Bone Dust',n:4,j:'Bring 4 Bone Dust for Lyssa.',tk:T_('Lyssa weeps quietly. "Thank you."',CH('Tell her she is not alone','She smiles through tears.',{bond:'lyssa',xp:1,pts:1}),CH('Walk her to the temple','She is forgiven. A gift is pressed into your hands.',{bond:'lyssa',item:2}))}]);
+PQ('c_kael','kael',"Kael looks away. \"I owe some very bad people. Open three chests in dungeons, and I can pay them off before they come looking.\"",[{k:'room',t:'treasure',n:3,j:'Open 3 chests with Kael.',tk:T_('Kael counts coins, and exhales.',CH('Let him keep the cut','He is genuinely moved.',{bond:'kael',gold:1.5,xp:.6}),CH('Take half','He nods. "Fair."',{bond:'kael',item:2}))}]);
+PQ('c_ember','ember',"Ember holds out a black stone. \"Cinder Shards. Five of them. I want to see if I can make a flame that never goes out.\"",[{k:'gather',m:'Cinder Shard',n:5,j:'Bring 5 Cinder Shards to Ember.',tk:T_('She cups a tiny flame. "Look!"',CH('Watch with her','The flame brightens.',{bond:'ember',xp:1,pts:1}),CH('Ask her to teach you','She shows you a trick.',{bond:'ember',tome:1}))}]);
+PQ('c_rime','rime',"Rime's breath fogs the air. \"I do not remember who froze me. The Frostmarch will know. Explore it to 80%.\"",[{k:'explore',zi:4,pct:80,j:'Explore the Frostmarch Wastes to 80% with Rime.',tk:T_('Rime touches a frozen stone. "I remember now."',CH('Hear her out','She tells you everything.',{bond:'rime',xp:1.2,pts:1}),CH('Let her grieve','She nods, grateful.',{bond:'rime',item:2}))}]);
+PQ('c_venn','venn',"Venn rubs his hands. \"The perfect elixir needs Ectoplasm. Three of them. I will name it after you. Possibly after myself.\"",[{k:'gather',m:'Ectoplasm',n:3,j:'Bring 3 Ectoplasm to Venn.',tk:T_('Venn holds up a glowing flask. "Do not drink this."',CH('Drink it anyway','You feel... remarkable.',{bond:'venn',fx:'bless',xp:.8}),CH('Bottle it for later','He hands you a batch.',{bond:'venn',pot:'hp3'}))}]);
+PQ('c_gorm','gorm',"Gorm cracks his knuckles. \"I want a duel with something worthy. That old oak in Whisperwood. Kill Grandmother Oak.\"",[{k:'boss',zi:1,j:'Defeat Grandmother Oak with Gorm.',tk:T_('Gorm roars with laughter. "A worthy foe!"',CH('Laugh with him','He claps you on the shoulder.',{bond:'gorm',xp:1,pts:1}),CH('Share the spoils','He takes the lesser share.',{bond:'gorm',item:2}))}]);
+PQ('c_nyx','nyx',"Nyx's voice comes from the shadow. \"I leave contracts unfinished. A puzzle-locked vault holds my final one. Solve three puzzles, and I will be free.\"",[{k:'puzzle',n:3,j:'Solve 3 puzzles with Nyx.',tk:T_('Nyx reads a name, and burns the paper.',CH('Ask no questions','She exhales. "Thank you."',{bond:'nyx',xp:1,pts:1}),CH('Ask who it was','She tells you. It is a long, bad story.',{bond:'nyx',item:2}))}]);
+QS.valeria.steps[0].tk.ch.push(CH('Ask to take her novice, Lyssa, along','Lyssa smiles, shy but determined.',{comp:'lyssa',xp:.6}));
+QS.hob.steps[0].tk.ch.push(CH('Take Cogsworth, his clockwork helper','Cogsworth whirs and salutes.',{comp:'cogsworth',xp:.6}));
+QLIST.splice(0,QLIST.length,...Object.keys(QS));
+const _qAvail=qAvail;
+qAvail=function(q){
+ if(q.req&&q.req.comp){const cs=S.world.comp[q.req.comp];if(!cs||cs.bond<(q.req.bond||1))return false;}
+ return _qAvail(q);
+};
+
+/* ----- abyss stair (endless, scales with you) ----- */
+const abyssOpen=()=>Object.keys(S.world.map.cleared).length>=2;
+function delveEnemy(f){
+ const h=S.hero,boss=f%5===0,el=!boss&&f%3===0,L=Math.max(1,h.lvl)+Math.floor(f*1.1)+(boss?2:0);
+ let tpl;
+ if(boss){const D=pick(DUNGEONS.filter(d=>!d.dyn));tpl={n:'Abyssal '+D.boss.n.replace(/^The /,''),hp:D.boss.hp,atk:D.boss.atk,def:D.boss.def,pat:D.boss.pat,pat2:D.boss.pat2};}
+ else{const a=pick(ZONES[ri(2,5)].mon);tpl={n:'Abyssal '+a.n,hp:a.hp,atk:a.atk,def:a.def,pat:a.pat};}
+ const tier=boss?'b':el?'e':'n',hm={n:1,e:1.5,b:2.2}[tier]*(1+.035*f)*dm(),am={n:1.05,e:1.2,b:1.3}[tier]*(1+.02*f)*dm();
+ const base=14+13*L+.6*L*L,hp=Math.round(base*tpl.hp*hm);
+ return{name:(el?'Elder ':'')+tpl.n,base:tpl.n,lvl:L,tier,zi:5,hp,max:hp,atk:Math.round((2.5+2.4*L+.08*L*L)*1.35*tpl.atk*am),def:Math.round((2+1.3*L)*tpl.def),pat:tpl.pat,pat2:tpl.pat2||null,pi:0,stun:0,poison:0,pd:0,buff:0,dg:'abyss',intro:boss?'The Abyss gives up one of its own.':null};
+}
+function delveMilestone(f){
+ const w=S.world,h=S.hero,lines=[];
+ const first=f>(w.delve.best||0);
+ if(!first)return lines;
+ w.delve.best=f;w.delve.who=`${h.name} ${h.fam} (Gen ${w.gen})`;
+ if(f===5||f===15){h.pts+=2;lines.push('📈 Milestone! +2 stat points.');}
+ if(f===10)lines.push(...addRelic('packleader'));
+ if(f===20)lines.push(...addRelic('prism'));
+ if(f===25){h.pts+=3;lines.push('📈 Milestone! +3 stat points.');}
+ if(f===30){const un=Object.keys(RELICS).filter(r=>!w.relics[r]);lines.push(...addRelic(un.length?pick(un):'prism'));}
+ if(f>30&&f%10===0){h.pts+=3;lines.push('📈 Milestone! +3 stat points.');}
+ return lines;
+}
+Object.assign(ACT,{
+ padd(id){const h=S.hero;if(!S.world.comp[id]||h.party.includes(id))return;if(h.party.length>=maxParty()){note('Your party is full.','e');return;}h.party.push(id);},
+ prem(id){const h=S.hero;h.party=h.party.filter(x=>x!==id);},
+ order(id){const c=S.cb;if(!c)return;const u=allyUnit(id);if(!u||u.down||u.cd>0)return;c.q[id]=!c.q[id];},
+ hire(id){
+  const w=S.world,cost=Math.round(120+S.hero.lvl*35);
+  if(w.comp[id])return;if(w.gold<cost){note('Not enough gold.','e');return;}
+  w.gold-=cost;S.hireLines=recruit(id);
+ },
+ relicEq(id){const h=S.hero;if(!S.world.relics[id]||h.rel.includes(id))return;if(h.rel.length>=2){note('Both relic slots are full. Unequip one first.','e');return;}h.rel.push(id);h_clamp();},
+ relicUn(id){const h=S.hero;h.rel=h.rel.filter(x=>x!==id);h_clamp();},
+ htab(t){S.htab=t;},
+ diff(i){S.set.diff=+i;h_clamp();},
+ delveStart(){
+  const h=S.hero;if(h.sta<2){note('You need 2 stamina.','e');return;}
+  h.sta-=2;S.dl={f:1,e:null};S.dl.e=delveEnemy(1);S.screen='delve';
+ },
+ delveFight(){const dl=S.dl;if(!dl||!dl.e)return;const e=dl.e;startCombat(e,e.tier==='b',{type:'delve',free:true});},
+ delveRetreat(){const dl=S.dl;if(dl){note(`You climb out of the Abyss after floor ${dl.f-1}. Best ever: floor ${S.world.delve.best}.`,'y');}S.dl=null;S.screen='town';},
+ delveNext(){const dl=S.dl;dl.e=delveEnemy(dl.f);S.screen='delve';}
 });
 
 /* ---------------- rendering ---------------- */
@@ -1988,6 +2381,7 @@ VIEWS.town=function(){
   ${btn('🍺 Tavern','go','tavern','',!hu,'Rumors & gossip')}
   ${btn('🚚 Tinker\'s Wagon','go','tinker','',!hu,hu?'Scrap → random loot':'Locked')}
   ${w.anc.length?btn('⚰️ Family Crypt','go','crypt','',!hu,'Face your ancestors'):''}
+  ${abyssOpen()&&hu?(S.dl?btn('🌀 Abyss Stair','go','delve','pri',false,'Resume your descent'):btn('🌀 Abyss Stair','delveStart',undefined,'',h.sta<2||!!S.dg,`2⚡ · endless · best floor ${w.delve.best||0}`)):''}
  </div>
  <div style="margin-top:10px">${btn('🛏️ Sleep until morning','sleep',undefined,'good',!!S.dg,S.dg?'Leave the dungeon first':'Restore HP & stamina · next day · refreshes shop/board')}</div>
  <h2>Recent events</h2>${logHtml(S.log,6)}`;
@@ -2070,8 +2464,8 @@ VIEWS.dungeon=function(){
  let g=`<div class="dgmap" style="grid-template-columns:repeat(${dg.W},1fr)">`;
  dg.rooms.forEach(x=>{
   const cur=x.i===dg.pos,known=roomKnown(dg,x);
-  const ic=cur?'🧍':x.s?ROOM_IC[x.t]:known?'❔':'';
-  g+=`<div class="dgc ${cur?'cur':''} ${x.s&&x.d&&!cur?'done':''} ${known||x.s?'k':''}">${ic}</div>`;
+  const ic=cur?'🧍':(x.s||rel('compass'))?ROOM_IC[x.t]:known?'❔':'';
+  g+=`<div class="dgc ${cur?'cur':''} ${x.s&&x.d&&!cur?'done':''} ${known||x.s||rel('compass')?'k':''}">${ic}</div>`;
  });
  t+=g+'</div>';
  if(dg.msg&&dg.msg.length)t+=`<div class="card">${dg.msg.map(l=>`<p>${l}</p>`).join('')}</div>`;
@@ -2106,7 +2500,7 @@ VIEWS.dungeon=function(){
  const cell=d=>{
   const code=r.ex[d];
   if(!code||code===3)return `<div></div>`;
-  const n=dgNb(r,d),ic=code===2?'🔒':n.s?ROOM_IC[n.t]:'❔';
+  const n=dgNb(r,d),ic=code===2?'🔒':(n.s||rel('compass'))?ROOM_IC[n.t]:'❔';
   return btn(`${DARR[d]} ${DNAME[d]} ${ic}`,'dgGo',d,'c');
  };
  t+=`<div></div>${cell('n')}<div></div>${cell('w')}<div class="dgme">🧍</div>${cell('e')}<div></div>${cell('s')}<div></div></div>`;
@@ -2194,7 +2588,7 @@ Object.assign(ACT,{
  dgEscapeYes(){const w=S.world;S.modal=null;w.gold-=Math.round(w.gold*.1);delete S.hero.dgsave[S.dg.id];S.dg=null;S.screen='hunt';note('You fled the dungeon, shaken.','e');}
 });
 const NAV=[
- ['town','🏘️','Town',['town','train','hunt','enc','result','shop','library','tinker','square','tavern','crypt','explore','dungeon','puzzle','talk']],
+ ['town','🏘️','Town',['town','train','hunt','enc','result','shop','library','tinker','square','tavern','crypt','explore','dungeon','puzzle','talk','delve']],
  ['journal','📖','Journal',['journal']],['hero','🧍','Hero',['hero']],['pack','🎒','Pack',['pack']],['guild','📜','Guild',['guild']],['menu','⚙️','Menu',['menu']]
 ];
 function render(){
@@ -2208,6 +2602,7 @@ function render(){
  if(S.screen==='puzzle'&&!S.pz)S.screen=S.dg?'dungeon':'town';
  if(S.screen==='explore'&&!S.ev)S.screen='hunt';
  if(S.screen==='talk'&&!S.talk)S.screen='square';
+ if(S.screen==='delve'&&!S.dl)S.screen='town';
  const sc=S.screen,h=S.hero,p=P();
  top.style.display=sc==='death'?'none':'block';
  top.innerHTML=`<div class="row"><span><b>${esc(h.name)}</b> Lv ${h.lvl}</span><span>💰 <b>${fmt(S.world.gold)}</b></span><span>⚡ <b>${h.sta}/${p.maxsta}</b></span><span>Day <b>${h.day}</b></span></div>${bar(h.hp,p.maxhp,'hp')}<div class="row"><span>❤ ${h.hp}/${p.maxhp}</span><span>XP ${h.xp}/${xpNeed(h.lvl)}</span></div>`;
@@ -2220,6 +2615,103 @@ function render(){
  const lg=$('#log');if(lg)lg.scrollTop=lg.scrollHeight;
  if(S.lastScreen!==sc){window.scrollTo(0,0);S.lastScreen=sc;}
 }
+
+/* =====================================================================
+   EXPANSION E — VIEWS FOR PARTY / RELICS / ABYSS / DIFFICULTY
+   ===================================================================== */
+VIEWS.combat=function(){
+ const c=S.cb,e=c.e,h=S.hero,p=P(),tk=e.pat[e.pi%e.pat.length],it=INTENT[tk];
+ const st=`${e.poison?`☠${e.pn||1} `:''}${e.burn?'🔥 ':''}${e.bleed?'🩸 ':''}${e.chill?'❄️ ':''}${e.mark?'🎯 ':''}${e.stun?'💫 ':''}${e.buff?'😡 ':''}`;
+ let t=`<div class="card"><div class="row2"><b>${e.tier==='b'?'👑 ':e.tier==='e'?'⭐ ':''}${esc(e.name)}</b><span class="tag">Lv ${e.lvl}</span></div>
+ ${bar(e.hp,e.max,'ehp')}<div class="row2 sm mut"><span>${e.hp}/${e.max}</span><span>${st}</span></div>
+ <div class="sm" style="margin-top:4px">${it[1]} <span class="${tk==='h'||tk==='s'||tk==='x'?'dn':'mut'}">Next: ${it[0]}</span></div></div>`;
+ t+=`<div class="card"><div class="row2"><b>${esc(h.name)}</b><span class="sm mut">Turn ${c.turn}</span></div>
+ ${bar(h.hp,p.maxhp,'hp')}<div class="row2 sm"><span>❤ ${h.hp}/${p.maxhp}${c.pb.barrier>0?` 🛡️${c.pb.barrier}`:''}</span><span class="mut">${c.hb.poison?'☠ ':''}${c.hb.atk?'📣 ':''}${c.hb.def?'🪨 ':''}${c.hb.stun?'💫 ':''}${c.hb.weak?'🌑 ':''}${c.pb.dmg>0?'🎺 ':''}${c.pb.wall>0?'🛡️ ':''}</span></div>
+ ${bar(c.focus,p.maxfocus,'fc')}<div class="sm mut">🔷 Focus ${c.focus}/${p.maxfocus}</div></div>`;
+ if(c.party.length){
+  t+=`<div class="card" style="padding:8px">`+c.party.map(u=>{const D=COMP[u.id];
+   return `<div class="sm" style="margin:4px 0"><div class="row2"><span>${D.ic} <b>${firstName(D)}</b> <span class="mut">Lv ${u.lvl}</span></span><span class="${u.down?'dn':'mut'}">${u.down?'DOWN':u.hp+'/'+u.max}${!u.down&&u.cd>0?` · ⏱${u.cd}`:''}${u.rage>0?' · 😡':''}</span></div>${bar(u.hp,u.max,'hp')}</div>`;}).join('')+
+  (c.thrall&&c.thrall.t>0?`<div class="sm mut">💀 Thrall (${c.thrall.t} turns)</div>`:'')+`</div>`;
+ }
+ t+=logHtml(c.log,14);
+ t+='<div style="margin-top:10px">';
+ if(c.panel==='skill'){
+  const ks=Object.keys(h.skills);
+  t+=ks.length?ks.map(k=>btn(`${SK[k].n} <span class="tag">Lv ${h.skills[k]}</span>`,'skill',k,'',c.focus<skillCost(k),`🔷${skillCost(k)} · ${SK[k].d(h.skills[k])}`)).join(''):'<p class="mut">You know no skills yet. Defeat monsters to find tomes, or buy them at the Old Library.</p>';
+  t+=btn('← Back','panel','','c');
+ }else if(c.panel==='item'){
+  const ps=Object.keys(POTS).filter(k=>S.world.pots[k]>0);
+  t+=ps.length?ps.map(k=>btn(`${POTS[k].n} ×${S.world.pots[k]}`,'pot',k,'good',false,`Heals ${Math.round(POTS[k].pct*100)}% max HP (min ${POTS[k].min})`)).join(''):'<p class="mut">No potions.</p>';
+  t+=btn('← Back','panel','','c');
+ }else{
+  t+=`<div class="grid">${btn('⚔️ Attack','atk',undefined,'pri c',false,'+1 🔷')}${btn('✨ Skills','panel','skill','c',false,'')}${btn('🛡️ Guard','guard',undefined,'c',false,'-55% dmg, +3 🔷')}${btn('🧪 Items','panel','item','c')}</div>`;
+  const ord=c.party.filter(u=>!u.down&&u.cd<=0);
+  if(ord.length)t+=`<h3>Orders <span class="mut sm">(free; they act after you)</span></h3><div class="grid">${ord.map(u=>btn(`${COMP[u.id].ic} ${COMP[u.id].spec[0]}`,'order',u.id,c.q[u.id]?'pri c':'c',false,c.q[u.id]?'queued':'ready')).join('')}</div>`;
+  t+=`<div style="margin-top:8px">${btn(c.boss?'🚫 Cannot flee':'🏃 Flee','flee',undefined,'c',c.boss)}</div>`;
+ }
+ return t+'</div>';
+};
+function compCard(id,inParty){
+ const D=COMP[id],cs=S.world.comp[id],h=S.hero,L=Math.min(cs.lvl,h.lvl+2),b=cs.bond;
+ const lo=BOND[b-1],hi=BOND[b]||BOND[4];
+ return `<div class="card"><div class="row2"><b>${D.ic} ${D.n}</b><span class="tag">${D.role} · Lv ${L}</span></div>
+ <div class="sm mut">Bond ${b}/5 ${b>=3?'· special recharges faster':''}</div>${bar(b>=5?1:cs.bx-lo,b>=5?1:hi-lo,'xp')}
+ <div class="sm">▸ <b>${D.basic[0]}:</b> ${D.basic[1]}</div><div class="sm">★ <b>${D.spec[0]}</b> (recharge ${cdVal({id})}): ${D.spec[1]}</div><div class="sm up">Passive: ${D.passd}</div>
+ <div style="margin-top:8px">${inParty?btn('Remove from party','prem',id,'c'):btn('Add to party','padd',id,'pri c',h.party.length>=maxParty())}</div></div>`;
+}
+VIEWS.party=function(){
+ const h=S.hero,w=S.world,mp=maxParty();
+ let t=`<p class="mut sm">Party: ${h.party.length}/${mp} companions. Slot 3 opens at Gold rank, slot 4 with the Pack Leader's Collar. Companions fight automatically; you can give <b>Orders</b> in battle to fire their specials on demand. They scale with you (up to 2 levels above).</p>`;
+ const sl=synList();
+ t+=`<h2>Synergies</h2>`+(sl.length?sl.map(s=>`<div class="card sm" style="border-color:var(--good)"><b class="up">${s.n}</b><br>${s.d}</div>`).join(''):'<p class="mut sm">No active synergies. Try pairing a tank with a healer, or a pyromancer with a cryomancer.</p>');
+ t+=`<h2>In your party</h2>`+(h.party.length?h.party.map(id=>compCard(id,true)).join(''):'<p class="mut sm">Empty. Recruit companions at the Tavern, in dungeons and through quests.</p>');
+ const bench=COMPIDS.filter(id=>w.comp[id]&&!h.party.includes(id));
+ if(bench.length)t+=`<h2>Roster</h2>`+bench.map(id=>compCard(id,false)).join('');
+ const un=COMPIDS.filter(id=>!w.comp[id]);
+ if(un.length)t+=`<h2>Not yet met (${un.length})</h2>`+un.map(id=>`<div class="item" style="cursor:default"><div><div class="n">❔ ${COMP[id].role}</div><div class="s">${COMP[id].from}</div></div></div>`).join('');
+ return t;
+};
+VIEWS.relics=function(){
+ const h=S.hero,w=S.world;
+ let t=`<p class="mut sm">Relics are build-defining finds. You can equip <b>two</b>. They belong to your bloodline, so heirs keep them. Some combinations break the game wide open. That's the point.</p>`;
+ t+=`<h2>Equipped (${h.rel.length}/2)</h2>`+(h.rel.length?h.rel.map(id=>`<div class="card"><b>${RELICS[id].ic} ${RELICS[id].n}</b><div class="sm">${RELICS[id].d}</div>${btn('Unequip','relicUn',id,'c')}</div>`).join(''):'<p class="mut sm">None.</p>');
+ const own=Object.keys(RELICS).filter(id=>w.relics[id]&&!h.rel.includes(id));
+ t+=`<h2>Collection (${Object.keys(w.relics).length}/${Object.keys(RELICS).length})</h2>`+(own.length?own.map(id=>`<div class="card"><b>${RELICS[id].ic} ${RELICS[id].n}</b><div class="sm">${RELICS[id].d}</div>${btn('Equip','relicEq',id,'pri c',h.rel.length>=2)}</div>`).join(''):'<p class="mut sm">Clear dungeons to earn relics. Each dungeon has one waiting.</p>');
+ return t;
+};
+const _heroStats=VIEWS.hero;
+VIEWS.hero=function(){
+ const tab=S.htab||'stats';
+ const tabs=[['stats','🧍 Stats'],['party','👥 Party'],['relics','🔮 Relics']];
+ return `<div class="grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:8px">${tabs.map(x=>btn(x[1],'htab',x[0],tab===x[0]?'pri c':'c')).join('')}</div>`+(tab==='party'?`<h1>👥 Party</h1>`+VIEWS.party():tab==='relics'?`<h1>🔮 Relics</h1>`+VIEWS.relics():_heroStats());
+};
+VIEWS.tavern=function(){
+ const h=S.hero,w=S.world,cost=Math.round(15+h.lvl*4),hc=Math.round(120+h.lvl*35);
+ let t=`<h1>🍺 The Gilded Mug</h1><p class="mut">Smoke, rumor, and mediocre stew. Gossip costs a round of drinks. Sellswords drink here too.</p>${S.rumor?`<div class="card">${S.rumor}</div>`:''}${btn('Buy a round for rumors','rumor',undefined,'pri',w.gold<cost,`${cost}g · may reveal a dungeon`)}`;
+ if(S.hireLines){t+=`<div class="card">${S.hireLines.map(l=>`<p>${l}</p>`).join('')}</div>`;S.hireLines=null;}
+ t+=`<h2>Sellswords for hire</h2>`;
+ const av=HIRE.filter(id=>!w.comp[id]);
+ t+=av.length?av.map(id=>`<div class="card"><b>${COMP[id].ic} ${COMP[id].n}</b> <span class="tag">${COMP[id].role}</span><div class="sm mut"><i>${COMP[id].intro}</i></div><div class="sm">★ ${COMP[id].spec[0]}: ${COMP[id].spec[1]}</div>${btn('Hire','hire',id,'pri c',w.gold<hc,hc+'g, one time')}</div>`).join(''):'<p class="mut sm">Everyone worth hiring is already with you.</p>';
+ return t+'<div style="height:8px"></div>'+btn('← Back to town','go','town','c');
+};
+VIEWS.delve=function(){
+ const dl=S.dl,e=dl.e,d=danger(e),w=S.world;
+ return `<h1>🌀 The Abyss Stair</h1><p class="mut sm">An endless descent. Every floor is built from <b>your</b> level, so power spikes can't trivialize it. Bank your progress by retreating. Dying is permanent.</p>
+ <div class="card"><div class="row2"><b>Floor ${dl.f}</b><span class="tag">Best: ${w.delve.best||0}</span></div><div class="sm mut">${w.delve.who?'Record holder: '+esc(w.delve.who):'No one has descended yet.'}</div></div>
+ <div class="card"><div class="row2"><b>${e.tier==='b'?'👑':e.tier==='e'?'⭐':'❓'} ${esc(e.name)}</b><span class="tag">Lv ${e.lvl}</span></div><p>Danger: <b style="color:${d[1]}">${d[0]}</b> <span class="skull">${'💀'.repeat(d[2])}</span></p>${e.tier==='b'?'<p class="dn sm">Boss floor. No escape once it begins.</p>':''}</div>
+ <div class="grid">${btn('⚔️ Fight','delveFight',undefined,'pri c')}${btn('🪜 Climb out','delveRetreat',undefined,'c')}</div>`;
+};
+const _result2=VIEWS.result;
+VIEWS.result=function(){
+ const r=S.res,ctx=r&&r.ctx||{};
+ if(ctx.type!=='delve')return _result2();
+ const h=S.hero;
+ return `<h1>🏆 Floor cleared</h1><p class="mut">${esc(r.name)} (Lv ${r.lvl}) defeated.</p><div class="card">${r.lines.map(l=>`<p>${l}</p>`).join('')}</div><p class="sm mut">❤ ${h.hp}/${P().maxhp}</p><div class="grid">${btn('Descend','delveNext',undefined,'pri c',false,'Floor '+S.dl.f)}${btn('Climb out','delveRetreat',undefined,'c')}</div>`;
+};
+const _menu=VIEWS.menu;
+VIEWS.menu=function(){
+ return _menu()+`<h2>Challenge</h2><p class="sm mut">Scales enemy HP and damage. Higher challenge pays better in XP, gold and drops. Good for when your build gets out of hand.</p><div class="grid">${DIFF.map((d,i)=>btn(d.n,'diff',i,dIdx()===i?'pri c':'c',false,`enemies ×${d.m} · rewards ×${d.r}`)).join('')}</div>`;
+};
 
 function main(){
  S=load();
@@ -2241,7 +2733,7 @@ function main(){
  render();
 }
 if(typeof document!=='undefined'&&typeof window!=='undefined'&&!window.__TQ_TEST){main();}
-if(typeof window!=='undefined')window.TQ={ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
+if(typeof window!=='undefined')window.TQ={COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>
 </html>
