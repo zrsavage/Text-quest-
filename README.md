@@ -93,3 +93,5 @@ There are now about 130 materials instead of 18. Every creature leaves its own p
 ## A harder, slower start
 
 The first rat is now a real fight: it has far more health than before and bites harder, so a fresh hero wins most of the time but loses about half their health doing it. Early enemies stay tougher until around level 5. The gates only open after **30 training sessions** (it was 10), so you spend days on the training yard first. While you are below level 8, sleeping only mends part of your wounds (38% of your health a night at level 1, rising to full by level 8), so you recover over several days while you keep training.
+
+The first errand now lives at the top of the Training Yard until it is done: "Haul Mira's flour sacks" is a button that counts as a training session (Strength and Vitality gains plus XP, 2 stamina) and starts the quest on its own. Three loads, then a card to report back to Mira. A few early monsters were also softened, and elites now wait until level 5.
