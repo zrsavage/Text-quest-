@@ -64,6 +64,12 @@ textarea{height:110px;font-size:0.75rem}
 #sleepfx .stars{inset:0;background-image:radial-gradient(2px 2px at 12% 18%,#fff,transparent),radial-gradient(1.5px 1.5px at 30% 35%,#fff,transparent),radial-gradient(2px 2px at 55% 12%,#fff,transparent),radial-gradient(1.5px 1.5px at 72% 28%,#fff,transparent),radial-gradient(2px 2px at 88% 15%,#fff,transparent),radial-gradient(1.5px 1.5px at 20% 52%,#fff,transparent),radial-gradient(1.5px 1.5px at 80% 48%,#fff,transparent),radial-gradient(2px 2px at 45% 42%,#fff,transparent);opacity:0;animation:starsfx 4.4s linear forwards}
 #sleepfx .sun{left:50%;width:84px;height:84px;margin-left:-42px;border-radius:50%;background:radial-gradient(circle,#fff6c9 30%,#ffc94a 70%);box-shadow:0 0 60px 20px rgba(255,190,70,.6);animation:sunfx 4.4s ease-in-out forwards}
 #sleepfx .moon{left:68%;top:20%;width:46px;height:46px;border-radius:50%;background:#f2f0e6;box-shadow:inset -12px -4px 0 0 #cfcab8,0 0 30px 8px rgba(220,230,255,.35);opacity:0;animation:moonfx 4.4s linear forwards}
+#sleepfx .scene{left:0;right:0;bottom:0;width:100%;height:36%;z-index:2}
+#sleepfx .gbar{left:0;right:0;bottom:0;height:3.5%;background:#0a0d18;z-index:2}
+#sleepfx .gl{opacity:0;animation:glfx 4.4s linear forwards}
+#sleepfx .fire{animation:flick .45s ease-in-out infinite alternate}
+@keyframes glfx{0%,28%{opacity:0}48%,100%{opacity:1}}
+@keyframes flick{from{opacity:.65;transform:scale(.9)}to{opacity:1;transform:scale(1.1)}}
 #sleepfx .hills{left:-10%;right:-10%;bottom:-2%;height:30%;background:#0a0d18;border-radius:50% 50% 0 0/100% 100% 0 0;box-shadow:0 0 0 100vh #0a0d18 inset;z-index:2}
 #sleepfx .town{left:0;right:0;bottom:calc(30% - 6px);text-align:center;font-size:1.875rem;letter-spacing:6px;z-index:2;opacity:.9;filter:grayscale(1) brightness(.2)}
 #sleepfx .stxt{left:0;right:0;top:12%;text-align:center;z-index:3;color:#fff;font-size:1.25rem;font-weight:600;text-shadow:0 2px 8px rgba(0,0,0,.6)}
@@ -441,12 +447,41 @@ function sleepDay(){
 function huntUnlocked(){return S.hero.tc>=(S.world.gen>1?HEIR_TC:UNLOCK_TC);}
 
 
+const SC_FILL='#0a0d18';
+function scHouse(x,w,hh,win){const y=100-hh;return `<rect x="${x}" y="${y}" width="${w}" height="${hh+4}"/><polygon points="${x-4},${y} ${x+w/2},${y-w*.38} ${x+w+4},${y}"/><rect x="${x+w*.7}" y="${y-w*.5}" width="5" height="12"/>${win?`<rect class="gl" x="${x+w*.2}" y="${y+hh*.3}" width="${Math.max(4,w*.16)}" height="${Math.max(5,hh*.2)}" fill="#ffc861"/><rect class="gl" x="${x+w*.6}" y="${y+hh*.3}" width="${Math.max(4,w*.16)}" height="${Math.max(5,hh*.2)}" fill="#ffc861"/>`:''}`;}
+function scPine(x,hh){return `<polygon points="${x-hh*.28},${100} ${x},${100-hh} ${x+hh*.28},100"/><rect x="${x-2}" y="98" width="4" height="8"/>`;}
+function scTent(x){return `<polygon points="${x-16},100 ${x},78 ${x+16},100"/><polygon class="gl" points="${x-4},100 ${x},90 ${x+4},100" fill="#ffb347"/><ellipse class="fire" cx="${x+30}" cy="92" rx="5" ry="6" fill="#ff9a3c"/><ellipse class="fire" cx="${x+30}" cy="93" rx="2.4" ry="3.4" fill="#ffe08a"/>`;}
+function sleepLoc(){
+ const l=(S&&S.sleepLoc)||'town';
+ if(l==='town')return{t:'town',txt:'The sun sets over '+TOWN+'…'};
+ if(l[0]==='z'){const i=clamp(+l.slice(1),0,5);return{t:'z',i,txt:'Night falls over '+ZONES[i].n+'…'};}
+ if(l[0]==='d'){const D=DG[l.slice(1)];return{t:'d',i:D?D.zi:0,txt:'Night falls outside '+(D?D.n:'the dungeon')+'…'};}
+ return{t:'town',txt:'The sun sets over '+TOWN+'…'};
+}
+function sceneSvg(L){
+ const i=L.i||0;let s='<rect x="0" y="100" width="400" height="20"/>';
+ const ground=['M0 100 Q60 72 130 94 T260 90 T400 94 V120 H0Z','M0 100 Q80 86 160 96 T320 92 T400 98 V120 H0Z','M0 100 Q100 94 200 100 T400 98 V120 H0Z','M0 100 L60 84 L110 98 L190 70 L250 96 L330 80 L400 100 V120 H0Z','M0 100 Q50 80 110 96 T230 92 T400 98 V120 H0Z','M0 100 L40 90 L70 100 L140 60 L170 100 L230 88 L300 100 L400 92 V120 H0Z'][i];
+ if(L.t==='town'){
+  s+=scHouse(8,46,30,1)+scHouse(62,38,24,1)+scHouse(110,52,36,1)+scHouse(172,40,26,1)+`<rect x="226" y="52" width="22" height="52"/><polygon points="222,52 237,30 252,52"/><rect class="gl" x="234" y="60" width="6" height="10" fill="#ffc861"/>`+scHouse(262,48,32,1)+scHouse(320,40,24,1)+scHouse(366,36,30,1)+'<rect x="0" y="98" width="400" height="3"/>'+[40,150,300,352].map(x=>`<rect x="${x}" y="88" width="2" height="12"/><circle class="gl" cx="${x+1}" cy="86" r="3" fill="#ffd27a"/>`).join('');
+ }else{
+  s+=`<path d="${ground}"/>`;
+  if(i===0)s+=`<rect x="300" y="72" width="5" height="30"/><circle cx="302" cy="66" r="18"/><circle cx="288" cy="74" r="12"/><circle cx="316" cy="74" r="12"/>`+[40,60,80,100].map(x=>`<rect x="${x}" y="86" width="3" height="14"/>`).join('')+'<rect x="36" y="90" width="70" height="2"/>';
+  if(i===1)s+=[20,50,85,120,330,360,390,60,300].map((x,k)=>scPine(x,44+(k*13)%34)).join('');
+  if(i===2)s+=[30,80,130,300,350].map((x,k)=>`<rect x="${x}" y="${84-(k%2)*6}" width="14" height="${20+(k%2)*6}" rx="6"/>`).join('')+`<rect x="215" y="70" width="4" height="34"/><rect x="207" y="78" width="20" height="4"/><rect x="330" y="60" width="4" height="44"/><polygon points="334,66 360,56 340,74"/>`;
+  if(i===3)s+=`<polygon points="150,100 190,52 230,100"/><polygon points="210,100 250,70 290,100"/><path class="gl" d="M190 56 L186 78 L192 92" stroke="#ff6a2a" stroke-width="2.5" fill="none"/><path class="gl" d="M250 74 L254 90" stroke="#ff6a2a" stroke-width="2" fill="none"/>`;
+  if(i===4)s+=`<polygon points="30,100 50,56 70,100"/><polygon points="60,100 84,70 108,100"/><polygon points="300,100 322,50 344,100"/><polygon points="332,100 354,66 376,100"/>`;
+  if(i===5)s+=`<polygon points="0,100 40,50 120,60 150,100"/><polygon points="250,100 290,56 360,48 400,100"/><path class="gl" d="M180 30 L196 62 L186 84 L200 102" stroke="#a46bff" stroke-width="3" fill="none"/>`;
+  if(L.t==='d')s+=`<path d="M120 100 Q200 20 280 100Z"/><path d="M168 100 V74 Q200 54 232 74 V100Z" fill="#000"/><rect class="gl" x="150" y="76" width="5" height="9" fill="#ffb347"/><rect class="gl" x="245" y="76" width="5" height="9" fill="#ffb347"/><ellipse class="fire" cx="152" cy="73" rx="4" ry="6" fill="#ff9a3c"/><ellipse class="fire" cx="248" cy="73" rx="4" ry="6" fill="#ff9a3c"/>`+scTent(104);
+  else s+=scTent(i===3?110:i===1?200:150);
+ }
+ return `<svg class="scene" viewBox="80 0 240 120" preserveAspectRatio="xMidYMax meet" fill="${SC_FILL}" aria-hidden="true">${s}</svg>`;
+}
 function playSleep(died){
  if(typeof document==='undefined')return;
  const old=document.getElementById('sleepfx');if(old)old.remove();
  const el=document.createElement('div');el.id='sleepfx';
- const day=S&&S.hero?S.hero.day:'';
- el.innerHTML='<div class="sky day"></div><div class="sky dusk"></div><div class="sky night"></div><div class="sky dawn"></div><div class="stars"></div><div class="sun"></div><div class="moon"></div><div class="town">🏠🏘️🏠</div><div class="hills"></div><div class="stxt"><span class="t1">The sun sets over '+TOWN+'…</span><span class="t2">'+(died?'Your long life comes to an end…':'Day '+day+' — you wake rested')+'</span></div>';
+ const day=S&&S.hero?S.hero.day:'',L=sleepLoc();
+ el.innerHTML='<div class="sky day"></div><div class="sky dusk"></div><div class="sky night"></div><div class="sky dawn"></div><div class="stars"></div><div class="sun"></div><div class="moon"></div>'+sceneSvg(L)+'<div class="gbar"></div><div class="stxt"><span class="t1">'+L.txt+'</span><span class="t2">'+(died?'Your long life comes to an end…':'Day '+day+' — you wake rested')+'</span></div>';
  const done=()=>{if(el.parentNode)el.remove();};
  el.addEventListener('click',done);
  document.body.appendChild(el);
@@ -475,7 +510,8 @@ const ACT={
   x.forEach(t=>note(t,'y'));
   if(h.tc===(S.world.gen>1?HEIR_TC:UNLOCK_TC))note('You finally feel strong enough to leave the gates and face the weakest creatures outside.','y');
  },
- sleep(){sleepDay();playSleep(S.screen==='death');},
+ sleep(){S.sleepLoc='town';sleepDay();playSleep(S.screen==='death');},
+ camp(p){if(S.dg)return;S.sleepLoc=p;sleepDay();playSleep(S.screen==='death');S.sleepLoc='town';},
  zone(zi){
   const h=S.hero;zi=+zi;if(h.sta<FIGHT_COST){note('Too tired to hunt. Sleep first.','e');S.screen='town';return;}
   const pct=S.world.map.explore[zi];
@@ -3201,7 +3237,7 @@ const VIEWS={
   return `<h1>⚰️ ${esc(d.name)} ${esc(d.fam)} has fallen</h1><p class="dn">${esc(d.cause)}</p>
   <div class="card sm">Level ${d.lvl} · Day ${d.day} · ${d.contracts} contracts · ${d.kills} kills</div>
   <h2>What passes on</h2><div class="card sm">💰 ${fmt(w.gold)} gold<br>🎒 ${items} pieces of gear<br>🧶 Materials & potions<br>🏮 The guild remembers you (heir starts with ${Math.floor(d.contracts*.4)} contracts)<br>🩸 Bloodline stat bonus & catch-up XP until your heir reaches level ${Math.max(w.bestLevel,d.lvl)}<br>🤝 Your companions retire. Those who trusted you most pass on their counsel, and new faces await your heir.</div>
-  <p class="mut sm">Lost: levels, skills, trained stats, essences. The powers you mastered are remembered by your bloodline.</p>${btn('Continue the bloodline','heir',undefined,'pri c')}`;
+  <p class="mut sm">Lost: levels, skills, trained stats, aspects. The powers you mastered are remembered by your bloodline.</p>${btn('Continue the bloodline','heir',undefined,'pri c')}`;
  }
 };
 
@@ -3298,10 +3334,10 @@ VIEWS.hunt=function(){
   if(lock){t+=`<div class="mut sm">Requires ${RANKS[i].n} rank</div></div>`;return;}
   t+=`<div class="mut sm">Familiarity ${ex}% ${ex<20?'· scouting unlocks at 20%':''}</div>${bar(ex,100,'sta')}
   <div class="grid" style="margin-top:6px">${btn('Hunt','zone',i,'pri',h.sta<FIGHT_COST||!!S.dg,FIGHT_COST+'⚡')}${btn('🧭 Scout','explore',i,'',h.sta<1||!!S.dg||ex<20,ex<20?'at 20% familiarity':'1⚡ · events & secrets')}</div>
-  <div style="margin-top:6px">${btn('Boss: '+z.boss.n,'boss',i,'bad',h.sta<BOSS_COST||!!S.dg,BOSS_COST+'⚡ · rare+ drop')}</div>`;
+  <div style="margin-top:6px">${btn('Boss: '+z.boss.n,'boss',i,'bad',h.sta<BOSS_COST||!!S.dg,BOSS_COST+'⚡ · rare+ drop')}</div><div style="margin-top:6px">${btn('⛺ Camp until morning','camp','z'+i,'c',!!S.dg,'rest here · next day')}</div>`;
   const dgs=LANDMARKS[i].map(l=>l.id).concat(DUNGEONS.filter(d=>d.hidden&&d.zi===i).map(d=>d.id)).filter(id=>w.map.found[id]);
   if(dgs.length){t+='<h3>Dungeons</h3>';dgs.forEach(id=>{const D=DG[id],cl=w.map.cleared[id]||0;
-   t+=`<div class="item" style="cursor:default"><div><div class="n">${D.ic} ${D.n}</div><div class="s">Lv ${D.lvl}+ · ${D.sz[0]*D.sz[1]} rooms · ${cl?`cleared ×${cl}`:'unexplored'}${h.dgsave[id]?' · <b>in progress</b>':''}</div></div><div style="width:110px">${btn(h.dgsave[id]?'Resume':'Enter','dgEnter',id,'pri c',!!S.dg||(!h.dgsave[id]&&h.sta<3),h.dgsave[id]?'':'3⚡')}</div></div>`;});}
+   t+=`<div class="item" style="cursor:default"><div><div class="n">${D.ic} ${D.n}</div><div class="s">Lv ${D.lvl}+ · ${D.sz[0]*D.sz[1]} rooms · ${cl?`cleared ×${cl}`:'unexplored'}${h.dgsave[id]?' · <b>in progress</b>':''}</div></div><div style="width:110px">${btn(h.dgsave[id]?'Resume':'Enter','dgEnter',id,'pri c',!!S.dg||(!h.dgsave[id]&&h.sta<3),h.dgsave[id]?'':'3⚡')}</div></div><div style="margin:4px 0 8px">${btn('⛺ Camp at the entrance','camp','d'+id,'c',!!S.dg)}</div>`;});}
   const zq=zoneQuests(i).map(questCard).join('');if(zq)t+='<h3>Wanderers</h3>'+zq;
   t+='</div>';
  });
@@ -3700,11 +3736,13 @@ const PROLOGUE=[
  'You are not a hero. You are barely a person with a plan. You cannot lift a full bucket without sitting down afterward.',
  'But families remember. What one of you learns, the next will carry down the road. Heroes die. The bloodline does not.'
 ];
+const fd=c=>(window.__ui&&window.__ui.fresh===false)?'':c;
+const bgDetail=id=>{const B=BGS[id];return `<div class="row2"><b>${B.ic} ${B.n}</b></div><p class="mut sm" style="margin:4px 0">${B.d}</p><div class="sm">${ptxt(B)}</div><div class="sm">${B.pd}</div>`;};
 const TV={
  title(){
   const sv=window.__save,hs=sv&&sv.hero?sv.hero:null;
-  return `<div class="fadein c" style="padding-top:12vh"><div style="font-size:3rem">🏮</div><h1 style="margin:6px 0 2px">${TOWN}</h1><div class="mut" style="letter-spacing:.25em;text-transform:uppercase;font-size:.8rem">Bloodline</div><p class="mut" style="margin:16px 0 26px">A story told one family at a time.</p></div>
-  <div class="fadein d2">${btn('Begin a New Story','tgo','new','pri c')}<div style="height:8px"></div>
+  return `<div class="${fd('fadein')} c" style="padding-top:12vh"><div style="font-size:3rem">🏮</div><h1 style="margin:6px 0 2px">${TOWN}</h1><div class="mut" style="letter-spacing:.25em;text-transform:uppercase;font-size:.8rem">Bloodline</div><p class="mut" style="margin:16px 0 26px">A story told one family at a time.</p></div>
+  <div class="${fd('fadein d2')}">${btn('Begin a New Story','tgo','new','pri c')}<div style="height:8px"></div>
   ${btn('Continue','tcont',undefined,'c',!hs,hs?`${esc(hs.name)} ${esc(hs.fam)} · Lv ${hs.lvl} · Day ${hs.day} · Generation ${sv.world.gen}`:'no saved story yet')}<div style="height:8px"></div>
   ${btn('Load','tgo','load','c',false,'from a saved text or file')}<div style="height:8px"></div>
   ${btn('Settings','tgo','settings','c')}</div>
@@ -3715,20 +3753,20 @@ const TV={
  },
  prologue(){
   const u=window.__ui,i=u.pg,last=i>=PROLOGUE.length-1;
-  return `<div style="padding-top:14vh;min-height:50vh"><p class="fadein" key="${i}" style="font-size:1.1875rem;line-height:1.6">${PROLOGUE[i]}</p></div>
-  <div class="fadein d2">${btn(last?'Take your first breath':'Continue','tnext',undefined,'pri c')}<div style="height:8px"></div>${btn('Skip','tgo','name','c')}</div>
+  return `<div style="padding-top:14vh;min-height:50vh"><p class="${fd('fadein')}" style="font-size:1.1875rem;line-height:1.6">${PROLOGUE[i]}</p></div>
+  <div class="${fd('fadein d2')}">${btn(last?'Take your first breath':'Continue','tnext',undefined,'pri c')}<div style="height:8px"></div>${btn('Skip','tgo','name','c')}</div>
   <p class="mut sm c">${i+1} / ${PROLOGUE.length}</p>`;
  },
  name(){
-  return `<h1 class="fadein">What are you called?</h1><p class="mut fadein d2">Names are only names. Your family name is what will last.</p>
-  <div class="card fadein d2"><h3>Your name</h3><input type="text" id="in-name" maxlength="16" placeholder="Wanderer" value="${esc(window.__nm||'')}"><h3>Family name</h3><input type="text" id="in-fam" maxlength="16" placeholder="Ashford" value="${esc(window.__fm||'')}"></div>
-  <div class="fadein d3">${btn('Continue','tgo','bg','pri c')}<div style="height:8px"></div>${btn('Back','tgo','prologue','c')}</div>`;
+  return `<h1 class="${fd('fadein')}">What are you called?</h1><p class="mut ${fd('fadein d2')}">Names are only names. Your family name is what will last.</p>
+  <div class="card ${fd('fadein d2')}"><h3>Your name</h3><input type="text" id="in-name" maxlength="16" placeholder="Wanderer" value="${esc(window.__nm||'')}"><h3>Family name</h3><input type="text" id="in-fam" maxlength="16" placeholder="Ashford" value="${esc(window.__fm||'')}"></div>
+  <div class="${fd('fadein d3')}">${btn('Continue','tgo','bg','pri c')}<div style="height:8px"></div>${btn('Back','tgo','prologue','c')}</div>`;
  },
  bg(){
   const cur=window.__bg||'wanderer',B=BGS[cur];
-  return `<h1 class="fadein">Who were you before the road?</h1><p class="mut sm fadein d2">This only shapes where you start. You will learn the rest by living it. Your family remembers, and repeating a background builds a tradition.</p>
-  <div class="chips fadein d2">${Object.keys(BGS).map(id=>btn(`${BGS[id].ic}<br>${BGS[id].n}`,'tbg',id,cur===id?'pri':'')).join('')}</div>
-  <div class="card"><div class="row2"><b>${B.ic} ${B.n}</b></div><p class="mut sm" style="margin:4px 0">${B.d}</p><div class="sm">${ptxt(B)}</div><div class="sm">${B.pd}</div></div>
+  return `<h1 class="${fd('fadein')}">Who were you before the road?</h1><p class="mut sm ${fd('fadein d2')}">This only shapes where you start. You will learn the rest by living it. Your family remembers, and repeating a background builds a tradition.</p>
+  <div class="chips ${fd('fadein d2')}" id="chips">${Object.keys(BGS).map(id=>btn(`${BGS[id].ic}<br>${BGS[id].n}`,'tbg',id,cur===id?'pri':'')).join('')}</div>
+  <div class="card" id="bgdetail">${bgDetail(cur)}</div>
   ${btn('Begin your story','start',undefined,'pri c')}<div style="height:8px"></div>${btn('Back','tgo','name','c')}`;
  },
  load(){
@@ -3745,11 +3783,11 @@ VIEWS.start=function(){const u=window.__ui||(window.__ui={step:'title',pg:0});re
 const TA={
  tgo(p){
   const n=$('#in-name'),f=$('#in-fam');if(n)window.__nm=n.value;if(f)window.__fm=f.value;
-  if(p==='new'){p=window.__save?'confirm':'prologue';window.__ui={step:p,pg:0};return;}
+  if(p==='new')p=window.__save?'confirm':'prologue';
   window.__ui={step:p,pg:0};window.__loadErr='';
  },
- tnext(){const u=window.__ui;if(u.pg>=PROLOGUE.length-1)u.step='name';else u.pg++;},
- tbg(p){window.__bg=p;},
+ tnext(){const u=window.__ui;if(u.pg>=PROLOGUE.length-1){window.__ui={step:'name',pg:0};}else{u.pg++;u.fresh=true;}},
+ tbg(p){window.__bg=p;const c=document.getElementById('chips');if(c)c.querySelectorAll('button').forEach(b=>b.classList.toggle('pri',b.dataset.p===p));const d=document.getElementById('bgdetail');if(d)d.innerHTML=bgDetail(p);throw 'skipr';},
  tcont(){
   const sv=window.__save;if(!sv)return;
   S=sv;window.__save=null;S.modal=null;ensureState();
@@ -3880,7 +3918,7 @@ function main(){
   if(a==='closeBg')return;
   try{
    if(a==='start'){ACT.start();}
-   else if(!S){const f=TA[a];if(f)f(p);render();return;}
+   else if(!S){const f=TA[a];if(f){try{f(p);}catch(x){if(x==='skipr')return;throw x;}}render();if(window.__ui)window.__ui.fresh=false;return;}
    else if(a==='resetYes'){ACT.resetYes();render();return;}
    else{const f=ACT[a];if(!f)return;f(p,b);}
   }catch(err){if(err!=='skip')console.error(err);render();return;}
@@ -3889,11 +3927,11 @@ function main(){
  document.addEventListener('change',e=>{
   if(e.target&&e.target.id==='tf'&&e.target.files&&e.target.files[0]){const r=new FileReader();r.onload=()=>{const t=$('#io');if(t)t.value=String(r.result).trim();};r.readAsText(e.target.files[0]);}
  });
- render();
+ render();if(window.__ui)window.__ui.fresh=false;
 }
 if(typeof document!=='undefined'&&typeof window!=='undefined'&&!window.__TQ_TEST){main();try{if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{});}catch(e){}}
 /* =====================================================================
-   PASS 4 — a first errand (no fighting) and Essences
+   PASS 4 — a first errand (no fighting) and Aspects
    ===================================================================== */
 // the very first thing anyone owns is something an honest day of work earned
 Q('firstchores',{t:'A Day of Honest Work',npc:'Mira the Baker',w:'town',req:{first:1},
@@ -3916,19 +3954,19 @@ qAvail=function(q){
  return _qAvailK(q);
 };
 
-/* ----- essences ----- */
+/* ----- aspects ----- */
 const ESS=[
- {id:'flame',n:'Flame',ic:'🔥',sk:'fire',e:{atk:.04},d:'Heat and hunger. Grants Fireball. +4% attack per attunement.'},
- {id:'stone',n:'Stone',ic:'🪨',sk:'iron',e:{def:.05},d:'Patience made solid. Grants Iron Skin. +5% defense per attunement.'},
- {id:'wind',n:'Wind',ic:'🌬️',sk:'flurry',e:{dodge:1.5},d:'Never where you were. Grants Flurry. +1.5% dodge per attunement.'},
- {id:'blood',n:'Blood',ic:'🩸',sk:'bite',e:{lifesteal:1},d:'A debt that pays itself. Grants Vampiric Bite. +1% lifesteal per attunement.'},
- {id:'life',n:'Life',ic:'🌿',sk:'mend',e:{maxhp:.05},d:'Roots that refuse to die. Grants Mend. +5% max HP per attunement.'},
- {id:'shadow',n:'Shadow',ic:'🌑',sk:'venom',e:{crit:1.5},d:'What they did not see coming. Grants Venom Stab. +1.5% crit per attunement.'},
- {id:'fortune',n:'Fortune',ic:'🍀',sk:'power',e:{goldf:4,dropf:2},d:'Luck that follows effort. Grants Power Strike. +4% gold and +2% drops per attunement.'},
- {id:'war',n:'War',ic:'🚩',sk:'cry',e:{xpf:2.5},d:'Every battle teaches twice. Grants Battle Cry. +2.5% XP per attunement.'}
+ {id:'flame',n:'Flame',ic:'🔥',sk:'fire',e:{atk:.04},d:'Heat and hunger. Grants Fireball. +4% attack per depth level.'},
+ {id:'stone',n:'Stone',ic:'🪨',sk:'iron',e:{def:.05},d:'Patience made solid. Grants Iron Skin. +5% defense per depth level.'},
+ {id:'wind',n:'Wind',ic:'🌬️',sk:'flurry',e:{dodge:1.5},d:'Never where you were. Grants Flurry. +1.5% dodge per depth level.'},
+ {id:'blood',n:'Blood',ic:'🩸',sk:'bite',e:{lifesteal:1},d:'A debt that pays itself. Grants Vampiric Bite. +1% lifesteal per depth level.'},
+ {id:'life',n:'Life',ic:'🌿',sk:'mend',e:{maxhp:.05},d:'Roots that refuse to die. Grants Mend. +5% max HP per depth level.'},
+ {id:'shadow',n:'Shadow',ic:'🌑',sk:'venom',e:{crit:1.5},d:'What they did not see coming. Grants Venom Stab. +1.5% crit per depth level.'},
+ {id:'fortune',n:'Fortune',ic:'🍀',sk:'power',e:{goldf:4,dropf:2},d:'Luck that follows effort. Grants Power Strike. +4% gold and +2% drops per depth level.'},
+ {id:'war',n:'War',ic:'🚩',sk:'cry',e:{xpf:2.5},d:'Every battle teaches twice. Grants Battle Cry. +2.5% XP per depth level.'}
 ];
 const ESSX={};ESS.forEach(x=>ESSX[x.id]=x);
-// two essences that sing together awaken a confluence
+// two aspects that sing together kindle a confluence
 const CONF=[
  {n:'Wildfire',a:'flame',b:'wind',e:{atk:.08,crit:3},d:'+8% attack, +3% crit'},
  {n:'Forge',a:'flame',b:'stone',e:{atk:.05,def:.06},d:'+5% attack, +6% defense'},
@@ -3944,7 +3982,7 @@ const CONF=[
 const essOf=()=>{const h=S&&S.hero;if(!h)return[];return h.ess=h.ess||[];};
 const essSlots=()=>{const h=S.hero;return(S.world.guild?1:0)+(h.contracts>=10?1:0)+(h.contracts>=32?1:0);};
 const essCap=()=>2+rankIdx(S.hero.contracts);
-/* ----- powers: a vestige taken from a monster family teaches its power. Powers resonate with the essences they work with. ----- */
+/* ----- powers: a vestige taken from a monster family teaches its power. Powers resonate with the aspects they work with. ----- */
 const POW={
  beast:{n:"Predator's Instinct",ic:'🐺',e:{crit:1.2,atk:.02},w:['shadow','wind']},
  bird:{n:'Gale Wings',ic:'🦅',e:{dodge:1.5},w:['wind','fortune']},
@@ -4045,12 +4083,12 @@ Object.assign(ACT,{
   const d=ESSX[id];essOf().push({id,a:1});h.essOffer=null;
   if(!h.skills[d.sk])h.skills[d.sk]=1;
   const nc=confluences();
-  note(`${d.ic} <b>The ${d.n} essence settles into you.</b> You can now use ${SK[d.sk].n}.`,'y');
-  nc.filter(c=>c.a===id||c.b===id).forEach(c=>note(`✨ Confluence: <b>${c.n}</b> (${c.d})`,'y'));
+  note(`${d.ic} <b>The ${d.n} aspect settles into you.</b> You can now use ${SK[d.sk].n}.`,'y');
+  nc.filter(c=>c.a===id||c.b===id).forEach(c=>note(`✨ Harmony: <b>${c.n}</b> (${c.d})`,'y'));
  },
  essAbsorb(id){
   const w=S.world,x=essOf().find(y=>y.id===id);if(!x||x.a>=essCap())return;const c=attuneCost(x.a);if((w.spirit||0)<c)return;
-  w.spirit-=c;x.a++;note(`${ESSX[id].ic} Your ${ESSX[id].n} essence deepens (attunement ${x.a}).`,'y');
+  w.spirit-=c;x.a++;note(`${ESSX[id].ic} Your ${ESSX[id].n} aspect deepens (depth ${x.a}).`,'y');
  },
  essReroll(){const h=S.hero,w=S.world;if(!h.essOffer||(w.spirit||0)<10)return;w.spirit-=10;const keep=essOf().map(x=>x.id);h.essOffer=ESS.filter(x=>!keep.includes(x.id)&&!h.essOffer.includes(x.id)).sort(()=>Math.random()-.5).slice(0,3).map(x=>x.id);if(h.essOffer.length<3)essOffer();},
  pwAbsorb(i){
@@ -4062,7 +4100,7 @@ Object.assign(ACT,{
   S.world.spirit-=cost;
   pw[c.f]=Math.min(powMax,cur?Math.max(cur+1,c.g):c.g);h.corebag.splice(+i,1);
   const m=powRes(c.f);
-  note(`${POW[c.f].ic} <b>${POW[c.f].n}</b> ${cur?'strengthens':'awakens'} (level ${pw[c.f]}).${m.length?' It resonates with your '+m.map(id=>ESSX[id].n).join(' and ')+' essence.':''}`,'y');
+  note(`${POW[c.f].ic} <b>${POW[c.f].n}</b> ${cur?'strengthens':'kindles'} (level ${pw[c.f]}).${m.length?' It resonates with your '+m.map(id=>ESSX[id].n).join(' and ')+' aspect.':''}`,'y');
  },
  pwForget(f){const pw=powOf();if(pw[f]){delete pw[f];note(`You let ${POW[f].n} go.`);}},
  pwInherit(f){
@@ -4073,35 +4111,35 @@ Object.assign(ACT,{
 });
 function powHtml(){
  const h=S.hero,w=S.world,pw=powOf(),keys=Object.keys(pw),sl=powSlots(),bag=h.corebag||[];
- let t=`<h2>🕯️ Wicks & Vestiges</h2><p class="mut sm">Wicks are the lantern-light left behind by monsters. They deepen essences and bind vestiges. A vestige is a rare fragment of a monster family, and each teaches the power of its monster family. A power resonates with the essences it works with and grows far stronger. Powers held: ${keys.length}/${sl}.</p><div class="card sm">🕯️ <b>${w.spirit||0}</b> wicks</div>`;
+ let t=`<h2>🕯️ Wicks & Vestiges</h2><p class="mut sm">Wicks are the lantern-light left behind by monsters. They deepen aspects and bind vestiges. A vestige is a rare fragment of a monster family, and each teaches the power of its monster family. A power resonates with the aspects it works with and grows far stronger. Powers held: ${keys.length}/${sl}.</p><div class="card sm">🕯️ <b>${w.spirit||0}</b> wicks</div>`;
  keys.forEach(f=>{const d=POW[f],m=powRes(f);
-  t+=`<div class="card"><div class="row2"><b>${d.ic} ${d.n}</b><span class="tag">Lv ${pw[f]}/${powMax}</span></div><div class="mut sm">Works with: ${d.w.map(id=>`${ESSX[id].ic} ${ESSX[id].n}${m.includes(id)?' ✓':''}`).join(', ')}</div><div class="sm ${m.length?'up':'mut'}">${m.length?`Resonating with ${m.map(id=>ESSX[id].n).join(' and ')}: effect ×${RES}.`:'No resonance. Awaken a matching essence to strengthen it.'}</div>${btn('Let it go','pwForget',f,'')}</div>`;});
+  t+=`<div class="card"><div class="row2"><b>${d.ic} ${d.n}</b><span class="tag">Lv ${pw[f]}/${powMax}</span></div><div class="mut sm">Works with: ${d.w.map(id=>`${ESSX[id].ic} ${ESSX[id].n}${m.includes(id)?' ✓':''}`).join(', ')}</div><div class="sm ${m.length?'up':'mut'}">${m.length?`Resonating with ${m.map(id=>ESSX[id].n).join(' and ')}: effect ×${RES}.`:'No resonance. Kindle a matching aspect to strengthen it.'}</div>${btn('Let it go','pwForget',f,'')}</div>`;});
  if(bag.length){
   t+=`<h3>Vestiges carried</h3>`+bag.map((c,i)=>{const d=POW[c.f],cur=pw[c.f]||0,full=!cur&&keys.length>=sl,m=powRes(c.f);
    return `<div class="card sm"><b>${d.ic} ${cap1(c.f)} vestige</b> <span class="tag">grade ${c.g}</span><br><span class="mut">${d.n}. Works with ${d.w.map(id=>ESSX[id].n).join(', ')}.</span>${m.length?` <span class="up">Good for you: resonates with ${m.map(id=>ESSX[id].n).join(' and ')}.</span>`:''}${btn(cur?'Strengthen '+d.n:'Absorb',  'pwAbsorb',i,'',full||cur>=powMax||(w.spirit||0)<absorbCost(cur,c.g),full?'no free power slot':`🕯️ ${absorbCost(cur,c.g)} · `+(cur?`Lv ${cur} → ${Math.min(powMax,Math.max(cur+1,c.g))}`:`Lv ${c.g}`))}</div>`;}).join('');
  }
  const pb=w.pbook||{},pk=Object.keys(pb);
  if(pk.length&&inhSlots()>0){
-  t+=`<h3>Bloodline memory</h3><p class="mut sm">Powers your ancestors mastered. Your heir may reawaken ${inhSlots()} of them (${h.inh||0} used) for wicks, one level weaker.</p>`+pk.map(f=>{const lv=Math.max(1,pb[f]-1),cost=inheritCost(lv);
-   return `<div class="card sm"><b>${POW[f].ic} ${POW[f].n}</b> <span class="mut">best ancestral Lv ${pb[f]}</span>${btn(pw[f]?'Already known':'Reawaken at Lv '+lv,'pwInherit',f,'',!!pw[f]||(h.inh||0)>=inhSlots()||keys.length>=sl||(w.spirit||0)<cost,`🕯️ ${cost}`)}</div>`;}).join('');
- }else if(pk.length)t+=`<p class="mut sm">Your ancestors left powers behind. The bloodline will be able to reawaken them from the second generation on.</p>`;
+  t+=`<h3>Bloodline memory</h3><p class="mut sm">Powers your ancestors mastered. Your heir may rekindle ${inhSlots()} of them (${h.inh||0} used) for wicks, one level weaker.</p>`+pk.map(f=>{const lv=Math.max(1,pb[f]-1),cost=inheritCost(lv);
+   return `<div class="card sm"><b>${POW[f].ic} ${POW[f].n}</b> <span class="mut">best ancestral Lv ${pb[f]}</span>${btn(pw[f]?'Already known':'Rekindle at Lv '+lv,'pwInherit',f,'',!!pw[f]||(h.inh||0)>=inhSlots()||keys.length>=sl||(w.spirit||0)<cost,`🕯️ ${cost}`)}</div>`;}).join('');
+ }else if(pk.length)t+=`<p class="mut sm">Your ancestors left powers behind. The bloodline will be able to rekindle them from the second generation on.</p>`;
  return t;
 }
 function essHtml(){
  const h=S.hero,own=essOf(),slots=essSlots();
- let t=`<h2>💠 Essences</h2><p class="mut sm">Essences awaken in you at the guild and shape who you become. Each grants a skill and a bonus, and certain pairs form a confluence. Wicks deepen them, and monster vestiges teach powers that resonate with them. Your heirs awaken their own essences but can inherit ancestral powers.</p>`;
- if(!slots){return t+`<div class="card sm mut">Join the ${GUILD} to awaken your first essence.</div>`;}
+ let t=`<h2>💠 Aspects</h2><p class="mut sm">Aspects kindle in you at the guild and shape who you become. Each grants a skill and a bonus, and certain pairs form a harmony. Wicks deepen them, and monster vestiges teach powers that resonate with them. Your heirs kindle their own aspects but can inherit ancestral powers.</p>`;
+ if(!slots){return t+`<div class="card sm mut">Join the ${GUILD} to kindle your first aspect.</div>`;}
  own.forEach(x=>{const d=ESSX[x.id],cap=essCap();
-  t+=`<div class="card"><div class="row2"><b>${d.ic} ${d.n}</b><span class="tag">Attunement ${x.a}/${cap}</span></div><div class="mut sm">${d.d}</div>${x.a<cap?btn('Attune deeper','essAbsorb',x.id,'',(S.world.spirit||0)<attuneCost(x.a),`🕯️ ${attuneCost(x.a)}`):'<div class="mut sm">Rank more contracts to attune further.</div>'}</div>`;});
+  t+=`<div class="card"><div class="row2"><b>${d.ic} ${d.n}</b><span class="tag">Depth ${x.a}/${cap}</span></div><div class="mut sm">${d.d}</div>${x.a<cap?btn('Deepen','essAbsorb',x.id,'',(S.world.spirit||0)<attuneCost(x.a),`🕯️ ${attuneCost(x.a)}`):'<div class="mut sm">Rank more contracts to attune further.</div>'}</div>`;});
  const cf=confluences();
  if(cf.length)t+=cf.map(c=>`<div class="card sm">✨ <b>${c.n}</b> <span class="mut">(${ESSX[c.a].n} + ${ESSX[c.b].n})</span><br>${c.d}</div>`).join('');
  if(own.length<slots){
   if(h.essOffer&&h.essOffer.length){
-   t+=`<div class="card"><b>An essence stirs. Choose one to awaken:</b></div>`+h.essOffer.map(id=>{const d=ESSX[id];
+   t+=`<div class="card"><b>An aspect stirs. Choose one to kindle:</b></div>`+h.essOffer.map(id=>{const d=ESSX[id];
     const hint=CONF.filter(c=>(c.a===id&&own.some(o=>o.id===c.b))||(c.b===id&&own.some(o=>o.id===c.a))).map(c=>c.n);
-    return `<div class="card"><b>${d.ic} ${d.n}</b><div class="mut sm">${d.d}</div>${hint.length?`<div class="sm" style="color:var(--acc)">Forms confluence: ${hint.join(', ')}</div>`:''}${btn('Awaken '+d.n,'essPick',id,'pri')}</div>`;}).join('')+btn('Reroll choices','essReroll',undefined,'',(S.world.spirit||0)<10,'🕯️ 10');
-  }else t+=btn('💠 Awaken an essence','essOpen',undefined,'pri',false,`${slots-own.length} slot${slots-own.length>1?'s':''} open`);
- }else if(own.length<3)t+=`<div class="card sm mut">Another essence will stir at ${own.length===1?'Bronze rank (10 contracts)':'Gold rank (32 contracts)'}.</div>`;
+    return `<div class="card"><b>${d.ic} ${d.n}</b><div class="mut sm">${d.d}</div>${hint.length?`<div class="sm" style="color:var(--acc)">Forms harmony: ${hint.join(', ')}</div>`:''}${btn('Kindle '+d.n,'essPick',id,'pri')}</div>`;}).join('')+btn('Reroll choices','essReroll',undefined,'',(S.world.spirit||0)<10,'🕯️ 10');
+  }else t+=btn('💠 Kindle an aspect','essOpen',undefined,'pri',false,`${slots-own.length} slot${slots-own.length>1?'s':''} open`);
+ }else if(own.length<3)t+=`<div class="card sm mut">Another aspect will stir at ${own.length===1?'Bronze rank (10 contracts)':'Gold rank (32 contracts)'}.</div>`;
  return t+(own.length?powHtml():'');
 }
 
@@ -4110,7 +4148,7 @@ VIEWS.town=function(){let t=_townK();const q=QS.firstchores,h=S.hero;
  if(S.world.gen===1&&!h.qd.firstchores)t=t.replace('<div class="grid">',`<h2>Odd jobs</h2>${questCard(q)}<div class="grid">`);return t;};
 const _heroEss=VIEWS.hero;
 VIEWS.hero=function(){const t=_heroEss();if((S.htab||'stats')!=='stats')return t;return t.replace('</div><h1>🧍',`</div>${essHtml()}<h1>🧍`);};
-HINTS.push({id:'ess',scr:['town','hero','guild'],when:()=>S.world.guild&&essOf().length<essSlots(),t:'An essence is ready to awaken in you. Open the Hero tab and choose one. Each grants a skill and shapes your build.'});
+HINTS.push({id:'ess',scr:['town','hero','guild'],when:()=>S.world.guild&&essOf().length<essSlots(),t:'An aspect is ready to kindle in you. Open the Hero tab and choose one. Each grants a skill and shapes your build.'});
 HINTS.push({id:'chore',scr:['town'],when:()=>S.world.gen===1&&!S.hero.qd.firstchores,t:'You own nothing yet. Mira the Baker has honest work for anyone willing, in the Town Square. It does not involve fighting.'});
 
 if(typeof window!=='undefined')window.TQ={absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};

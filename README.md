@@ -42,20 +42,24 @@ Companions are **procedurally generated**: each generation gets a fresh cast of 
 - **Bounty board:** the guild posts hunts for specific creatures from your Codex, including Notorious elites that start turning up once you accept. Bounty rank grows with marks.
 - **Mobile:** auto-battle, text size, vibration, battle speed, contextual tips (not a tutorial), and installable offline files (`manifest.webmanifest`, `sw.js`, icons) when hosted on GitHub Pages or similar.
 
-## First errand and Essences
+## First errand and Aspects
 
 - **Nothing but honest work:** the first thing a new hero can own comes from an errand with no fighting. Mira the Baker needs flour sacks hauled (three Training Yard sessions), then pays in a tunic and boots, or a kitchen knife and a loaf. Only the first generation gets this.
-- **Essences:** joining the guild awakens a first essence (more at Bronze and Gold rank). You are offered three random ones. Each grants a skill and a scaling bonus, and certain pairs form a **confluence** with extra bonuses.
-- **Monster cores:** once you have an essence, kills can leave cores (elites and bosses far more often). Cores deepen an essence's attunement, capped by guild rank. Heirs awaken their own essences.
+- **Aspects:** joining the guild kindles a first aspect (more at Bronze and Gold rank). You are offered three random ones. Each grants a skill and a scaling bonus, and certain pairs form a **harmony** with extra bonuses.
+- **Monster cores:** once you have an aspect, kills can leave cores (elites and bosses far more often). Cores deepen an aspect's depth, capped by guild rank. Heirs kindle their own aspects.
 
 ### Wicks, vestiges and powers
 
-- **Wicks** are the lantern-light monsters leave behind once you have an essence. They are scarce: normal kills rarely drop one, elites more often, bosses almost always. They deepen essences, bind vestiges and reroll essence offers.
+- **Wicks** are the lantern-light monsters leave behind once you have an aspect. They are scarce: normal kills rarely drop one, elites more often, bosses almost always. They deepen aspects, bind vestiges and reroll aspect offers.
 - **Vestiges** are rare fragments of a monster family. There are 26 families (beast, wolf, boar, vermin, stag, bird, undead, wraith, leech, spider, slime, golem, knight, troll, imp, goblin, tree, sprite, eye, maw, mimic, crab, archer, dragon, frost, fire). Grade follows the monster's tier, and the rarer families (mimic, maw, dragon, troll, knight, eye) drop far less often.
 - Binding a vestige costs wicks and teaches the family's **power**. A duplicate strengthens it. Rank limits how many powers you can hold.
-- **Resonance:** every power lists the essences it works with. If you hold one, the power is 1.75x stronger.
-- **Bloodline memory:** from the second generation on, an heir can reawaken some ancestral powers for wicks, one level weaker. Essences, skills and levels are not inherited.
+- **Resonance:** every power lists the aspects it works with. If you hold one, the power is 1.75x stronger.
+- **Bloodline memory:** from the second generation on, an heir can rekindle some ancestral powers for wicks, one level weaker. Aspects, skills and levels are not inherited.
 
 ## Title screen and a slower opening
 
 The game now opens on a title screen: **Begin a New Story**, **Continue** (shows your hero, level, day and generation), **Load** (paste Export text or pick a file) and **Settings** (text size, vibration, tips). A new story eases in through a three-line prologue, then your name, then a single-background chooser that shows one background's details at a time. The Menu has a **Return to title screen** button.
+
+## Sleeping where you are
+
+The sleep animation now shows a dark silhouette of wherever you rest: the town's rooftops, the meadow, the woods, the catacombs, the ashen cliffs, the frost or the rift, or a dungeon's entrance with torches. Away from town you also see a tent and campfire. You can camp from any region card or dungeon entrance in the Hunt screen ("Camp until morning"). The new-story background tiles also no longer reload on every tap.
