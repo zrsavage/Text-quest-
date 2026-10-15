@@ -54,19 +54,19 @@ textarea{height:110px;font-size:0.75rem}
 .up{color:var(--good)}.dn{color:var(--bad)}
 .skull{letter-spacing:2px}
 
-#sleepfx{position:fixed;inset:0;z-index:50;overflow:hidden;background:#0b1030;animation:fxout .5s ease 3.9s forwards}
+#sleepfx{position:fixed;inset:0;z-index:50;overflow:hidden;background:#0b1030;animation:fxout .5s ease 2.3s forwards}
 #sleepfx>*{position:absolute;pointer-events:none}
 #sleepfx .sky{inset:0;opacity:0}
-#sleepfx .day{background:linear-gradient(#5fb0ff,#bfe3ff);animation:skyday 4.4s linear forwards;opacity:1}
-#sleepfx .dusk{background:linear-gradient(#2b1a5a,#ff7a3c 70%,#ffd27a);animation:skydusk 4.4s linear forwards}
-#sleepfx .night{background:linear-gradient(#050818,#101a4a);animation:skynight 4.4s linear forwards}
-#sleepfx .dawn{background:linear-gradient(#3a3f8f,#ff9b6a 75%,#ffe3a1);animation:skydawn 4.4s linear forwards}
-#sleepfx .stars{inset:0;background-image:radial-gradient(2px 2px at 12% 18%,#fff,transparent),radial-gradient(1.5px 1.5px at 30% 35%,#fff,transparent),radial-gradient(2px 2px at 55% 12%,#fff,transparent),radial-gradient(1.5px 1.5px at 72% 28%,#fff,transparent),radial-gradient(2px 2px at 88% 15%,#fff,transparent),radial-gradient(1.5px 1.5px at 20% 52%,#fff,transparent),radial-gradient(1.5px 1.5px at 80% 48%,#fff,transparent),radial-gradient(2px 2px at 45% 42%,#fff,transparent);opacity:0;animation:starsfx 4.4s linear forwards}
-#sleepfx .sun{left:50%;width:84px;height:84px;margin-left:-42px;border-radius:50%;background:radial-gradient(circle,#fff6c9 30%,#ffc94a 70%);box-shadow:0 0 60px 20px rgba(255,190,70,.6);animation:sunfx 4.4s ease-in-out forwards}
-#sleepfx .moon{left:68%;top:20%;width:46px;height:46px;border-radius:50%;background:#f2f0e6;box-shadow:inset -12px -4px 0 0 #cfcab8,0 0 30px 8px rgba(220,230,255,.35);opacity:0;animation:moonfx 4.4s linear forwards}
+#sleepfx .day{background:linear-gradient(#5fb0ff,#bfe3ff);animation:skyday 2.6s linear forwards;opacity:1}
+#sleepfx .dusk{background:linear-gradient(#2b1a5a,#ff7a3c 70%,#ffd27a);animation:skydusk 2.6s linear forwards}
+#sleepfx .night{background:linear-gradient(#050818,#101a4a);animation:skynight 2.6s linear forwards}
+#sleepfx .dawn{background:linear-gradient(#3a3f8f,#ff9b6a 75%,#ffe3a1);animation:skydawn 2.6s linear forwards}
+#sleepfx .stars{inset:0;background-image:radial-gradient(2px 2px at 12% 18%,#fff,transparent),radial-gradient(1.5px 1.5px at 30% 35%,#fff,transparent),radial-gradient(2px 2px at 55% 12%,#fff,transparent),radial-gradient(1.5px 1.5px at 72% 28%,#fff,transparent),radial-gradient(2px 2px at 88% 15%,#fff,transparent),radial-gradient(1.5px 1.5px at 20% 52%,#fff,transparent),radial-gradient(1.5px 1.5px at 80% 48%,#fff,transparent),radial-gradient(2px 2px at 45% 42%,#fff,transparent);opacity:0;animation:starsfx 2.6s linear forwards}
+#sleepfx .sun{left:50%;width:84px;height:84px;margin-left:-42px;border-radius:50%;background:radial-gradient(circle,#fff6c9 30%,#ffc94a 70%);box-shadow:0 0 60px 20px rgba(255,190,70,.6);animation:sunfx 2.6s ease-in-out forwards}
+#sleepfx .moon{left:68%;top:20%;width:46px;height:46px;border-radius:50%;background:#f2f0e6;box-shadow:inset -12px -4px 0 0 #cfcab8,0 0 30px 8px rgba(220,230,255,.35);opacity:0;animation:moonfx 2.6s linear forwards}
 #sleepfx .scene{left:0;right:0;bottom:0;width:100%;height:36%;z-index:2}
 #sleepfx .gbar{left:0;right:0;bottom:0;height:3.5%;background:#0a0d18;z-index:2}
-#sleepfx .gl{opacity:0;animation:glfx 4.4s linear forwards}
+#sleepfx .gl{opacity:0;animation:glfx 2.6s linear forwards}
 #sleepfx .fire{animation:flick .45s ease-in-out infinite alternate}
 @keyframes glfx{0%,28%{opacity:0}48%,100%{opacity:1}}
 @keyframes flick{from{opacity:.65;transform:scale(.9)}to{opacity:1;transform:scale(1.1)}}
@@ -74,7 +74,7 @@ textarea{height:110px;font-size:0.75rem}
 #sleepfx .town{left:0;right:0;bottom:calc(30% - 6px);text-align:center;font-size:1.875rem;letter-spacing:6px;z-index:2;opacity:.9;filter:grayscale(1) brightness(.2)}
 #sleepfx .stxt{left:0;right:0;top:12%;text-align:center;z-index:3;color:#fff;font-size:1.25rem;font-weight:600;text-shadow:0 2px 8px rgba(0,0,0,.6)}
 #sleepfx .stxt span{position:absolute;left:0;right:0;opacity:0}
-#sleepfx .t1{animation:txt1 4.4s linear forwards}#sleepfx .t2{animation:txt2 4.4s linear forwards}
+#sleepfx .t1{animation:txt1 2.6s linear forwards}#sleepfx .t2{animation:txt2 2.6s linear forwards}
 @keyframes skyday{0%{opacity:1}30%{opacity:0}100%{opacity:0}}
 @keyframes skydusk{0%{opacity:0}15%{opacity:1}42%{opacity:1}55%{opacity:0}100%{opacity:0}}
 @keyframes skynight{0%,30%{opacity:0}48%{opacity:1}62%{opacity:1}75%{opacity:0}100%{opacity:0}}
@@ -110,7 +110,7 @@ body.big .btn{min-height:60px;padding-top:14px;padding-bottom:14px}body.big .ite
 .chips2{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}.chipb{background:var(--panel2);color:var(--tx);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-family:inherit;font-size:.8125rem;min-height:34px}.chipb.on{border-color:var(--acc);color:var(--acc)}
 .savewarn{position:sticky;top:0;z-index:50;background:#6b1d1d;color:#fff;padding:8px 12px;font-size:.875rem;text-align:center}
 .log .e{color:#ff9a8a}.log .g{color:#7be3a4}.log .y{color:var(--acc)}
-</style>
+.cpic{border-radius:50%;flex:none;vertical-align:middle}</style>
 </head>
 <body>
 <div id="app">
@@ -503,7 +503,7 @@ function playSleep(died){
  const done=()=>{if(el.parentNode)el.remove();};
  el.addEventListener('click',done);
  document.body.appendChild(el);
- setTimeout(done,4500);
+ setTimeout(done,2900);
 }
 /* ---------------- actions ---------------- */
 const ACT={
@@ -3591,7 +3591,7 @@ VIEWS.combat=function(){
  ${bar(c.focus,p.maxfocus,'fc')}<div class="sm mut">🔷 Focus ${c.focus}/${p.maxfocus}</div></div>`;
  if(c.party.length){
   t+=`<div class="card" style="padding:8px">`+c.party.map(u=>{const D=COMP[u.id];
-   return `<div class="sm" style="margin:4px 0"><div class="row2"><span>${D.ic} <b>${firstName(D)}</b> <span class="mut">Lv ${u.lvl}</span></span><span class="${u.down?'dn':'mut'}">${u.down?'DOWN':u.hp+'/'+u.max}${!u.down&&u.cd>0?` · ⏱${u.cd}`:''}${u.rage>0?' · 😡':''}</span></div>${bar(u.hp,u.max,'hp')}</div>`;}).join('')+
+   return `<div class="sm" style="margin:4px 0"><div class="row2"><span>${cpic(u.id,22)} <b>${firstName(D)}</b> <span class="mut">Lv ${u.lvl}</span></span><span class="${u.down?'dn':'mut'}">${u.down?'DOWN':u.hp+'/'+u.max}${!u.down&&u.cd>0?` · ⏱${u.cd}`:''}${u.rage>0?' · 😡':''}</span></div>${bar(u.hp,u.max,'hp')}</div>`;}).join('')+
   (c.thrall&&c.thrall.t>0?`<div class="sm mut">💀 Thrall (${c.thrall.t} turns)</div>`:'')+`</div>`;
  }
  t+=logHtml(c.log,14);
@@ -3624,13 +3624,13 @@ VIEWS.party=function(){
  const h=S.hero,w=S.world,mp=maxParty();
  let t=`<p class="mut sm">Party: ${h.party.length}/${mp} companions. Slot 3 opens at Gold rank, slot 4 with the Pack Leader's Collar. Companions fight automatically; you can give <b>Orders</b> in battle to fire their specials on demand. They scale with you (up to 2 levels above).</p>`;
  const sl=synList();
- if(h.guest){const gd=COMP[h.guest.id];t+=`<div class="card sm" style="border-color:var(--acc)">${gd.ic} <b>${gd.n}</b> is working with you${h.guest.trial?' on a trial':` (${h.guest.fights}/${h.guest.need} fights)`}.</div>`;}
+ if(h.guest){const gd=COMP[h.guest.id];t+=`<div class="card sm" style="border-color:var(--acc)">${cpic(h.guest.id,26)} <b>${gd.n}</b> is working with you${h.guest.trial?' on a trial':` (${h.guest.fights}/${h.guest.need} fights)`}.</div>`;}
  t+=`<h2>Synergies</h2>`+(sl.length?sl.map(s=>`<div class="card sm" style="border-color:var(--good)"><b class="up">${s.n}</b><br>${s.d}</div>`).join(''):'<p class="mut sm">No active synergies. Try pairing a tank with a healer, or a pyromancer with a cryomancer.</p>');
  t+=`<h2>In your party</h2>`+(h.party.length?h.party.map(id=>compCard(id,true)).join(''):'<p class="mut sm">Empty. Meet people at the Tavern, in dungeons and through quests, then earn their trust.</p>');
  const bench=castIds().filter(id=>w.comp[id]&&!h.party.includes(id));
  if(bench.length)t+=`<h2>Roster</h2>`+bench.map(id=>compCard(id,false)).join('');
  const acq=castIds().filter(id=>!w.comp[id]&&w.meet[id]);
- if(acq.length)t+=`<h2>Acquaintances</h2>`+acq.map(id=>`<div class="item" style="cursor:default"><div><div class="n">${COMP[id].ic} ${COMP[id].n}</div><div class="s">Trust ${trustOf(id)}/100 · find them at the Tavern</div></div></div>`).join('');
+ if(acq.length)t+=`<h2>Acquaintances</h2>`+acq.map(id=>`<div class="item" style="cursor:default"><div><div class="n" style="display:flex;gap:8px;align-items:center">${cpic(id,32)} ${COMP[id].n}</div><div class="s">Trust ${trustOf(id)}/100 · find them at the Tavern</div></div></div>`).join('');
  const un=castIds().filter(id=>!w.comp[id]&&!w.meet[id]);
  if(un.length)t+=`<h2>Not yet met (${un.length})</h2>`+un.map(id=>`<div class="item" style="cursor:default"><div><div class="n">❔ Someone you have yet to meet</div><div class="s">${COMP[id].from.replace(/^Tavern \(appears/,"Tavern (someone appears").replace(/^Find them in/,"Held captive in")}</div></div></div>`).join('');
  return t;
@@ -3655,7 +3655,7 @@ VIEWS.tavern=function(){
  if(S.hireLines){t+=`<div class="card">${S.hireLines.map(l=>`<p>${l}</p>`).join('')}</div>`;S.hireLines=null;}
  t+=`<h2>Sellswords for hire</h2>`;
  const av=HIRE.filter(id=>!w.comp[id]);
- t+=av.length?av.map(id=>`<div class="card"><b>${COMP[id].ic} ${COMP[id].n}</b> <span class="tag">${COMP[id].role}</span><div class="sm mut"><i>${COMP[id].intro}</i></div><div class="sm">★ ${COMP[id].spec[0]}: ${COMP[id].spec[1]}</div>${btn('Hire','hire',id,'pri c',w.gold<hc,hc+'g, one time')}</div>`).join(''):'<p class="mut sm">Everyone worth hiring is already with you.</p>';
+ t+=av.length?av.map(id=>`<div class="card">${cpic(id,40)} <b>${COMP[id].n}</b> <span class="tag">${COMP[id].role}</span><div class="sm mut"><i>${COMP[id].intro}</i></div><div class="sm">★ ${COMP[id].spec[0]}: ${COMP[id].spec[1]}</div>${btn('Hire','hire',id,'pri c',w.gold<hc,hc+'g, one time')}</div>`).join(''):'<p class="mut sm">Everyone worth hiring is already with you.</p>';
  return t+'<div style="height:8px"></div>'+btn('← Back to town','go','town','c');
 };
 VIEWS.delve=function(){
@@ -6252,7 +6252,7 @@ VIEWS.party=function(){
  life+=act.map(id=>{const c=w.comp[id],[l,d]=likeOf(id),m=moodOf(id);
   const pr=pairs.find(q=>(q.a===id||q.b===id)&&(w.comp[q.a===id?q.b:q.a]));
   const other=pr?COMP[pr.a===id?pr.b:pr.a]:null;
-  return `<div class="card sm"><div class="row2"><b>${COMP[id].ic} ${COMP[id].n}</b><span class="tag">${moodWord(m)} · ${m}</span></div>${bar(m,100,m>=60?'xp':'hp')}
+  return `<div class="card sm"><div class="row2"><b>${cpic(id,28)} ${COMP[id].n}</b><span class="tag">${moodWord(m)} · ${m}</span></div>${bar(m,100,m>=60?'xp':'hp')}
   <div class="mut">Likes ${LIKEN[l]}. Dislikes ${LIKEN[d]}.${other?` ${pr.k==='friend'?'Good friends with':'Rivals with'} ${other.n}.`:''}</div>
   ${c.err?`<div style="margin-top:4px">💬 ${COMP[id].n} ${c.err.txt}</div>${c.err.k==='bring'?btn('Hand it over','errDone',id,'pri c',(w.mats[c.err.m]||0)<c.err.n,`${c.err.n} ${c.err.m}`):btn('Ask if we are there','errDone',id,'pri c',where()!==c.err.town||!h.party.includes(id))}`:''}
   ${pr&&pr.k==='rival'&&h.party.includes(pr.a)&&h.party.includes(pr.b)&&pr.a===id?btn('Settle it over a drink','mediate',pr.a+':'+pr.b,'c',w.gold<40,'40g'):''}</div>`;}).join('');
@@ -6859,6 +6859,250 @@ const _menuR=VIEWS.menu;
 VIEWS.menu=function(){return _menuR()+`<h2>Playtesting</h2>${btn('View playtest report','go','report','c',false,'deaths, health lost per fight, pacing')}`;};
 NAV[5][3].push('report');
 
+/* =====================================================================
+   PASS S — playtest notes: Focus is learned at the guild, plain early
+   armour, haggling and a real sell screen, clearer services, hidden dens
+   everywhere, companion portraits and conversations that read naturally
+   ===================================================================== */
+// ---------- Focus is something you are taught ----------
+const hasFocus=()=>!!(S&&S.hero&&(S.hero.focusTaught||Object.keys(S.hero.skills||{}).length));
+try{Object.defineProperty(STAT_DESC,'int',{get:()=>hasFocus()?'Focus pool and magic power':'Raises magic power',configurable:true});}catch(e){}
+function focusStrip(t){
+ if(hasFocus())return t;
+ return t
+  .replace(/<div class="bar fc">[\s\S]*?<\/div><div class="sm mut">🔷 Focus [^<]*<\/div>/g,'')
+  .replace(/<button class="btn c" data-a="panel" data-p="skill"[^>]*>[\s\S]*?<\/button>/g,'')
+  .replace(/<small>\+1 🔷<\/small>/g,'').replace(/, \+3 🔷/g,'')
+  .replace(/\s*·\s*🔷 Max Focus \d+/g,'')
+  .replace(/<h2>Skills<\/h2>(?:<p class="mut sm">None\.[^<]*<\/p>|<p class="mut sm">You have no skills yet[^<]*<\/p>)/g,'');
+}
+{
+ const _c=VIEWS.combat,_h=VIEWS.hero;
+ VIEWS.combat=function(){return focusStrip(_c());};
+ VIEWS.hero=function(){return focusStrip(_h());};
+}
+{
+ const _g=ACT.go;
+ const libJob=()=>{const o=S.hero&&S.hero.odd,j=o&&ODD_BY[o.id];return !!(j&&j.k==='visit'&&j.at==='library');};
+ ACT.go=function(p,b){if(p==='library'&&!hasFocus()){if(libJob()){oddFinish();return;}note('You do not know how to use skills yet. Someone at the guild might.','e');return;}return _g.apply(this,arguments);};
+ const _t=VIEWS.town;
+ VIEWS.town=function(){
+  let t=_t();
+  if(!hasFocus()&&!libJob())t=t.replace(/<button class="btn[^"]*" data-a="go" data-p="library"[^>]*>[\s\S]*?<\/button>/,'');
+  const R=[['Potions &amp; gear','Potions and equipment. Stock changes daily. To sell, use Sell goods inside the Market.'],['Potions & gear','Potions and equipment. Stock changes daily. To sell, use Sell goods inside the Market.'],
+   ['Skill tomes','Learn and sharpen skills. Skills also grow with use.'],['Food, drink, gossip','Meals, rumours, and people who might fight beside you.'],
+   ['Scrap → random loot','Trade scrap for a gamble on gear.'],['Regions, dungeons, secrets','Where you hunt monsters, explore and find hidden places.'],
+   ['Who is about?','Townsfolk who need help, and the day\'s requests.'],['Buy low, sell high','Buy goods where they are cheap, sell them where they are dear. Every town prices differently.'],
+   ['Savings, loans, ventures','Keep gold safe (it passes to your heir), borrow against your name, or back a venture. Debts pass on too.'],
+   ['What is going on','Today\'s news: events, prices and trouble on the roads.'],['Jobs &amp; distractions','Odd jobs for coin and training, and small happenings around town.'],['Jobs & distractions','Odd jobs for coin and training, and small happenings around town.'],
+   ['Chat, gifts, friends','Talk to the locals. Friends share tips, discounts and sometimes work.'],['Roads to other towns','Travel to towns you have found. Each has its own prices and dangers.'],
+   ['2 stamina · raise your stats','2 stamina each. Lift, run and drill to raise your stats. Rest when you tire.']];
+  R.forEach(r=>{t=t.split('<small>'+r[0]+'</small>').join('<small>'+r[1]+'</small>');});
+  t=t.replace(/<small>Rank: ([^<]*)<\/small>/,'<small>Rank: $1. Contracts and bounties pay gold and permanent bonuses.</small>');
+  return t;
+ };
+}
+Object.assign(ACT,{
+ learnFocus(){const h=S.hero;if(h.focusTaught)return;h.focusTaught=1;note('You learn to gather your Focus. Skills spend it; attacking and guarding build it back.','y');}
+});
+{
+ const _g=VIEWS.guild;
+ VIEWS.guild=function(){
+  let t=_g();
+  if(S.world.guild&&!hasFocus()&&atHome())t=t.replace(/(<h1>[^<]*<\/h1>)/,'$1<div class="card" style="border-color:var(--acc)"><b>An instructor takes you aside</b><p class="sm">"Everyone has more in them than they use. Learn to gather it and you can do more than swing a blade. The guild calls it <b>Focus</b>."</p><p class="sm mut">Skills spend Focus. Attacking and guarding build it back. Once you know how, the Old Library will teach you skills.</p>'+btn('Learn to focus','learnFocus',undefined,'pri c')+'</div>');
+  return t;
+ };
+}
+{
+ const _l=learnTome;
+ learnTome=function(zi){return hasFocus()?_l(zi):null;};
+}
+
+// ---------- gear: early armour is poor, plate is a late luxury ----------
+const BASEMIN={Plate:30,Greaves:22,Mail:14,Helm:10};
+{
+ const _gen=genItem;
+ genItem=function(il,rar,slot){
+  if(AF.maxfocus)AF.maxfocus.w=hasFocus()?.8:0;
+  let it=null;
+  for(let i=0;i<10;i++){it=_gen(il,rar,slot);if(!BASEMIN[it.base]||il>=BASEMIN[it.base])break;}
+  if(it.slot==='armor'&&il<8&&['Mail','Plate'].includes(it.base)){it.name=it.name.replace(it.base,'Slat Vest');it.base='Slat Vest';}
+  if(it.base==='Tunic'&&il<5&&Math.random()<.5){it.name=it.name.replace('Tunic','Slat Vest');it.base='Slat Vest';}
+  if(it.base==='Slat Vest'){it.lore='Thin wooden plates tied on with string. It will stop a bad day, not a bad fight.';if(it.st.def)it.st.def=Math.max(1,Math.round(it.st.def*.8));it.val=Math.max(3,Math.round(it.val*.7));}
+  return it;
+ };
+ const _rs=refreshShop;
+ refreshShop=function(){_rs();(S.world.shop||[]).forEach(it=>{if(it.base==='Plate')it.price=Math.round(it.price*2.4);else if(it.base==='Mail'||it.base==='Greaves')it.price=Math.round(it.price*1.6);});};
+}
+
+// ---------- haggling and a proper sell screen ----------
+const hagMax=()=>3+Math.floor(((S.hero||{}).hagw||0)/5);
+const hagLeft=()=>{const h=S.hero;return h.hag&&h.hag.d===h.day?Math.max(0,hagMax()-h.hag.n):hagMax();};
+const hprice=it=>(it.hgd===S.hero.day&&it.hg)?it.hg:sellVal(it);
+const hagChance=()=>{const p=P(),h=S.hero;return clamp(.38+p.int*.006+p.st.agi*.004+(h.hagw||0)*.006,.3,.85);};
+function hagDo(id){
+ const f=findItem(id);if(!f||f.where!=='inv')return;
+ const g=hprice(f.it);S.world.gold+=g;ACT._rm(f);S.hagMsg=`Sold ${esc(f.it.name)} for ${g}g.`;
+}
+Object.assign(ACT,{
+ hag(id){
+  const h=S.hero,f=findItem(id);if(!f||f.where!=='inv')return;const it=f.it;
+  if(it.lock){S.hagMsg='That item is locked.';return;}
+  if(it.hgd===h.day){S.hagMsg='You already bargained over that one today.';return;}
+  if(hagLeft()<1){S.hagMsg='The merchant has had enough bargaining for one day.';return;}
+  h.hag={d:h.day,n:(h.hag&&h.hag.d===h.day?h.hag.n:0)+1};it.hgd=h.day;
+  if(Math.random()<hagChance()){
+   it.hg=Math.max(sellVal(it)+1,Math.round(it.val*(.55+Math.random()*.12)));h.hagw=(h.hagw||0)+1;
+   S.hagMsg=`The merchant sighs and agrees to ${it.hg}g for ${esc(it.name)}.`;
+   if(h.hagw%5===0)S.hagMsg+=' You are getting a feel for how merchants think. You can bargain more often each day.';
+  }else{
+   it.hg=Math.max(1,Math.round(it.val*.38));S.hagMsg=`"Not for that." The merchant drops the offer on ${esc(it.name)} to ${it.hg}g.`;
+  }
+ },
+ hsell(id){
+  const f=findItem(id);if(!f||f.where!=='inv')return;
+  if(f.it.lock){S.hagMsg='That item is locked. Unlock it in the Pack first.';return;}
+  if(f.it.rar>=2){S.hsId=id;S.modal={t:'confirm',a:'hsellYes',q:`Sell ${esc(f.it.name)} (${RAR[f.it.rar].n}) for ${hprice(f.it)}g?`};return;}
+  hagDo(id);
+ },
+ hsellYes(){S.modal=null;const id=S.hsId;S.hsId=null;if(id!=null)hagDo(id);},
+ sellWorse(){
+  const h=S.hero,L=S.world.inv.filter(it=>!it.lock&&it.rar<3&&h.equip[it.slot]&&upDiff(it)<=0);
+  if(!L.length){S.hagMsg='Nothing in your pack is worse than what you wear.';return;}
+  S.modal={t:'confirm',a:'sellWorseYes',q:`Sell ${L.length} item${L.length>1?'s':''} no better than what you wear, for ${L.reduce((a,i)=>a+hprice(i),0)}g? Locked items are kept.`};
+ },
+ sellWorseYes(){
+  S.modal=null;const h=S.hero;let g=0,n=0;
+  S.world.inv=S.world.inv.filter(it=>{if(!it.lock&&it.rar<3&&h.equip[it.slot]&&upDiff(it)<=0){g+=hprice(it);n++;return false;}return true;});
+  S.world.gold+=g;S.hagMsg=`Sold ${n} item${n===1?'':'s'} for ${g}g.`;
+ }
+});
+VIEWS.sell=function(){
+ const w=S.world,h=S.hero,inv=w.inv.slice().sort((a,b)=>hprice(b)-hprice(a));
+ const tot=inv.filter(i=>!i.lock).reduce((a,i)=>a+hprice(i),0);
+ let t=`<h1>Sell goods</h1><p class="mut sm">The merchant in ${esc(TOWNS[where()].n)} pays about 45% of an item's worth. You can bargain for more: each try may raise the price, or sour the offer on that item. Bargaining improves with Intellect, Agility and practice.</p>`;
+ t+=`<div class="card sm"><div class="row2"><span>Bargaining chances today</span><b>${hagLeft()}/${hagMax()}</b></div><div class="row2"><span>Odds of a better price</span><b>${Math.round(hagChance()*100)}%</b></div><div class="row2"><span>Everything unlocked, sold now</span><b>${fmt(tot)}g</b></div></div>`;
+ if(S.hagMsg)t+=`<div class="card" style="border-color:var(--acc)">${S.hagMsg}</div>`;
+ t+=`<div class="grid">${btn('Sell what is worse than worn','sellWorse',undefined,'c')}${btn('Sell Commons','sellAll',0,'c')}</div><div style="height:6px"></div>`;
+ if(!inv.length)t+='<p class="mut sm">Your pack is empty.</p>';
+ inv.slice(0,25).forEach(it=>{
+  const d=upDiff(it),cmp=h.equip[it.slot]?(d>0?'<span class="up">better than worn</span>':'<span class="mut">no better than worn</span>'):'<span class="up">empty slot</span>';
+  const done=it.hgd===h.day;
+  t+=`<div class="card sm"><div class="row2"><b>${SLOT_ICON[it.slot]} ${rarName(it)}${it.lock?' <span class="tag">locked</span>':''}</b><b>${hprice(it)}g</b></div><div class="mut sm">Lv ${it.il} · ${cmp}${done&&it.hg>sellVal(it)?' · <span class="up">good price</span>':done?' · <span class="dn">offer soured</span>':''}</div><div class="grid" style="margin-top:6px">${btn('Sell','hsell',it.id,'c',!!it.lock)}${btn('Haggle','hag',it.id,'c',!!it.lock||done||hagLeft()<1,done?'tried today':hagLeft()<1?'no chances left':'')}</div></div>`;
+ });
+ if(inv.length>25)t+=`<p class="mut sm">${inv.length-25} cheaper items not shown. Use Sell Commons for those.</p>`;
+ return t+btn('← Back to Market','go','shop','c');
+};
+NAV[0][3].push('sell');
+{
+ const _s=VIEWS.shop;
+ VIEWS.shop=function(){S.hagMsg=null;return _s().replace(/(<h1>🛒[^<]*<\/h1>)/,'$1'+btn('🤝 Sell goods & haggle','go','sell','c',false,'Offer your gear to the merchant'));};
+ const _p=VIEWS.pack;
+ VIEWS.pack=function(){return _p().replace(/<h2>Inventory<\/h2><div class="grid">/,'<h2>Inventory</h2>'+btn('🤝 Sell goods & haggle','go','sell','pri c',false,'Better prices, one item at a time')+'<div style="height:6px"></div><div class="grid">');};
+}
+
+// ---------- gambling dens are in every town ----------
+ROUGH.briarhold.places=['den','fence','smug'];
+
+// ---------- conversations that read like conversations ----------
+{
+ const N=[null,
+  {t:'"A child was begging by the door when I came in. Thin as a rail. What would you have done?"',ch:[['"Bought them a hot meal."','mercy'],['"Told them to earn it. Work is kinder than charity."','duty'],['"Shown them which marks are easy and which are not."','cunning'],['"Nothing. I cannot save everyone."','caution']]},
+  {t:'"See the man at the bar? He says he killed a dragon. Twice, depending on who asks."',ch:[['"Challenge him to prove it. With steel."','wrath'],['"Ask him how. I want every detail."','knowledge'],['"Buy him a drink. A good story is worth one."','glory'],['"Listen, nod, and check his purse on the way out."','greed']]},
+  {t:'"Say you find a heavy purse lying in the road. Nobody around. What then?"',ch:[['"I would find whoever lost it."','honor'],['"Finders keepers."','greed'],['"Leave it. It smells like a trap."','caution'],['"Spend it where it counts: a guard, a closed door."','cunning']]},
+  {t:'"A wolf with a torn leg is blocking the path, and it is watching you. What do you do?"',ch:[['"Bind the leg, then let it go."','mercy'],['"End it quickly. It is kinder."','wrath'],['"Look at the wound. Something did that to it."','knowledge'],['"Step around it, slowly and quietly."','nature']]},
+  {t:'"Be honest with me. When a fight starts, what matters most?"',ch:[['"Winning, by whatever means."','wrath'],['"The people at my side."','duty'],['"Doing it well. Style counts."','glory'],['"Walking away afterwards."','caution']]},
+  {t:'"Suppose you find a book of forbidden lore. Nobody would ever know. What happens to it?"',ch:[['"I read every page."','knowledge'],['"I sell it to whoever pays most."','greed'],['"I burn it. Some things should stay unknown."','duty'],['"I hide it somewhere safe and forget it."','caution']]},
+  {t:'"A rival offers you a deal behind the guild\'s back. Good money. What do you say?"',ch:[['"I take it. Coin is coin."','greed'],['"I report it. The guild comes first."','duty'],['"I smile, agree, and learn what they are after."','cunning'],['"I refuse to their face, even if it costs me."','honor']]},
+  {t:'"Picture a beaten enemy who drops their weapon and yields. Then what?"',ch:[['"Let them go."','mercy'],['"Finish it. They would not spare you."','wrath'],['"Ask for a ransom."','greed'],['"Question them first."','cunning']]},
+  {t:'"Imagine a whole square cheering your name. How would that sit with you?"',ch:[['"I would enjoy every second."','glory'],['"I would slip away before the mood turned."','caution'],['"I would point at the people who helped me."','honor'],['"I would start charging for it."','greed']]},
+  {t:'"They are cutting down the forest east of here for a new road. Thoughts?"',ch:[['"I would stand in the way."','nature'],['"I would take the lumber contract."','greed'],['"I would say a quiet word for the trees."','mercy'],['"I would ask what the road is for."','knowledge']]},
+  {t:'"The shortcut home crosses a graveyard, and it is past midnight. Do you take it?"',ch:[['"Yes, and walk it proudly."','glory'],['"Yes, after a respectful word for the dead."','mercy'],['"No. I take the long way."','caution'],['"Yes. Graves hold things worth taking."','greed']]},
+  {t:'"Why do you do this work? The truth, not the song."',ch:[['"To protect people."','duty'],['"For the gold."','greed'],['"For the story afterwards."','glory'],['"To find answers."','knowledge']]}
+ ];
+ for(let i=1;i<N.length;i++)SCEN[i]=N[i];
+}
+const CV_LEAD=['looks up from their drink.','turns to you.','leans against the wall.','sets down what they were doing.','lowers their voice.','glances over.'];
+VIEWS.convo=function(){
+ const cv=S.cv,id=cv.id,D=COMP[id],X=COMPX[id],sc=SCEN[cv.idx];
+ let t=`<div style="display:flex;gap:12px;align-items:center;margin-bottom:8px">${cpic(id,64)}<div><h1 style="margin:0">${esc(D.n)}</h1><div class="mut sm">${esc(D.role)} · trust ${trustOf(id)}/100</div></div></div>`;
+ if(cv.first)t+=`<div class="card"><i>${X.open}</i></div>`;
+ t+=`<div class="card"><p class="mut sm" style="margin:0 0 6px"><i>${esc(firstName(D))} ${CV_LEAD[cv.idx%CV_LEAD.length]}</i></p><p style="margin:0">${sc.t}</p></div>`;
+ if(!cv.res)t+='<p class="mut sm">How do you answer?</p>'+sc.ch.map((c,i)=>btn(esc(c[0]),'cvch',i,'')).join('');
+ else t+=`<div class="card"><p class="mut sm" style="margin:0 0 6px">You said: ${esc(sc.ch[cv.pick!=null?cv.pick:0][0])}</p>${cv.res.map(l=>`<p>${l}</p>`).join('')}</div>${btn('Done','cvdone',undefined,'pri c')}`;
+ return t;
+};
+{
+ const _cv=ACT.cvch;
+ ACT.cvch=function(i){if(S.cv&&!S.cv.res)S.cv.pick=+i;return _cv.call(this,i);};
+}
+Object.assign(TRAITL,{
+ warm:['"There you are. Sit down, you look like you have skipped a meal."','"Good to see you. Mind the dog, he is friendlier than he looks."','"I was just thinking about you. Come in."','"Come in, come in. You are letting the warm out."','"You look tired. Have you eaten?"'],
+ gruff:['"Hmph. You again."','"Make it quick."','"I have work to do. Say your piece."','"You are not as bad as you look."','"Speak up. Not too loud."'],
+ wry:['"Ah, a visitor. How unexpected."','"You have the look of someone with plans. I will not ask."','"Lovely weather, if you like weather."','"Do not mind me. I am only here to watch."','"The hero returns. I will find you a stool."'],
+ bubbly:['"Oh! Hello! You are here!"','"You will not believe the day I have had."','"I was just about to tell someone something, and then you walked in!"','"Good to see you. Really."','"Stay a while! Tell me about anything."'],
+ formal:['"Good day. I trust you are well."','"A pleasure. I do appreciate a punctual guest."','"Please mind the carpet. It is older than both of us."','"Precision, traveller, is the root of good work."','"I shall endeavour to be of use."'],
+ cold:['"..."','"State your business."','"You are loud."','"Hm."','"I did not expect company."']
+});
+AMB.splice(0,AMB.length,
+ 'A man argues with a goose over a loaf of bread. The goose does not give ground.',
+ 'Two children sell "genuine monster teeth". They look suspiciously like a dog\'s.',
+ 'Someone nearby loudly explains how to hold a sword. They are holding it backwards.',
+ 'A woman insists the baker\'s loaves have shrunk. The baker insists she has grown.',
+ 'A pigeon snatches a pie out of a guard\'s hand. Nobody mentions it.',
+ 'An old man swears he was once an adventurer. His knees do not argue.',
+ 'A merchant sells "lucky" stones. They look like stones.',
+ 'A bard plays the same three notes, very confidently.',
+ 'A cart horse watches you pass with a tired, patient look.',
+ 'Someone lost a boot in the fountain years ago. It is still there.',
+ 'A fishmonger shouts a price, then quietly tells a regular the truth about the fish.',
+ 'A guard and a baker argue about whose turn it is to fix the gate.',
+ 'Children chase a chicken through the square. The chicken is winning.',
+ 'A tinker mends a pot while explaining, to nobody, what is wrong with the world.',
+ 'Two old friends argue about a card game they played forty years ago.');
+
+// ---------- companion portraits ----------
+const PORT={
+ _:{bg:'#3a4150',cloth:'#6a7282',top:(s,h)=>`<path d="M21 27c-1-10 4-15 11-15s12 5 11 15c-2-5-5-8-11-8s-9 3-11 8z" fill="${h}"/>`},
+ brom:{bg:'#3b4656',cloth:'#7a8492',top:(s,h)=>`<path d="M20.500 27v-6c0-8 6-12 11.500-12s11.500 4 11.500 12v6h-3v-5c0-5-4-8-8.500-8s-8.500 3-8.500 8v5z" fill="#99a3b1"/><rect x="30.500" y="20" width="3" height="10" fill="#99a3b1"/>`,front:(s,h)=>`<path d="M22 32c1 9 5 13 10 13s9-4 10-13c-3 3-6 4-10 4s-7-1-10-4z" fill="${h}"/>`},
+ lyssa:{bg:'#4a4f6b',cloth:'#ddd8ca',top:()=>`<path d="M19 31c-3-15 4-22 13-22s16 7 13 22c-3-5-4-12-13-12s-10 7-13 12z" fill="#f0ebdc"/>`},
+ kael:{bg:'#2e3340',cloth:'#3d4452',top:()=>`<path d="M18 34c-3-17 5-25 14-25s17 8 14 25l-5-8c0-6-4-9-9-9s-9 3-9 9z" fill="#262b36"/>`,front:()=>`<path d="M22 32c3 3 7 4 10 4s7-1 10-4v5c-3 3-7 4-10 4s-7-1-10-4z" fill="#8a3b3b"/>`},
+ ember:{bg:'#58302a',cloth:'#7a3b2e',top:()=>`<path d="M19 29c-4-15 4-23 13-23s17 8 13 23c-1-6-3-10-6-12-1 3-4 4-7 4s-5-1-7-4c-3 2-5 6-6 12z" fill="#d2561f"/><path d="M50 12c-3 4 2 5-1 9 5-2 6-7 1-9z" fill="#ffb347"/>`},
+ rime:{bg:'#2d4452',cloth:'#9ac6d8',skin:'#dcecf2',back:()=>`<path d="M19 26c-2 14 0 22 4 26h18c4-4 6-12 4-26z" fill="#eaf4f8"/>`,top:()=>`<path d="M20 26c0-10 5-15 12-15s12 5 12 15c-4-3-7-8-12-8s-8 5-12 8z" fill="#eaf4f8"/><path d="M21 20h22" stroke="#9ad7ff" stroke-width="1.500"/>`},
+ venn:{bg:'#3f4a33',cloth:'#8a7a52',top:(s,h)=>`<path d="M20 26c-3-10 3-17 12-17s15 7 12 17c-2-4-4-7-12-7s-10 3-12 7z" fill="${h}"/><rect x="21" y="19" width="22" height="6" rx="3" fill="#6b5a3a"/><circle cx="27" cy="22" r="3" fill="#cfe9ef"/><circle cx="37" cy="22" r="3" fill="#cfe9ef"/>`},
+ orla:{bg:'#5a3d52',cloth:'#a64f6b',back:(s,h)=>`<path d="M20 28c-2 10 0 18 3 22l4-2c-2-6-3-12-3-20z" fill="${h}"/>`,top:()=>`<path d="M20 24c0-9 5-12 12-12s12 3 12 12z" fill="#2f6b5a"/><path d="M40 17c6-6 12-6 14-2-6 0-9 2-12 7z" fill="#e8c24a"/>`},
+ gorm:{bg:'#4a2b25',cloth:'#7a4a2a',top:()=>`<path d="M24 22l5 7M40 22l-5 7" stroke="#b03a2a" stroke-width="2.500"/>`,front:()=>`<path d="M21 31c0 11 5 16 11 16s11-5 11-16c-3 3-6 4-11 4s-8-1-11-4z" fill="#a8421f"/>`},
+ nyx:{bg:'#1d1f2b',cloth:'#2a2d3f',top:()=>`<path d="M17 36c-3-19 5-28 15-28s18 9 15 28l-5-6c0-8-4-12-10-12s-10 4-10 12z" fill="#1c1e2a"/><ellipse cx="32" cy="29" rx="8.500" ry="9" fill="#14151d"/>`,eyes:'#9be0ff'},
+ seraph:{bg:'#5a5030',cloth:'#d8cfa8',top:()=>`<path d="M20.500 27v-6c0-8 6-12 11.500-12s11.500 4 11.500 12v6h-3v-5c0-5-4-8-8.500-8s-8.500 3-8.500 8v5z" fill="#e0bd54"/><path d="M32 6v8" stroke="#e0bd54" stroke-width="3"/><ellipse cx="32" cy="5" rx="9" ry="2.500" fill="none" stroke="#ffe27a" stroke-width="1.500"/>`},
+ thorn:{bg:'#2f4a35',cloth:'#4e6b3b',top:(s,h)=>`<path d="M21 27c-1-10 4-15 11-15s12 5 11 15c-2-5-5-8-11-8s-9 3-11 8z" fill="#4a5a2a"/><path d="M21 18c2-5 6-6 10-4-1 4-6 6-10 4zM43 18c-2-5-6-6-10-4 1 4 6 6 10 4zM27 13c1-4 4-5 7-3-1 3-4 5-7 3z" fill="#7cb85a"/>`},
+ mortis:{bg:'#2c2a3d',cloth:'#3a3150',skin:'#cfd2c0',top:()=>`<path d="M18 34c-3-17 5-25 14-25s17 8 14 25l-5-8c0-6-4-9-9-9s-9 3-9 9z" fill="#3b2f55"/>`,eyes:'#101018',big:true},
+ zephyr:{bg:'#35503f',cloth:'#6a7f4a',pre:`<path d="M12 64L40 44" stroke="#5a3b22" stroke-width="3"/>`,top:()=>`<path d="M20 24c0-9 5-12 12-12s12 3 12 12z" fill="#4b7a3a"/><path d="M42 16c5-7 10-8 14-4-6 0-9 3-11 8z" fill="#e8d98a"/>`},
+ cogsworth:{bg:'#3a3a42',cloth:'#80838c',machine:true},
+ witch:{bg:'#34284f',cloth:'#4b3a73',top:()=>`<path d="M15 25c5-1 8-3 10-7l7-15 5 15c2 4 5 6 12 7z" fill="#3a2a5a"/>`},
+ sniper:{bg:'#43382b',cloth:'#6a5a44',top:()=>`<path d="M18 34c-3-17 5-25 14-25s17 8 14 25l-5-8c0-6-4-9-9-9s-9 3-9 9z" fill="#5a4a36"/><circle cx="36.500" cy="28" r="3.400" fill="none" stroke="#c9a24a" stroke-width="1.200"/>`,front:()=>`<path d="M22 33c3 3 7 4 10 4s7-1 10-4v4c-3 3-7 4-10 4s-7-1-10-4z" fill="#8a7a5a"/>`},
+ monk:{bg:'#5a4328',cloth:'#c8762f',top:()=>`<rect x="21" y="20" width="22" height="3.500" fill="#e8d4a0"/>`}
+};
+function cpic(id,sz){
+ sz=sz||40;const D=COMP[id]||{},k=D.k||id,P=PORT[k]||PORT._;
+ let hs=0;for(const c of String(id))hs=(hs*31+c.charCodeAt(0))>>>0;
+ const SKIN=['#f0cfae','#e0b48c','#c58f64','#9a6842','#6e4a30'],HAIR=['#2b2118','#5a3a22','#8a5a2b','#c9a24a','#9a9aa4','#7a2a1a'];
+ const s=P.skin||SKIN[hs%5],h=HAIR[(hs>>3)%6];
+ let g=`<circle cx="32" cy="32" r="32" fill="${P.bg}"/>`;
+ if(P.pre)g+=P.pre;
+ if(P.back)g+=P.back(s,h);
+ g+=`<path d="M6 64C8 48 20 43 32 43s24 5 26 21z" fill="${P.cloth}"/><rect x="28" y="36" width="8" height="9" fill="${s}"/><path d="M28 43l4 5 4-5" fill="none" stroke="rgba(0,0,0,.25)" stroke-width="1.500"/>`;
+ if(P.machine){
+  g+=`<path d="M32 15V8" stroke="#b9bdc6" stroke-width="2"/><circle cx="32" cy="7" r="2.200" fill="#ff7a4a"/><rect x="20" y="15" width="24" height="22" rx="4" fill="#a2a7b0"/><rect x="24" y="22" width="6" height="5" rx="1" fill="#ffcf4a"/><rect x="34" y="22" width="6" height="5" rx="1" fill="#ffcf4a"/><path d="M25 32h14M25 34.500h14" stroke="#6a6e78" stroke-width="1.200"/>`;
+ }else{
+  g+=`<ellipse cx="32" cy="28" rx="11" ry="13" fill="${s}"/>`;
+  g+=(P.top||PORT._.top)(s,h);
+  const ec=P.eyes||'#1a1410',r=P.big?2.2:1.400;
+  g+=`<circle cx="27.500" cy="28" r="${r}" fill="${ec}"/><circle cx="36.500" cy="28" r="${r}" fill="${ec}"/><path d="M29 35q3 1.800 6 0" fill="none" stroke="rgba(40,20,10,.65)" stroke-width="1.200" stroke-linecap="round"/>`;
+  if(P.front)g+=P.front(s,h);
+ }
+ return `<svg class="cpic" width="${sz}" height="${sz}" viewBox="0 0 64 64" role="img" aria-label="${esc(D.n||'Companion')}">${g}</svg>`;
+}
+
 /* ----- a slow start: bodies heal over days, not overnight, until you are properly seasoned ----- */
 const nightRecovery=()=>{const L=S.hero.lvl;return L>=8?1:Math.min(1,.38+.09*(L-1));};
 const _sleepDayRec=sleepDay;
@@ -6899,7 +7143,7 @@ VIEWS.train=function(){
  return s.replace(/(<\/p>)/,'$1'+card);
 };
 if(typeof document!=='undefined'&&typeof window!=='undefined'&&!window.__TQ_TEST){try{render();}catch(e){}}
-if(typeof window!=='undefined')window.TQ={nextStep,foldHtml,upDiff,reportText,tele,loadBackup,skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
+if(typeof window!=='undefined')window.TQ={ROUGH,cpic,hasFocus,hprice,nextStep,foldHtml,upDiff,reportText,tele,loadBackup,skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>
 </html>

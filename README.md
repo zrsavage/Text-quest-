@@ -115,3 +115,12 @@ Emoji decoration is off by default. The game now shows plain text labels (Gold, 
 - **Accessibility** (Menu → Settings): high contrast, colour-blind safe danger colours, large tap targets.
 - **Playtest report**: Menu → "View playtest report" shows balance telemetry you can copy and share.
 - **Voice**: system text uses a calm, consistent tone; humour stays in NPC dialogue.
+
+## Playtest round 1
+- Sleep animation about 40% faster (tap to skip).
+- Focus is not mentioned until a guild instructor teaches it; the Old Library stays out of sight until then.
+- Early armour is wooden slats tied with string. Mail needs Lv 14+, Plate Lv 30+ and costs far more in shops.
+- **Sell goods** (Market or Pack): per-item Sell and Haggle, a limited number of bargaining tries per day that grow with practice, and "sell what is worse than worn".
+- Services have fuller descriptions on the Town screen.
+- Every town has a hidden gambling den in its rough quarter; find it by wandering.
+- Companions have drawn portraits. Conversations are now spoken questions with spoken answers. NPC chatter and street scenes rewritten.
