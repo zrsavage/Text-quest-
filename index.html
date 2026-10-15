@@ -110,7 +110,7 @@ body.big .btn{min-height:60px;padding-top:14px;padding-bottom:14px}body.big .ite
 .chips2{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}.chipb{background:var(--panel2);color:var(--tx);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-family:inherit;font-size:.8125rem;min-height:34px}.chipb.on{border-color:var(--acc);color:var(--acc)}
 .savewarn{position:sticky;top:0;z-index:50;background:#6b1d1d;color:#fff;padding:8px 12px;font-size:.875rem;text-align:center}
 .log .e{color:#ff9a8a}.log .g{color:#7be3a4}.log .y{color:var(--acc)}
-.cpic{border-radius:50%;flex:none;vertical-align:middle}#rewpop{position:fixed;left:50%;top:42%;transform:translate(-50%,-50%);z-index:60;max-width:min(88vw,360px);background:#1b2130;border:1px solid var(--acc);border-radius:14px;padding:14px 16px;box-shadow:0 8px 30px rgba(0,0,0,.6);animation:rewfx 1.5s ease forwards;font-size:.9375rem}#rewpop p{margin:6px 0 0}@keyframes rewfx{0%{opacity:0;transform:translate(-50%,-46%)}12%{opacity:1;transform:translate(-50%,-50%)}70%{opacity:1}100%{opacity:0}}.mpic{border-radius:14%;border-style:solid;object-fit:cover;vertical-align:middle;flex:none;background:#10141c}@media (prefers-reduced-motion:reduce){#rewpop{animation-duration:1.5s}}</style>
+.cpic{border-radius:50%;flex:none;vertical-align:middle}#rewpop{position:fixed;left:50%;top:42%;transform:translate(-50%,-50%);z-index:60;max-width:min(88vw,360px);background:#1b2130;border:1px solid var(--acc);border-radius:14px;padding:14px 16px;box-shadow:0 8px 30px rgba(0,0,0,.6);animation:rewfx 2.5s ease forwards;font-size:.9375rem}#rewpop p{margin:6px 0 0}@keyframes rewfx{0%{opacity:0;transform:translate(-50%,-46%)}8%{opacity:1;transform:translate(-50%,-50%)}80%{opacity:1}100%{opacity:0}}.mpic{border-radius:14%;border-style:solid;object-fit:cover;vertical-align:middle;flex:none;background:#10141c}@media (prefers-reduced-motion:reduce){#rewpop{animation-duration:2.5s}}</style>
 </head>
 <body>
 <div id="app">
@@ -7352,7 +7352,7 @@ function popReward(title,lines){
   const el=document.createElement('div');el.id='rewpop';
   el.innerHTML=`<b>${title}</b>${(lines||[]).map(l=>`<p>${l}</p>`).join('')}`;
   el.addEventListener('click',()=>el.remove());
-  document.body.appendChild(el);setTimeout(()=>{if(el.parentNode)el.remove();},1700);
+  document.body.appendChild(el);setTimeout(()=>{if(el.parentNode)el.remove();},2700);
  }catch(e){}
 }
 {
