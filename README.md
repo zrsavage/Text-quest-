@@ -23,4 +23,10 @@ A mobile-first, text-based RPG in a single file. Open `index.html` in any browse
 - Skills level up **through use** (max Lv 10). Spamming one skill slows its gain, while neglected skills train up to twice as fast, so rotating abilities makes you stronger overall.
 
 ## Earning trust (no hiring)
-Companions can't be bought. You meet them naturally (tavern regulars who notice you as you progress, captives in dungeons, people from quests), then build **trust** three ways: one conversation a day each (their personality decides how your answers land), **temporary work** (they fight beside you for 5 fights and you're scored on how well you gel), and a **personal trial** they set once you're close. Pass it and reach 55 trust, and they offer to join. Fail a trial and you can retry after a few days.
+Companions can't be bought. You meet them naturally (tavern regulars who notice you as you progress, captives in dungeons, people from quests), then build **trust** three ways: one conversation a day each (their personality decides how your answers land), **temporary work** (they fight beside you for 5 fights and you're scored on how well you gel), and a **personal trial** they set once you're close. Pass it and reach 50 trust, and they offer to join. Fail a trial and you can retry after a few days.
+
+## Encounters, packs and the codex
+- Enemy levels follow a **bell curve** around yours, with rare out-of-depth monsters. The encounter screen flags them, and you can **slip away** (chance based on level gap and AGI; failure lets it strike first).
+- Some creatures appear in **packs** that hit harder at full strength and weaken as you thin them out.
+- Every monster has a **procedurally drawn SVG icon** (generated per species, with elite and boss markers).
+- The **Codex** (Journal) lists every creature by region and dungeon, with native level range, how hard it is for *you* right now, observed moves and hunting tips.

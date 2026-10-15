@@ -2221,7 +2221,7 @@ function canApproach(id){
  return (!r.kills||h.kills>=r.kills)&&(!r.lvl||h.lvl>=r.lvl);
 }
 function trialReady(id){const m=S.world.meet[id],h=S.hero;return !!m&&!m.test&&m.chat+m.job>=20&&h.day>=m.cool&&!h.q['t_'+id];}
-function canInvite(id){const m=S.world.meet[id];return !!m&&m.test&&trustOf(id)>=55&&!S.world.comp[id];}
+function canInvite(id){const m=S.world.meet[id];return !!m&&m.test&&trustOf(id)>=50&&!S.world.comp[id];}
 const wOk=st=>!st.with||(S.hero.guest&&S.hero.guest.id===st.with)||S.hero.party.includes(st.with);
 
 /* ---- trials: personal tests, run with the companion alongside ---- */
@@ -2406,7 +2406,7 @@ function codexView(){
  const known=en=>!!(w.best[en.name]&&(w.best[en.name].seen||w.best[en.name].k>0));
  const cnt=all.filter(known).length;
  let t=`<p class="mut sm">Everything you've met in the wild. Encounter levels follow a <b>bell curve</b> around your level: usually close, but now and then something far stronger wanders in. Check the danger rating, and <b>run</b> when it's red. Discovered ${cnt}/${all.length}. Every 10 kills of a species grants +1% damage against it (max +25%), shared across your bloodline.</p>`;
- const secs=ZONES.map((z,i)=>['z'+i,z.ic+' '+z.n.split(' ')[0]]).concat([['dg','🏰 Dungeons']]);
+ const secs=ZONES.map((z,i)=>['z'+i,z.ic+' '+z.n.replace(/^The /,'').split(' ')[0]]).concat([['dg','🏰 Dungeons']]);
  t+=`<div class="grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:8px">${secs.map(x=>btn(x[1],'cxsec',x[0],sec===x[0]?'pri c':'c')).join('')}</div>`;
  const list=all.filter(en=>en.sec===sec);
  let lastSrc='';
