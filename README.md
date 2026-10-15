@@ -148,3 +148,6 @@ Hero tab → Skills log. Abilities improve by use (success teaches more than fai
 
 ## Loot order
 Loot lines now read item/material, then its description, then the next item. Art queue (portraits): monsters, companions, locals, stronger adventurers and employees, then item and material pictures.
+
+## Chat pop-ups
+Talking to townsfolk, market keepers, listening in, buying rumours and mingling in the square now show the result as a centred pop-up (3.5-6 seconds depending on length, tap to dismiss). The text stays on the page as well.

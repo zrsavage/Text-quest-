@@ -7351,19 +7351,29 @@ const MONPIC={"Gel Slime": "data:image/webp;base64,UklGRlwFAABXRUJQVlA4IFAFAAAQG
 }
 
 /* ---------- quick reward pop-up ---------- */
-function popReward(title,lines){
+function popReward(title,lines,ms){
  if(typeof document==='undefined')return;
  try{
   const old=document.getElementById('rewpop');if(old)old.remove();
   const el=document.createElement('div');el.id='rewpop';
   el.innerHTML=`<b>${title}</b>${(lines||[]).map(l=>`<p>${l}</p>`).join('')}`;
+  ms=ms||2500;el.style.animationDuration=ms+'ms';
   el.addEventListener('click',()=>el.remove());
-  document.body.appendChild(el);setTimeout(()=>{if(el.parentNode)el.remove();},2700);
+  document.body.appendChild(el);setTimeout(()=>{if(el.parentNode)el.remove();},ms+200);
  }catch(e){}
 }
 {
  const _dd=ACT.doDo;
  ACT.doDo=function(id){S.doRes=null;_dd.call(this,id);if(S.doRes)popReward(`${S.doRes.ic} ${S.doRes.n}`,S.doRes.lines);};
+ const chatMs=ls=>clamp(2500+(ls||[]).join(' ').replace(/<[^>]+>/g,'').length*25,3500,6000);
+ const _nt=ACT.npcTalk;
+ ACT.npcTalk=function(id){S.npcRes=null;_nt.call(this,id);if(S.npcRes)popReward(esc(S.npcRes.who.n),S.npcRes.lines,chatMs(S.npcRes.lines));};
+ const _kt=ACT.kpTalk;
+ ACT.kpTalk=function(){S.kpMsg=null;_kt.call(this);if(S.kpMsg){const k=keeper();popReward(esc(k?k.n:''),[S.kpMsg],chatMs([S.kpMsg]));}};
+ const _ls=ACT.listen,_ru=ACT.rumor,_mi=ACT.mingle;
+ ACT.listen=function(){const h=S.hero,done=h.lstDay===h.day;_ls.call(this);if(!done&&S.rumor)popReward('Overheard',[S.rumor],chatMs([S.rumor]));};
+ ACT.rumor=function(){S.rumor=null;_ru.call(this);if(S.rumor)popReward('Rumours',[S.rumor],chatMs([S.rumor]));};
+ ACT.mingle=function(){S.mingle=null;_mi.call(this);if(S.mingle)popReward('Around the square',S.mingle,chatMs(S.mingle));};
  const _of2=oddFinish;
  oddFinish=function(){_of2();if(S.oddRes)popReward(`${S.oddRes.ic} ${S.oddRes.n}: done`,S.oddRes.lines);};
 }
