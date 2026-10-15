@@ -454,7 +454,7 @@ const ACT={
   const n=($('#in-name').value||'').trim()||'Wanderer',f=($('#in-fam').value||'').trim()||'Ashford';
   S={v:1,world:newWorld(),hero:null,screen:'town',log:[],cb:null,enc:null,res:null,death:null,modal:null,set:{autosell:false},tab:'town',tcount:0};
   S.hero=newHero(n.slice(0,16),f.slice(0,16),1,window.__bg||'wanderer');ensureState();S.world.cast=genCast(1);registerCast(S.world.cast);
-  S.world.gold+=30;S.world.pots.hp1=(S.world.pots.hp1||0)+2;
+  
   S.hero.hp=P().maxhp;S.hero.sta=P().maxsta;
   refreshShop();
   note(`You arrive as ${S.hero.name} ${S.hero.fam}. You can barely lift a bucket. Time to train.`,'y');
@@ -1121,7 +1121,8 @@ function ensureState(){
  const w=S.world,h=S.hero;
  w.map=w.map||{};w.map.explore=w.map.explore||[0,0,0,0,0,0];w.map.found=w.map.found||{};
  w.map.lore=w.map.lore||{};w.map.cleared=w.map.cleared||{};w.map.flags=w.map.flags||{};
- w.best=w.best||{};w.comp=w.comp||{};w.meet=w.meet||{};w.lineage=w.lineage||{};w.estate=w.estate||{home:0,staff:{},biz:{},train:{},vault:{n:0,gold:0,mats:{},pots:{},items:[]}};w.bounty=w.bounty||{board:[],kills:0};w.vets=w.vets||[];if(!w.cast)w.cast=legacyCast();registerCast(w.cast);w.relics=w.relics||{};w.delve=w.delve||{best:0,who:''};
+ w.best=w.best||{};w.comp=w.comp||{};w.meet=w.meet||{};w.lineage=w.lineage||{};w.estate=w.estate||{home:0,staff:{},biz:{},train:{},vault:{n:0,gold:0,mats:{},pots:{},items:[]}};{const E=w.estate;if(E.deed===undefined){E.deed=!!(E.home>0||Object.keys(E.staff).length||Object.keys(E.biz).length||Object.keys(E.train).length);E.age=E.deed?100:0;E.since=E.deed?60:0;}E.served=E.served||{};E.fage=E.fage||{};E.staffName=E.staffName||{};Object.keys(E.staff).forEach(k=>{if(E.served[k]==null)E.served[k]=(E.staff[k]-1)*25;});['biz','train'].forEach(kd=>Object.keys(E[kd]).forEach(k=>{if(E.fage[k]==null)E.fage[k]=(E[kd][k]-1)*30;}));}
+ w.qdone=w.qdone||{};Object.keys(h.qd||{}).forEach(k=>{w.qdone[k]=1;});w.bounty=w.bounty||{board:[],kills:0};w.vets=w.vets||[];if(!w.cast)w.cast=legacyCast();registerCast(w.cast);w.relics=w.relics||{};w.delve=w.delve||{best:0,who:''};
  h.party=h.party||[];h.rel=h.rel||[];h.talked=h.talked||{};h.bounties=h.bounties||[];if(h.guest===undefined)h.guest=null;h.su=h.su||{};h.sx=h.sx||{};S.set=S.set||{autosell:false};if(S.set.diff==null)S.set.diff=1;S.easy=S.easy||0;S.hints=S.hints||{};S.weather=S.weather||'clear';if(S.dl===undefined)S.dl=null;S.htab=S.htab||'stats';
  h.q=h.q||{};h.qd=h.qd||{};h.fl=h.fl||{};h.fx=h.fx||[];h.dgc=h.dgc||{};h.dgsave=h.dgsave||{};h.pz=h.pz||0;
  if(S.dg===undefined)S.dg=null;if(S.pz===undefined)S.pz=null;if(S.ev===undefined)S.ev=null;if(S.talk===undefined)S.talk=null;
@@ -1212,7 +1213,7 @@ function qTalkChoose(i){
  lines.push(...applyOut(ch.eff,zi,t.id));
  const next=ch.go!=null?ch.go:qs.s+1;
  if(next>=q.steps.length){
-  delete h.q[t.id];h.qd[t.id]=1;
+  delete h.q[t.id];h.qd[t.id]=1;S.world.qdone=S.world.qdone||{};S.world.qdone[t.id]=1;
   if(h.guest&&h.guest.trial&&'t_'+h.guest.id===t.id)h.guest=null;
   if(S.talkRetry===t.id){delete h.qd[t.id];S.talkRetry=null;}
   lines.push(`✅ <b>Quest complete: ${q.t}</b>`);
@@ -2631,12 +2632,12 @@ function retireCast(){
    PASS 1 — backgrounds, paths, more companion archetypes, hints, settings
    ===================================================================== */
 const BGS={
- soldier:{n:'Soldier',ic:'⚔️',d:'Drilled and disciplined.',st:{str:3,vit:2,int:-1},sk:{power:2},perk:{def:.10},pd:'+10% defense'},
- scholar:{n:'Scholar',ic:'📚',d:'More books than muscle.',st:{int:4,vit:-2,str:-1},sk:{fire:1,mend:1},perk:{mastery:.12,xpPuzzle:.20},pd:'+12% skill mastery, +20% puzzle XP'},
- thief:{n:'Thief',ic:'🗝️',d:'Quick hands, quicker exits.',st:{agi:3,int:1,vit:-2},sk:{venom:1},perk:{goldf:10,pick:.15,slip:15},pd:'+10% gold, better lock-picking, easier to slip away'},
- hunter:{n:'Hunter',ic:'🏹',d:'Knows beasts and trails.',st:{agi:2,str:2,int:-1},sk:{},perk:{beastDmg:.10,fam:.25},pd:'+10% damage to beasts and birds, learn regions 25% faster',pots:2},
- acolyte:{n:'Acolyte',ic:'✨',d:'Faith and bandages.',st:{vit:3,int:2,str:-2},sk:{mend:2},perk:{potion:.20,restheal:.15},pd:'Potions heal 20% more, rests heal more'},
- noble:{n:'Noble',ic:'👑',d:'Money, manners, and no calluses.',st:{str:-1,vit:-1},sk:{cry:1},perk:{price:.10,trust:.10},pd:'Shops 10% cheaper, win trust 10% faster. Starts with 150 gold and gear.',gold:150,gear:1},
+ soldier:{n:'Soldier',ic:'⚔️',d:'Drilled and disciplined.',st:{str:3,vit:2,int:-1},sk:{},perk:{def:.10},pd:'+10% defense'},
+ scholar:{n:'Scholar',ic:'📚',d:'More books than muscle.',st:{int:4,vit:-2,str:-1},sk:{},perk:{mastery:.12,xpPuzzle:.20},pd:'+12% skill mastery, +20% puzzle XP'},
+ thief:{n:'Thief',ic:'🗝️',d:'Quick hands, quicker exits.',st:{agi:3,int:1,vit:-2},sk:{},perk:{goldf:10,pick:.15,slip:15},pd:'+10% gold, better lock-picking, easier to slip away'},
+ hunter:{n:'Hunter',ic:'🏹',d:'Knows beasts and trails.',st:{agi:2,str:2,int:-1},sk:{},perk:{beastDmg:.10,fam:.25},pd:'+10% damage to beasts and birds, learn regions 25% faster'},
+ acolyte:{n:'Acolyte',ic:'✨',d:'Faith and bandages.',st:{vit:3,int:2,str:-2},sk:{},perk:{potion:.20,restheal:.15},pd:'Potions heal 20% more, rests heal more'},
+ noble:{n:'Noble',ic:'👑',d:'Money, manners, and no calluses.',st:{str:-1,vit:-1},sk:{},perk:{price:.10,trust:.10},pd:'Shops 10% cheaper, win trust 10% faster'},
  farmhand:{n:'Farmhand',ic:'🌾',d:'Up before dawn, every dawn.',st:{vit:4,str:1,int:-2},sk:{},perk:{train:.20,sta:2},pd:'Training +20%, +2 stamina'},
  wanderer:{n:'Wanderer',ic:'🧭',d:'A little of everything.',st:{str:1,vit:1,agi:1,int:1},sk:{},perk:{sta:1,slip:10},pd:'+1 stamina, easier to slip away'}
 };
@@ -2703,7 +2704,7 @@ const HINTS=[
  {id:'fam',scr:['hunt'],when:()=>S.hero.kills>=5,t:'Every kill teaches you the region. Keep hunting. Dungeons and wanderers turn up as your familiarity grows.'},
  {id:'meet',scr:['town'],when:()=>tavernIds().some(canApproach),t:'Someone at the Tavern has noticed you. Companions are earned through conversation, work and trust, never gold.'},
  {id:'path',scr:['town','hero','result'],when:()=>S.hero.lvl>=10&&!S.hero.path,t:'You are experienced enough to choose a path. Open the Hero tab.'},
- {id:'estate',scr:['town'],when:()=>S.world.gold>=600,t:'Gold can do more than buy gear. Invest in your Estate: housing, staff, businesses and training grounds that your whole bloodline keeps.'},
+ {id:'estate',scr:['town'],when:()=>S.world.estate&&S.world.estate.deed,t:'The town has granted your family land. Your Estate grows with time and with the people you help, and your whole bloodline keeps it.'},
  {id:'bounty',scr:['guild'],when:()=>S.world.guild,t:'The Bounty Board posts hunts for specific monsters from your Codex. Notorious ones are tougher but pay far better.'},
  {id:'night',scr:['hunt','town'],when:()=>typeof timeOfDay==='function'&&timeOfDay()==='night',t:'It is night. Undead are more common and loot is better, but you are running low on stamina.'},
  {id:'weather',scr:['town','hunt'],when:()=>S.weather&&S.weather!=='clear',t:'Weather changes how fights play out. Check the note on the Hunt screen before you head out.'},
@@ -2820,55 +2821,74 @@ function envNote(){
    PASS 3 — the family estate (a gold sink that your bloodline keeps) and the bounty board
    ===================================================================== */
 const HOME=[
- {n:'Campsite',cost:0,sta:0,inv:0,vault:3,slots:1,hp:0,rested:0,d:'A bedroll by the town wall.'},
- {n:'Rented Room',cost:400,sta:1,inv:5,vault:5,slots:2,hp:0,rested:0,d:'A bed, a lock, and a landlady with opinions.'},
- {n:'Cottage',cost:3000,sta:2,inv:10,vault:7,slots:3,hp:.05,rested:0,d:'Your own roof and a hearth.'},
- {n:'Townhouse',cost:18000,sta:3,inv:15,vault:10,slots:4,hp:.05,rested:1,d:'Two floors, a kitchen, and a good lock.'},
- {n:'Manor',cost:90000,sta:4,inv:20,vault:14,slots:5,hp:.08,rested:1,d:'Servants, a library, and a stable.'},
- {n:'Keep',cost:400000,sta:5,inv:30,vault:20,slots:6,hp:.10,rested:1,d:'Walls, banners, and the family crest.'}
+ {n:'Plot of Land',sta:0,inv:0,vault:0,slots:0,hp:0,rested:0,d:'A patch of earth by the town wall that is yours. Nothing is built on it yet.'},
+ {n:'Cabin',cost:150,days:10,need:{contracts:8},needT:'8 contracts completed',sta:1,inv:5,vault:5,slots:1,hp:0,rested:0,d:'Four walls, a roof, and a door that locks.'},
+ {n:'Cottage',cost:1200,days:20,need:{contracts:10,dungeons:1},needT:'Bronze rank and a dungeon cleared',sta:2,inv:10,vault:7,slots:2,hp:.05,rested:0,d:'Your own roof and a hearth.'},
+ {n:'Townhouse',cost:8000,days:30,need:{contracts:20,dungeons:3,brank:1},needT:'Silver rank, 3 dungeons cleared and a Tracker bounty rank',sta:3,inv:15,vault:10,slots:3,hp:.05,rested:1,d:'Two floors, a kitchen, and a good lock.'},
+ {n:'Manor',cost:40000,days:45,need:{contracts:32,dungeons:6,delve:5},needT:'Gold rank, 6 dungeons cleared and Abyss floor 5',sta:4,inv:20,vault:14,slots:5,hp:.08,rested:1,d:'Servants, a library, and a stable.'},
+ {n:'Keep',cost:200000,days:60,need:{contracts:48,dungeons:10,delve:15},needT:'Mythril rank, 10 dungeons cleared and Abyss floor 15',sta:5,inv:30,vault:20,slots:6,hp:.10,rested:1,d:'Walls, banners, and the family crest.'}
 ];
 const invMax=()=>INV_MAX+HOME[estLv('home')].inv;
 const lvH=()=>(S.hero?S.hero.lvl:1);
 const stewardGold=lv=>(40+lvH()*12)*lv,stakeGold=lv=>(25+lvH()*6)*lv,tradeGold=lv=>(80+lvH()*16)*lv;
 const apoPot=lv=>lv<=2?'hp1':lv<=4?'hp2':'hp3';
+const qd=ids=>[].concat(ids).some(id=>S.world.qdone&&S.world.qdone[id]);
+const dungeonsCleared=()=>Object.keys(S.world.map.cleared).length;
+function needMet(n){
+ const h=S.hero,w=S.world;
+ return(!n.contracts||h.contracts>=n.contracts)&&(!n.dungeons||dungeonsCleared()>=n.dungeons)&&(!n.brank||brank()>=n.brank)&&(!n.delve||(w.delve.best||0)>=n.delve);
+}
+function needList(n){
+ const h=S.hero,w=S.world,L=[];
+ if(n.contracts)L.push([h.contracts>=n.contracts,`${n.contracts} contracts (${h.contracts})`]);
+ if(n.dungeons)L.push([dungeonsCleared()>=n.dungeons,`${n.dungeons} dungeons cleared (${dungeonsCleared()})`]);
+ if(n.brank)L.push([brank()>=n.brank,`Bounty rank ${BRANKS[n.brank][0]}`]);
+ if(n.delve)L.push([(w.delve.best||0)>=n.delve,`Abyss floor ${n.delve} (${w.delve.best||0})`]);
+ return L;
+}
+// staff are people, not purchases: they turn up on their own once you have earned their respect
 const STAFF=[
- {id:'steward',n:'Steward',ic:'🧾',base:600,d:lv=>`Earns ${fmt(stewardGold(lv))} gold a day.`},
- {id:'apothecary',n:'Apothecary',ic:'⚗️',base:700,d:lv=>`Brews a ${POTS[apoPot(lv)].n} each day.`},
- {id:'quartermaster',n:'Quartermaster',ic:'📦',base:800,d:lv=>`Sells your Common loot each morning. The market stocks ${lv} more item${lv>1?'s':''} and prices drop ${lv*4}%.`},
- {id:'scout',n:'Scout',ic:'🧭',base:900,d:lv=>`Maps your regions (+${(lv*1.5).toFixed(1)}% a day) and has a ${lv*10}% daily chance to hear of a new dungeon.`},
- {id:'tutor',n:'Tutor',ic:'🎓',base:1000,d:lv=>`Drills your least-used skill every day (+${lv*4} mastery).`},
- {id:'cook',n:'Cook',ic:'🍲',base:700,d:lv=>`You wake Well Fed (+10% HP)${lv>=3?' and Blessed':''}.`},
- {id:'armorer',n:'Armorer',ic:'🔨',base:1500,d:lv=>`Forges ${lv>=3?'a piece of gear every day':'a piece of gear every other day'}, better with your level.`}
+ {id:'steward',n:'Steward',ic:'🧾',home:1,age:20,q:null,from:'Aide Corvin sends over a clerk',need:'A cabin and 20 days on your land',d:lv=>`Earns ${fmt(stewardGold(lv))} gold a day.`},
+ {id:'cook',n:'Cook',ic:'🍲',home:1,age:30,q:'rats',from:"Mira the Baker's apprentice",need:"Help Mira with her rats, and 30 days on your land",d:lv=>`You wake Well Fed (+10% HP)${lv>=3?' and Blessed':''}.`},
+ {id:'apothecary',n:'Apothecary',ic:'⚗️',home:2,age:40,q:['valeria','quill'],from:"A herbalist from Sister Valeria's infirmary",need:"Help Sister Valeria or Alchemist Quill, a cottage, and 40 days",d:lv=>`Brews a ${POTS[apoPot(lv)].n} each day.`},
+ {id:'quartermaster',n:'Quartermaster',ic:'📦',home:2,age:50,q:['hob','smith'],from:"Hob's old trading partner",need:"Help Hob or Garrick, a cottage, and 50 days",d:lv=>`Sells your Common loot each morning. The market stocks ${lv} more item${lv>1?'s':''} and prices drop ${lv*4}%.`},
+ {id:'scout',n:'Scout',ic:'🧭',home:2,age:60,q:['hermit','ranger'],from:'A ranger who owes you a favor',need:"Help the Hermit or Ranger Sella, a cottage, and 60 days",d:lv=>`Maps your regions (+${(lv*1.5).toFixed(1)}% a day) and has a ${lv*10}% daily chance to hear of a new dungeon.`},
+ {id:'tutor',n:'Tutor',ic:'🎓',home:3,age:80,q:'ennis',from:"One of Scholar Ennis's students",need:"Help Scholar Ennis, a townhouse, and 80 days",d:lv=>`Drills your least-used skill every day (+${lv*4} mastery).`},
+ {id:'armorer',n:'Armorer',ic:'🔨',home:3,age:100,q:'smith',from:"A journeyman from Garrick's forge",need:"Help Garrick the Smith, a townhouse, and 100 days",d:lv=>`Forges ${lv>=3?'a piece of gear every day':'a piece of gear every other day'}, better with your level.`}
 ];
+// facilities need a milestone and some gold to build once. After that they grow by themselves as the years pass.
 const BIZ=[
- {id:'farm',n:'Farm',ic:'🌾',need:1,base:1500,d:lv=>`Grows ${lv} Healing Potion${lv>1?'s':''} a day.`},
- {id:'tavernstake',n:'Tavern Stake',ic:'🍺',need:1,base:4000,d:lv=>`Pays ${fmt(stakeGold(lv))} gold a day, and the regulars warm to you (+1 trust a day with someone you know).`},
- {id:'mine',n:'Mine',ic:'⛏️',need:2,base:9000,d:lv=>`Digs ${lv*2} materials a day from your current tier.`},
- {id:'trade',n:'Trading Company',ic:'🚢',need:2,base:15000,d:lv=>`Earns ${fmt(tradeGold(lv))} gold a day. Caravans are sometimes raided.`}
+ {id:'farm',n:'Farm',ic:'🌾',home:1,cost:300,ok:()=>true,need:'A cabin',d:lv=>`Grows ${lv} Healing Potion${lv>1?'s':''} a day.`},
+ {id:'tavernstake',n:'Tavern Stake',ic:'🍺',home:1,cost:800,ok:()=>qd('dolly'),need:"Help Dolly the Tavernkeeper",d:lv=>`Pays ${fmt(stakeGold(lv))} gold a day, and the regulars warm to you (+1 trust a day with someone you know).`},
+ {id:'mine',n:'Mine',ic:'⛏️',home:2,cost:3000,ok:()=>dungeonsCleared()>=3,need:'Clear 3 dungeons and own a cottage',d:lv=>`Digs ${lv*2} materials a day from your current tier.`},
+ {id:'trade',n:'Trading Company',ic:'🚢',home:2,cost:6000,ok:()=>S.hero.contracts>=20,need:'Reach Silver rank and own a cottage',d:lv=>`Earns ${fmt(tradeGold(lv))} gold a day. Caravans are sometimes raided.`}
 ];
 const drill=lv=>(lv*.04).toFixed(2);
 const TRAINX=[
- {id:'str',n:'Iron Dojo',ic:'🥋',base:1200,d:lv=>`Strength training +${lv*15}%, and the dojo drills you +${drill(lv)} STR every day.`},
- {id:'vit',n:'Endurance Track',ic:'🏃',base:1200,d:lv=>`Endurance training +${lv*15}%, and +${drill(lv)} VIT every day.`},
- {id:'agi',n:'Agility Course',ic:'🤸',base:1200,d:lv=>`Agility training +${lv*15}%, and +${drill(lv)} AGI every day.`},
- {id:'int',n:'Study Hall',ic:'📖',base:1200,d:lv=>`Study training +${lv*15}%, and +${drill(lv)} INT every day.`},
- {id:'academy',n:'Skill Academy',ic:'🎓',base:3000,d:lv=>`Skills gain mastery ${lv*5}% faster, and you can take ${lv} paid lesson${lv>1?'s':''} a day.`},
- {id:'barracks',n:'Barracks',ic:'🛡️',base:5000,d:lv=>`Companions can rise ${lv} level${lv>1?'s':''} above the usual cap${lv>=3?' and bond faster':''}.`}
+ {id:'str',n:'Iron Dojo',ic:'🥋',home:1,cost:400,ok:()=>qd('hale'),need:"Help Captain Hale",d:lv=>`Strength training +${lv*15}%, and the dojo drills you +${drill(lv)} STR every day.`},
+ {id:'vit',n:'Endurance Track',ic:'🏃',home:1,cost:400,ok:()=>qd('brannock'),need:"Help Old Brannock",d:lv=>`Endurance training +${lv*15}%, and +${drill(lv)} VIT every day.`},
+ {id:'agi',n:'Agility Course',ic:'🤸',home:1,cost:400,ok:()=>qd('pipcat'),need:"Help Pip find his cat",d:lv=>`Agility training +${lv*15}%, and +${drill(lv)} AGI every day.`},
+ {id:'int',n:'Study Hall',ic:'📖',home:1,cost:400,ok:()=>qd('ennis'),need:"Help Scholar Ennis",d:lv=>`Study training +${lv*15}%, and +${drill(lv)} INT every day.`},
+ {id:'academy',n:'Skill Academy',ic:'🎓',home:2,cost:2500,ok:()=>qd('ennis')&&S.hero.lvl>=15,need:'Help Scholar Ennis and reach level 15',d:lv=>`Skills gain mastery ${lv*5}% faster, and you can take ${lv} paid lesson${lv>1?'s':''} a day.`},
+ {id:'barracks',n:'Barracks',ic:'🛡️',home:3,cost:4000,ok:()=>Object.keys(S.world.comp).length+(S.world.vets||[]).length>=2,need:'Have two companions or veterans in the family',d:lv=>`Companions can rise ${lv} level${lv>1?'s':''} above the usual cap${lv>=3?' and bond faster':''}.`}
 ];
 const CATS={staff:STAFF,biz:BIZ,train:TRAINX};
-const estCost=(kind,def)=>{const lv=estLv(kind,def.id);return lv>=5?null:Math.round(def.base*Math.pow(kind==='biz'?2.7:2.6,lv));};
 const staffCount=()=>Object.keys(S.world.estate.staff).filter(k=>S.world.estate.staff[k]>0).length;
-function estBuy(kind,id){
- const w=S.world,E=w.estate;
- if(kind==='home'){
-  const nx=HOME[E.home+1];if(!nx||w.gold<nx.cost){note('Not enough gold.','e');return;}
-  w.gold-=nx.cost;E.home++;note(`You move into a ${nx.n}.`,'y');return;
- }
- const def=CATS[kind].find(d=>d.id===id),lv=estLv(kind,id),cost=estCost(kind,def);
- if(cost==null||w.gold<cost){note('Not enough gold.','e');return;}
- if(kind==='biz'&&E.home<def.need){note(`You need a ${HOME[def.need].n} first.`,'e');return;}
- if(kind==='staff'&&lv===0&&staffCount()>=HOME[E.home].slots){note('No room for more staff. Upgrade your home.','e');return;}
- w.gold-=cost;E[kind][id]=lv+1;note(`${def.n} ${lv?'improved to':'established at'} level ${lv+1}.`,'y');
+function checkDeed(){
+ const w=S.world,E=w.estate,h=S.hero;if(!E||E.deed)return;
+ if(qd('mayor')&&h.contracts>=4){E.deed=true;E.age=0;E.since=0;note('🏡 <b>The town grants your family a plot of land by the wall.</b> The estate is yours to grow.','y');}
+}
+function estHome(){
+ const w=S.world,E=w.estate,nx=HOME[E.home+1];if(!E.deed||!nx)return;
+ if(!needMet(nx.need)||E.since<nx.days){note('You have not earned that yet.','e');return;}
+ if(w.gold<nx.cost){note('Not enough gold for materials.','e');return;}
+ w.gold-=nx.cost;E.home++;E.since=0;note(`You build a ${nx.n}.`,'y');
+}
+function estBuild(kind,id){
+ const w=S.world,E=w.estate,def=CATS[kind].find(d=>d.id===id);if(!E.deed||!def||E[kind][id])return;
+ if(E.home<def.home||!def.ok()){note('You have not earned that yet.','e');return;}
+ if(w.gold<def.cost){note('Not enough gold for materials.','e');return;}
+ w.gold-=def.cost;E[kind][id]=1;E.fage[id]=0;note(`${def.n} built. It will grow as the years pass.`,'y');
 }
 function addSkillXp(id,xp){
  const h=S.hero;h.sx=h.sx||{};h.sx[id]=(h.sx[id]||0)+xp;const l=h.skills[id];
@@ -2876,7 +2896,7 @@ function addSkillXp(id,xp){
  return null;
 }
 function addFamiliarity(zi,gain){
- const m=S.world.map,z=ZONES[zi],before=m.explore[zi],lines=[];
+ const m=S.world.map,before=m.explore[zi],lines=[];
  if(before>=100)return lines;
  m.explore[zi]=Math.min(100,before+gain);
  for(const lm of LANDMARKS[zi])if(!m.found[lm.id]&&m.explore[zi]>=lm.p){m.found[lm.id]=1;lines.push(`🗺️ Your scout found a path to ${DG[lm.id].ic} ${DG[lm.id].n}.`);}
@@ -2884,15 +2904,26 @@ function addFamiliarity(zi,gain){
 }
 function estateDaily(){
  const w=S.world,E=w.estate,h=S.hero;if(!E)return;
+ checkDeed();if(!E.deed)return;
  const hm=HOME[E.home],v=E.vault,msgs=[];
+ E.age++;E.since++;
+ const cap=Math.max(1,Math.min(5,E.home));
+ // people arrive on their own, and grow with years of service
+ STAFF.forEach(def=>{
+  if(!E.staff[def.id]){
+   if(E.home>=def.home&&E.age>=def.age&&(def.q==null||qd(def.q))&&staffCount()<hm.slots){
+    E.staff[def.id]=1;E.served[def.id]=0;E.staffName[def.id]=pick(FIRSTN);
+    msgs.push(`${def.ic} <b>${E.staffName[def.id]}</b>, ${def.from.charAt(0).toLowerCase()+def.from.slice(1)}, joins your household as ${def.n.toLowerCase()}.`);
+   }
+  }else{E.served[def.id]=(E.served[def.id]||0)+1;const nl=Math.min(cap,1+Math.floor(E.served[def.id]/25));if(nl>E.staff[def.id]){E.staff[def.id]=nl;msgs.push(`${def.ic} ${E.staffName[def.id]||def.n} has grown into the role (level ${nl}).`);}}
+ });
+ ['biz','train'].forEach(kind=>{CATS[kind].forEach(def=>{if(E[kind][def.id]){E.fage[def.id]=(E.fage[def.id]||0)+1;const nl=Math.min(cap,1+Math.floor(E.fage[def.id]/30));if(nl>E[kind][def.id]){E[kind][def.id]=nl;msgs.push(`${def.ic} Your ${def.n.toLowerCase()} has matured (level ${nl}).`);}}});});
  // training grounds drill you while you sleep
  ['str','vit','agi','int'].forEach(k=>{const lv=E.train[k]||0;if(lv)h.st[k]+=lv*.04;});
  if(hm.rested)addFx('bless');
  const cook=E.staff.cook||0;if(cook){addFx('fed');if(cook>=3)addFx('bless');}
- // quartermaster sells commons
  const qm=E.staff.quartermaster||0;
  if(qm){let g=0,n=0;w.inv=w.inv.filter(it=>{if(it.rar===0){g+=sellVal(it);n++;return false;}return true;});if(n){w.gold+=g;msgs.push(`📦 The quartermaster sold ${n} Common item${n>1?'s':''} for ${g}g.`);}}
- // scout
  const sc=E.staff.scout||0;
  if(sc){
   const r=rankIdx(h.contracts);let zi=-1,best=-1;
@@ -2900,18 +2931,15 @@ function estateDaily(){
   if(zi>=0)addFamiliarity(zi,sc*1.5).forEach(l=>msgs.push(l));
   if(Math.random()<sc*.1){const un=DUNGEONS.filter(d=>!d.dyn&&!d.hidden&&!w.map.found[d.id]&&d.zi<=Math.min(5,r+1));if(un.length){const d=pick(un);w.map.found[d.id]=1;msgs.push(`🧭 Your scout heard of ${d.ic} ${d.n}.`);}}
  }
- // tutor
  const tu=E.staff.tutor||0;
  if(tu){const ks=Object.keys(h.skills);if(ks.length){ks.sort((a,b)=>((h.su&&h.su[a])||0)-((h.su&&h.su[b])||0));const m=addSkillXp(ks[0],tu*4);if(m)msgs.push('🎓 '+m);}}
- // tavern stake: trust
  if((E.biz.tavernstake||0)>0){const met=Object.keys(w.meet).filter(id=>!w.comp[id]&&w.meet[id].chat<45);if(met.length){const m=w.meet[pick(met)];m.chat=Math.min(45,m.chat+1);}}
- // production goes to the vault, up to its capacity
  if(v.n<hm.vault){
   v.n++;
   let gold=0;
   if(E.staff.steward)gold+=stewardGold(E.staff.steward);
   if(E.biz.tavernstake)gold+=stakeGold(E.biz.tavernstake);
-  if(E.biz.trade){const r=Math.random();if(r<.06)msgs.push('🚢 A caravan was raided. Today\'s trade income is lost.');else gold+=tradeGold(E.biz.trade)*(r>.96?3:1);}
+  if(E.biz.trade){const r=Math.random();if(r<.06)msgs.push("🚢 A caravan was raided. Today's trade income is lost.");else gold+=tradeGold(E.biz.trade)*(r>.96?3:1);}
   v.gold+=Math.round(gold);
   if(E.staff.apothecary){const k=apoPot(E.staff.apothecary);v.pots[k]=(v.pots[k]||0)+1;}
   if(E.biz.farm)v.pots.hp1=(v.pots.hp1||0)+E.biz.farm;
@@ -2923,7 +2951,8 @@ function estateDaily(){
  msgs.forEach(m=>note(m));
 }
 Object.assign(ACT,{
- estBuy(p){const [kind,id]=p.split(':');estBuy(kind,id);},
+ estHome(){estHome();},
+ estBuild(p){const [kind,id]=p.split(':');estBuild(kind,id);},
  collect(){
   const w=S.world,v=w.estate.vault;
   w.gold+=v.gold;v.gold=0;
@@ -2945,6 +2974,7 @@ Object.assign(ACT,{
  },
  estclear(){S.estmsg=null;}
 });
+
 /* ----- bounty board ----- */
 const NICKS=['Gnash','Scar','Hollowback','Redmaw','Old Grudge','Gloom','Splinter','Rust','Fang','Dreadhide','Moonmad','Ironjaw','Bonecrusher','Whisper','Cinderheart'];
 const BRANKS=[['Rookie',0],['Tracker',5],['Stalker',15],['Reaper',35],['Legend',70],['Apex',120]];
@@ -3231,7 +3261,7 @@ VIEWS.town=function(){
   ${btn('🍺 Tavern','go','tavern','',!hu,'Rumors & gossip')}
   ${btn('🚚 Tinker\'s Wagon','go','tinker','',!hu,hu?'Scrap → random loot':'Locked')}
   ${w.anc.length?btn('⚰️ Family Crypt','go','crypt','',!hu,'Face your ancestors'):''}
-  ${hu?btn('🏡 Estate','go','estate','',false,HOME[estLv('home')].n+(S.world.estate.vault.gold||S.world.estate.vault.items.length?' · goods waiting':'')):''}
+  ${hu?btn('🏡 Estate','go','estate','',false,S.world.estate.deed?HOME[estLv('home')].n+(S.world.estate.vault.gold||S.world.estate.vault.items.length?' · goods waiting':''):'Earn a place of your own'):''}
   ${abyssOpen()&&hu?(S.dl?btn('🌀 Abyss Stair','go','delve','pri',false,'Resume your descent'):btn('🌀 Abyss Stair','delveStart',undefined,'',h.sta<2||!!S.dg,`2⚡ · endless · best floor ${w.delve.best||0}`)):''}
  </div>
  <div style="margin-top:10px">${btn('🛏️ Sleep until morning','sleep',undefined,'good',!!S.dg,S.dg?'Leave the dungeon first':'Restore HP & stamina · next day · refreshes shop/board')}</div>
@@ -3710,41 +3740,54 @@ VIEWS.enc=function(){
 };
 
 /* ===== PASS 3 — views ===== */
-function estInfo(kind,def){
- const E=S.world.estate,lv=estLv(kind,def.id),cost=estCost(kind,def);let lock='';
- if(kind==='biz'&&E.home<def.need)lock=`Needs a ${HOME[def.need].n}`;
- else if(kind==='staff'&&lv===0&&staffCount()>=HOME[E.home].slots)lock='No free staff room (upgrade your home)';
- return{lv,cost,lock};
-}
+function estTime(kind,def){const E=S.world.estate;if(kind==='staff')return 25-((E.served[def.id]||0)%25);return 30-((E.fage[def.id]||0)%30);}
 function estCards(kind,title,intro){
- const w=S.world;
+ const w=S.world,E=w.estate,h=S.hero,cap=Math.max(1,Math.min(5,E.home));
  let t=`<h2>${title}</h2><p class="sm mut">${intro}</p>`;
  CATS[kind].forEach(def=>{
-  const {lv,cost,lock}=estInfo(kind,def);
-  t+=`<div class="card"><div class="row2"><b>${def.ic} ${def.n}</b><span class="tag">Lv ${lv}/5</span></div>
-  <div class="sm">${lv?def.d(lv):'<span class="mut">Not built yet.</span>'}</div>${lv<5?`<div class="sm mut">Next: ${def.d(lv+1)}</div>`:'<div class="sm up">Fully upgraded.</div>'}
-  ${cost==null?'':btn(lv?'Upgrade':(kind==='staff'?'Hire':'Build'),'estBuy',kind+':'+def.id,'pri c',!!lock||w.gold<cost,lock||`${fmt(cost)}g`)}`;
-  if(def.id==='academy'&&lv>0){
-   const h=S.hero,ks=Object.keys(h.skills),used=h.studied&&h.studied.day===h.day?h.studied.n:0;
-   t+=`<div class="sm mut" style="margin-top:6px">Lessons today: ${used}/${lv}${S.estmsg?`<br><span class="up">${S.estmsg}</span>`:''}</div>`+(ks.length?ks.map(k=>{const l=h.skills[k],c=Math.round((80+h.lvl*25)*(l+1));return btn(`📖 Study ${SK[k].n} (Lv ${l})`,'study',k,'c',used>=lv||l>=SKMAX||w.gold<c,`${fmt(c)}g`);}).join(''):'<div class="sm mut">Learn a skill first.</div>');
+  const lv=estLv(kind,def.id);
+  if(kind==='staff'){
+   if(lv){t+=`<div class="card"><div class="row2"><b>${def.ic} ${esc(E.staffName[def.id]||def.n)} <span class="mut sm">(${def.n})</span></b><span class="tag">Lv ${lv}/${cap}</span></div><div class="sm">${def.d(lv)}</div><div class="sm mut">${lv<cap?`Grows into the next level in ${estTime(kind,def)} days.`:E.home<5?'Needs a bigger home to develop further.':'At the peak of their craft.'}</div></div>`;}
+   else{const ready=E.home>=def.home&&(def.q==null||qd(def.q));t+=`<div class="card" style="opacity:.75"><div class="row2"><b>${def.ic} ${def.n}</b><span class="tag">not yet</span></div><div class="sm mut">${def.need}.</div>${ready&&E.age<def.age?`<div class="sm">They will come in ${def.age-E.age} days.</div>`:''}${ready&&E.age>=def.age&&staffCount()>=HOME[E.home].slots?'<div class="sm dn">No spare room. Build a bigger home.</div>':''}</div>`;}
+   return;
   }
-  t+='</div>';
+  if(lv){
+   t+=`<div class="card"><div class="row2"><b>${def.ic} ${def.n}</b><span class="tag">Lv ${lv}/${cap}</span></div><div class="sm">${def.d(lv)}</div><div class="sm mut">${lv<cap?`Matures to level ${lv+1} in ${estTime(kind,def)} days.`:E.home<5?'Needs a bigger home to grow further.':'Fully matured.'}</div>`;
+   if(def.id==='academy'){
+    const ks=Object.keys(h.skills),used=h.studied&&h.studied.day===h.day?h.studied.n:0;
+    t+=`<div class="sm mut" style="margin-top:6px">Lessons today: ${used}/${lv}${S.estmsg?`<br><span class="up">${S.estmsg}</span>`:''}</div>`+(ks.length?ks.map(k=>{const l=h.skills[k],c=Math.round((80+h.lvl*25)*(l+1));return btn(`📖 Study ${SK[k].n} (Lv ${l})`,'study',k,'c',used>=lv||l>=SKMAX||w.gold<c,`${fmt(c)}g`);}).join(''):'<div class="sm mut">Learn a skill first.</div>');
+   }
+   t+='</div>';
+  }else{
+   const unlocked=E.home>=def.home&&def.ok();
+   t+=`<div class="card" style="${unlocked?'':'opacity:.75'}"><div class="row2"><b>${def.ic} ${def.n}</b><span class="tag">${unlocked?'available':'locked'}</span></div><div class="sm mut">${def.need}${E.home<def.home?`, and a ${HOME[def.home].n}`:''}.</div>${unlocked?btn('Build','estBuild',kind+':'+def.id,'pri c',w.gold<def.cost,`${fmt(def.cost)}g for materials`):''}</div>`;
+  }
  });
  return t;
 }
 VIEWS.estate=function(){
- const w=S.world,E=w.estate,hm=HOME[E.home],nx=HOME[E.home+1],v=E.vault;
+ const w=S.world,E=w.estate,h=S.hero;
+ if(!E.deed){
+  return `<h1>🏡 The ${esc(h.fam)} Estate</h1><div class="card"><p>You own nothing in Hollowmere yet.</p><p class="mut">The mayor's office grants plots of land to those who keep the roads safe. Earn your family a place:</p>
+  <div class="sm">${qd('mayor')?'✅':'⬜'} Complete <b>Safe Roads</b> for Aide Corvin (kill the Gelatinous King)</div><div class="sm">${h.contracts>=4?'✅':'⬜'} Reach Copper rank (4 contracts) (${h.contracts})</div></div>${btn('← Back to town','go','town','c')}`;
+ }
+ const hm=HOME[E.home],nx=HOME[E.home+1],v=E.vault;
  const vitems=v.gold||v.items.length||Object.keys(v.pots).length||Object.keys(v.mats).length;
- let t=`<h1>🏡 The ${esc(S.hero.fam)} Estate</h1><p class="mut">Gold well spent. Everything here belongs to the family, so your heirs inherit it. 💰 <b>${fmt(w.gold)}</b></p>`;
+ let t=`<h1>🏡 The ${esc(h.fam)} Estate</h1><p class="mut">Everything here belongs to the family, so your heirs inherit it. It grows with time and with what you accomplish. People join on their own once they respect you. 💰 <b>${fmt(w.gold)}</b> · ${E.age} days on the land</p>`;
  t+=`<div class="card"><div class="row2"><b>🏠 ${hm.n}</b><span class="tag">Tier ${E.home}/5</span></div><div class="sm mut">${hm.d}</div>
- <div class="sm">+${hm.sta} stamina · +${hm.inv} pack space · ${hm.slots} staff room${hm.slots>1?'s':''} · vault holds ${hm.vault} days${hm.hp?` · +${Math.round(hm.hp*100)}% max HP`:''}${hm.rested?' · you wake Blessed':''}</div>
- ${nx?btn('Move up: '+nx.n,'estBuy','home:0','pri c',w.gold<nx.cost,fmt(nx.cost)+'g'):'<div class="sm up">The finest home in Hollowmere.</div>'}</div>`;
- t+=`<div class="card"><div class="row2"><b>🗄️ Vault</b><span class="tag">${v.n}/${hm.vault} days</span></div><div class="sm">${vitems?`💰 ${fmt(v.gold)}${Object.keys(v.pots).length?' · 🧪 '+Object.keys(v.pots).map(k=>`${v.pots[k]}× ${POTS[k].n}`).join(', '):''}${Object.keys(v.mats).length?' · 🧶 '+Object.values(v.mats).reduce((a,b)=>a+b,0)+' materials':''}${v.items.length?' · 🎁 '+v.items.length+' item'+(v.items.length>1?'s':''):''}`:'<span class="mut">Empty. Staff and businesses fill it while you sleep.</span>'}</div>${v.n>=hm.vault?'<div class="sm dn">The vault is full. Collect it to keep production going.</div>':''}${btn('Collect everything','collect',undefined,'good c',!vitems)}</div>`;
- t+=estCards('staff','👥 Staff',`Your household helpers. Rooms for staff: ${staffCount()}/${hm.slots}.`);
- t+=estCards('biz','💼 Businesses','Invest in ventures that pay out while you sleep.');
- t+=estCards('train','🏋️ Training Grounds','Facilities that make the whole family stronger.');
+ <div class="sm">+${hm.sta} stamina · +${hm.inv} pack space · ${hm.slots} staff room${hm.slots===1?'':'s'}${hm.vault?` · vault holds ${hm.vault} days`:''}${hm.hp?` · +${Math.round(hm.hp*100)}% max HP`:''}${hm.rested?' · you wake Blessed':''}</div>`;
+ if(nx){
+  const nl=needList(nx.need),timeOk=E.since>=nx.days;
+  t+=`<div class="sm" style="margin-top:6px"><b>Next: ${nx.n}</b> — ${nx.d}</div>${nl.map(x=>`<div class="sm ${x[0]?'up':'mut'}">${x[0]?'✅':'⬜'} ${x[1]}</div>`).join('')}<div class="sm ${timeOk?'up':'mut'}">${timeOk?'✅':'⬜'} ${nx.days} days in your current home (${E.since})</div>${btn('Build the '+nx.n,'estHome',undefined,'pri c',!(needMet(nx.need)&&timeOk)||w.gold<nx.cost,`${fmt(nx.cost)}g for materials`)}`;
+ }else t+='<div class="sm up">The finest home in Hollowmere.</div>';
+ t+='</div>';
+ if(hm.vault)t+=`<div class="card"><div class="row2"><b>🗄️ Vault</b><span class="tag">${v.n}/${hm.vault} days</span></div><div class="sm">${vitems?`💰 ${fmt(v.gold)}${Object.keys(v.pots).length?' · 🧪 '+Object.keys(v.pots).map(k=>`${v.pots[k]}× ${POTS[k].n}`).join(', '):''}${Object.keys(v.mats).length?' · 🧶 '+Object.values(v.mats).reduce((a,b)=>a+b,0)+' materials':''}${v.items.length?' · 🎁 '+v.items.length+' item'+(v.items.length>1?'s':''):''}`:'<span class="mut">Empty. Your household fills it while you sleep.</span>'}</div>${v.n>=hm.vault?'<div class="sm dn">The vault is full. Collect it to keep production going.</div>':''}${btn('Collect everything','collect',undefined,'good c',!vitems)}</div>`;
+ t+=estCards('staff','👥 Household',`Staff cannot be hired. They come when you have earned their respect, and they grow with every year they serve. Rooms: ${staffCount()}/${hm.slots}.`);
+ t+=estCards('biz','💼 Businesses','Ventures that pay out while you sleep. Build one once you have earned the right; it matures over time.');
+ t+=estCards('train','🏋️ Training Grounds','Facilities unlocked by the people you have helped. They mature the longer you use them.');
  return t+'<div style="height:8px"></div>'+btn('← Back to town','go','town','c');
 };
+
 function bountyHtml(){
  const w=S.world,h=S.hero,B=w.bounty;
  let t=`<h2>🎯 Bounty Board</h2><p class="sm mut">Rank <b>${BRANKS[brank()][0]}</b> · ${B.kills} marks. The board refreshes each morning. Notorious targets are elite versions of a creature that start turning up in their region once you accept.</p>`;
@@ -3776,7 +3819,7 @@ function main(){
  render();
 }
 if(typeof document!=='undefined'&&typeof window!=='undefined'&&!window.__TQ_TEST){main();try{if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{});}catch(e){}}
-if(typeof window!=='undefined')window.TQ={HOME,STAFF,BIZ,TRAINX,estBuy,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
+if(typeof window!=='undefined')window.TQ={HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>
 </html>
