@@ -360,16 +360,17 @@ const tomePrice=(id,lvl)=>Math.round(60*(1+SK[id].t*2.5)*Math.pow(lvl+1,1.6)*(wf
 function makeEnemy(zi,boss,forceEl){
  const z=ZONES[zi],h=S.hero;
  const last=zi===ZONES.length-1,zmax=last?9999:z.max;
- let lvl=boss?(last?Math.max(z.max,h.lvl+1):z.max):clamp(h.lvl+ri(-1,2),z.min,zmax);
+ let lvl=boss?(last?Math.max(z.max,h.lvl+1):z.max):clamp(h.lvl+bellOffset(),z.min,last?zmax:zmax+2);
  const early=!boss&&zi===0&&h.kills<4&&!forceEl;
  let tpl=boss?z.boss:pick(z.mon);
  if(early){lvl=1;tpl=h.kills===0?z.mon[1]:pick([z.mon[0],z.mon[1]]);}
  const el=!boss&&(forceEl||(h.lvl>=3&&Math.random()<.12)),tier=boss?'b':el?'e':'n';
  if(el)lvl=Math.min(lvl+1,zmax+1);
+ const packN=(!boss&&!early&&!el&&PACKS.includes(tpl.n)&&h.lvl>=4&&Math.random()<.18)?ri(3,lvl>=15?5:4):0;
  const hm={n:1,e:1.9,b:3.6}[tier]*(early?.55:1),am={n:1,e:1.3,b:1.5}[tier]*(early?.5:1);
  const base=14+13*lvl+.6*lvl*lvl;
- const hp=Math.round(base*tpl.hp*hm*dm());
- return{name:(el?pick(['Alpha','Ravenous','Ancient','Frenzied'])+' ':'')+tpl.n,base:tpl.n,lvl,tier,zi,
+ const hp=Math.round(base*tpl.hp*hm*dm()*(packN?packN*.8:1));
+ return{name:(el?pick(['Alpha','Ravenous','Ancient','Frenzied'])+' ':'')+tpl.n+(packN?' Pack':''),base:tpl.n,pack:packN,lvl,tier,zi,
   hp,max:hp,atk:Math.round((2.5+2.4*lvl+.08*lvl*lvl)*1.35*tpl.atk*am*dm()),def:Math.round((2+1.3*lvl)*tpl.def),
   pat:tpl.pat,pi:0,stun:0,poison:0,pd:0,buff:0};
 }
@@ -377,7 +378,7 @@ function danger(e){
  const p=P(),h=S.hero;
  const avg=e.pat.split('').reduce((a,t)=>a+PAT_MULT[t],0)/e.pat.length;
  const hd=Math.max(1,p.atk*(1-mit(e.def,h.lvl)))*(1+p.crit/100*(p.critdmg/100-1));
- const ed=Math.max(1,e.atk*avg*(1-mit(p.def,e.lvl)))*(1-p.dodge/100);
+ const ed=Math.max(1,e.atk*avg*(1-mit(p.def,e.lvl)))*(1-p.dodge/100)*(e.pack?.55*(e.pack+1)/2:1);
  const pd2=partyDanger(hd,ed);const r=(h.hp/pd2[1])/(e.hp/pd2[0]);
  return r>=3?['Easy','var(--good)',1]:r>=1.8?['Fair','var(--acc)',2]:r>=1.15?['Risky','#ff9a3c',3]:['Deadly','var(--bad)',4];
 }
@@ -460,11 +461,11 @@ const ACT={
   const h=S.hero;zi=+zi;if(h.sta<FIGHT_COST){note('Too tired to hunt. Sleep first.','e');S.screen='town';return;}
   const pct=S.world.map.explore[zi];
   if(pct>=10&&Math.random()<Math.min(.14,.03+pct*.0012)){huntSpecial(zi);return;}
-  S.enc={zi,boss:false,e:makeEnemy(zi,false)};S.screen='enc';
+  S.enc={zi,boss:false,e:makeEnemy(zi,false)};seeMon(S.enc.e);S.screen='enc';
  },
  boss(zi){
   const h=S.hero;zi=+zi;if(h.sta<BOSS_COST){note('Too tired for a boss. You need '+BOSS_COST+' stamina.','e');return;}
-  S.enc={zi,boss:true,e:makeEnemy(zi,true)};S.screen='enc';
+  S.enc={zi,boss:true,e:makeEnemy(zi,true)};seeMon(S.enc.e);S.screen='enc';
  },
  fight(){const en=S.enc;S.enc=null;startCombat(en.e,en.boss);},
  avoid(){S.enc=null;S.screen='hunt';},
@@ -1111,7 +1112,7 @@ function ensureState(){
  h.q=h.q||{};h.qd=h.qd||{};h.fl=h.fl||{};h.fx=h.fx||[];h.dgc=h.dgc||{};h.dgsave=h.dgsave||{};h.pz=h.pz||0;
  if(S.dg===undefined)S.dg=null;if(S.pz===undefined)S.pz=null;if(S.ev===undefined)S.ev=null;if(S.talk===undefined)S.talk=null;
  if(S.pz&&S.pz.d&&S.pz.d.show)S.pz.d.show=false;
- S.jtab=S.jtab||'quests';
+ S.jtab=S.jtab||'quests';S.cxs=S.cxs||'z0';
  if(w.anc.length&&!w.map.found.crypt)w.map.found.crypt=1;
 }
 const lvlRef=zi=>{const z=ZONES[clamp(zi==null?0:zi,0,5)];return clamp(S.hero.lvl,z.min,z.max);};
@@ -1318,6 +1319,7 @@ function enterRoom(r){
  const D=getD(S.dg.id);
  if(rel('compass'))Object.keys(DIRS).forEach(d=>{if(r.ex[d]===3){const nb=dgNb(r,d);r.ex[d]=1;nb.ex[OPP[d]]=1;}});
  if(['fight','elite','key','boss'].includes(r.t)&&!r.d&&!r.e)r.e=buildDgEnemy(D,r.t==='fight'?'n':r.t);
+ if(r.e&&!r.d)seeMon(r.e);
  if(r.t==='boss'&&!r.d)dgSay(`<i>${D.boss.intro}</i>`);
 }
 function chestLoot(D,vault,smash){
@@ -1382,7 +1384,7 @@ function huntSpecial(zi){
 /* ---------------- victory (replaces original) ---------------- */
 function victory(){
  const c=S.cb,e=c.e,h=S.hero,w=S.world,p=P();c.over=true;
- const ctx=c.ctx||{type:'hunt'},mult={n:1,e:2.2,b:6}[e.tier],lines=[],dgx=ctx.type==='dg'?1.15:1;
+ const ctx=c.ctx||{type:'hunt'},mult={n:1,e:2.2,b:6}[e.tier]*(e.pack?1+.5*(e.pack-1):1),lines=[],dgx=ctx.type==='dg'?1.15:1;
  const gold=Math.round((4+e.lvl*3.2)*mult*dgx*rnd(.8,1.2)*(1+p.goldf/100)*dr());
  const xp=Math.round((10+e.lvl*3.2)*mult*dgx*clamp(1-(h.lvl-e.lvl)*.08,.1,1.5)*(1+p.xpf/100)*catchMult()*dr());
  w.gold+=gold;lines.push(`💰 +${gold} gold`);lines.push(`✨ +${xp} XP`);
@@ -1391,7 +1393,7 @@ function victory(){
  lines.push(...guestFight(c));
  h.kills++;w.kills++;
  if((ctx.type==='hunt'||ctx.type==='ev')&&!e.dg)lines.push(...regionProgress(e));
- const z=ZONES[e.zi],ch=({n:.16,e:.6,b:1}[e.tier])*(1+p.dropf/100)*(ctx.type==='dg'?1.3:1)*dr();
+ const z=ZONES[e.zi],ch=({n:.16,e:.6,b:1}[e.tier])*(e.pack?1.4:1)*(1+p.dropf/100)*(ctx.type==='dg'?1.3:1)*dr();
  if(Math.random()<ch){
   const ws={n:[60,28,9,3],e:[30,40,22,8],b:[0,20,55,25]}[e.tier];
   const it=genItem(e.lvl+ri(0,2),rollRarity(ws,1+p.dropf/200));
@@ -1988,10 +1990,10 @@ function enemyTurn(){
  if(e.hp<=0)return;
  if(e.stun>0){e.stun--;say(`💫 ${esc(e.name)} is stunned and loses its turn!`,'g');return;}
  if(e.pat2&&!e.ph&&e.hp<=e.max*.5){e.ph=1;e.pat=e.pat2;e.pi=0;say(`💢 ${esc(e.name)} ENRAGES! Its attacks change.`,'e');}
- const tk=e.pat[e.pi%e.pat.length];e.pi++;
+ const tk=e.pat[e.pi%e.pat.length];e.pi++;trackTk(e,tk);
  if(tk==='r'){const n=Math.round(e.max*.12);e.hp=Math.min(e.max,e.hp+n);say(`💚 ${esc(e.name)} recovers ${n} HP.`);return;}
  if(tk==='b'){e.buff=3;say(`🔥 ${esc(e.name)} rages! Its attacks grow stronger.`,'e');return;}
- const mult=PAT_MULT[tk]*(e.buff>0?1.3:1)*(e.chill>0?(rel('frost')?.65:.75):1);
+ const mult=PAT_MULT[tk]*(e.buff>0?1.3:1)*(e.chill>0?(rel('frost')?.65:.75):1)*packF(e);
  if(e.buff>0)e.buff--;
  let tgt=pickTarget();
  if(tgt==='hero'){const sr=c.party.find(u=>u.id==='seraph'&&!u.down);if(sr&&Math.random()<.3){tgt=sr;say('⚜️ Seraph steps in front of you!','g');}}
@@ -2076,11 +2078,13 @@ function startCombat(e,boss,ctx){
  ['burn','bd','chill','mark','bleed','bld','pn'].forEach(k=>{if(e[k]==null)e[k]=0;});
  const party=buildParty();
  if(party.length&&!e.scaled){e.scaled=1;e.hp=e.max=Math.round(e.max*(1+.14*party.length));}
+ seeMon(e);
  S.cb={e,boss,ctx:ctx||{type:'hunt'},log:[],turn:1,focus:Math.floor(p.maxfocus/2),panel:null,hb:{atk:0,atkT:0,def:0,defT:0,poison:0,pd:0,stun:0,weak:0},pb:{dmg:0,wall:0,taunt:0,regen:null,barrier:0},party,q:{},thrall:null,lb:false,hp0:h.hp,st:{atk:0,guard:0,skill:0,crit:0,fire:0,heal:0,combo:0,spec:{},down:{}},over:false};
  say(`${e.tier==='b'?'👑':e.tier==='e'?'⭐':'⚔️'} ${esc(e.name)} (Lv ${e.lvl}) appears!`,'y');
  if(party.length)say(`Your party: ${party.map(u=>COMP[u.id].ic+' '+firstName(COMP[u.id])).join(', ')}`);
  if(e.intro)say(`<i>${e.intro}</i>`);
  S.screen='combat';
+ if(ctx&&ctx.ambush){say(`${esc(e.name)} strikes first!`,'e');enemyTurn();checkDeath();}
 }
 function partyDanger(hd,ed){const n=S.hero.party?S.hero.party.length:0;return[hd*(1+.35*n),ed*(1-.05*n)];}
 
@@ -2293,6 +2297,137 @@ Object.assign(ACT,{
   S.hireLines=[`<i>${COMP[id].n}: "You earned it. If the offer stands, I would be honored to fight at your side."</i>`,...recruit(id)];
  }
 });
+
+/* =====================================================================
+   EXPANSION G — BELL-CURVE ENCOUNTERS, PACKS, ICONS, CODEX
+   ===================================================================== */
+const PACKS=['Field Rat','Wild Boar','Timber Wolf','Cave Spider','Skeleton Soldier','Ash Hound','Cinder Imp','Harpy Raider','Frost Wolf','Rift Stalker','Gel Slime','Bramble Goblin','Drowned Ghoul','Rime Archer','Cave Bat'];
+function gauss(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function bellOffset(){
+ const h=S.hero,sd=Math.max(1.6,1+h.lvl*.09);
+ let o=Math.round(.4+gauss()*sd);
+ if(h.lvl>=4&&Math.random()<.04)o=ri(4,8);
+ return clamp(o,-6,10);
+}
+const packF=e=>e.pack?Math.max(.55,Math.ceil(e.hp/(e.max/e.pack))*.55):1;
+const packAlive=e=>e.pack?Math.max(1,Math.ceil(e.hp/(e.max/e.pack))):1;
+function seeMon(e){const w=S.world;const b=w.best[e.base]=w.best[e.base]||{k:0,zi:e.zi};b.tk=b.tk||{};b.seen=1;}
+function trackTk(e,tk){const b=S.world.best[e.base];if(b){b.tk=b.tk||{};b.tk[tk]=1;}}
+
+/* ---------- procedurally drawn monster icons ---------- */
+const ZHUE=[105,150,215,18,190,285];
+function hashStr(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return h;}
+function archOf(n){
+ n=n.toLowerCase();
+ const T=[['tree',/oak|fungal|shambler|thistle/],['eye',/eye|maw|horror|astral|archivist|footnote|page /],['dragon',/wyrm|drake|cinderwing|dragon|worm/],
+  ['spider',/spider|crawler|spinner|brood|crab|weaver/],['bird',/crow|harpy|bat\b|moth|stormcaller|talon|gale|windcaller|stormwing/],
+  ['slime',/slime|gel\b|gelatinous|mold|blob|leech/],
+  ['undead',/skeleton|ghoul|wraith|revenant|shade|ghost|hand|acolyte|bone|skull|rib cage|marrow|drowned|bishop|echo|heir|restless|grave|thrall|lurker|sylvaine|ice queen|vael|miller|apprentice bonewright|nyx|hollow god|ink|deacon|scholar/],
+  ['golem',/golem|construct|sentinel|anvil|knight|soldier|guardian|gatekeeper|ignar|forgemaster|smith|automaton|clockwork|troll|yeti|hrimgar|barrel|index|sapper|keeper|cataloguer|warden|captain|chamberlain|sentry|orrery|guard|oth\b/],
+  ['imp',/imp\b|sprite|goblin/],['beast',/rat|roach|boar|wolf|hound|stag|fox|bear|swarm|pack|stalker/]];
+ for(const [a,re] of T)if(re.test(n))return a;
+ return 'beast';
+}
+function icoBody(arch,n,c1,c2,c3){
+ const h=hashStr(n),v=h%3,eyeW='#fff',dark='#14161c';
+ switch(arch){
+  case 'slime':return `<path d="M8 48 Q6 26 32 20 Q58 26 56 48 Q52 56 32 56 Q12 56 8 48Z" fill="${c1}" stroke="${c2}" stroke-width="2"/><ellipse cx="22" cy="30" rx="6" ry="3.5" fill="#fff" opacity=".35"/><circle cx="24" cy="40" r="4.5" fill="${eyeW}"/><circle cx="40" cy="40" r="4.5" fill="${eyeW}"/><circle cx="25" cy="41" r="2" fill="${dark}"/><circle cx="41" cy="41" r="2" fill="${dark}"/><path d="M26 48 Q32 52 38 48" stroke="${c2}" stroke-width="2" fill="none"/>`;
+  case 'beast':{
+   const boar=/boar/i.test(n),rat=/rat|roach|swarm/i.test(n),wolf=/wolf|hound|stalker/i.test(n),stag=/stag/i.test(n);
+   const ears=rat?`<circle cx="13" cy="17" r="6" fill="${c2}"/><circle cx="25" cy="14" r="6" fill="${c2}"/>`:stag?`<path d="M12 18 L6 4 M12 18 L16 6 M24 16 L26 2 M24 16 L32 6" stroke="${c2}" stroke-width="3" fill="none" stroke-linecap="round"/>`:`<path d="M9 22 L12 8 L19 20Z M21 18 L28 8 L30 22Z" fill="${c2}"/>`;
+   return `<path d="M44 38 Q60 30 58 18" stroke="${c2}" stroke-width="${rat?2:4}" fill="none" stroke-linecap="round"/><ellipse cx="38" cy="40" rx="20" ry="12" fill="${c1}" stroke="${c2}" stroke-width="2"/>${ears}<circle cx="18" cy="30" r="11" fill="${c1}" stroke="${c2}" stroke-width="2"/><rect x="22" y="48" width="5" height="10" rx="2" fill="${c2}"/><rect x="34" y="48" width="5" height="10" rx="2" fill="${c2}"/><rect x="46" y="48" width="5" height="10" rx="2" fill="${c2}"/><ellipse cx="9" cy="34" rx="${rat?3:5}" ry="3.5" fill="${c3}"/><circle cx="15" cy="27" r="2.6" fill="${eyeW}"/><circle cx="14.5" cy="27.5" r="1.3" fill="${dark}"/>${boar?`<path d="M8 38 L4 46 L12 41Z" fill="#f4efe0"/>`:''}${wolf?`<path d="M8 36 L10 42 L13 36Z" fill="#fff"/>`:''}`;}
+  case 'bird':return `<path d="M32 30 L4 14 Q10 34 24 40Z" fill="${c2}" stroke="${c1}" stroke-width="1.5"/><path d="M32 30 L60 14 Q54 34 40 40Z" fill="${c2}" stroke="${c1}" stroke-width="1.5"/><ellipse cx="32" cy="38" rx="11" ry="15" fill="${c1}" stroke="${c2}" stroke-width="2"/><circle cx="32" cy="22" r="8" fill="${c1}" stroke="${c2}" stroke-width="2"/><path d="M28 24 L32 32 L36 24Z" fill="${c3}"/><circle cx="29" cy="20" r="2.2" fill="${eyeW}"/><circle cx="35" cy="20" r="2.2" fill="${eyeW}"/><circle cx="29" cy="20" r="1" fill="${dark}"/><circle cx="35" cy="20" r="1" fill="${dark}"/>`;
+  case 'spider':{let legs='';for(let i=0;i<4;i++){const y=26+i*5;legs+=`<path d="M26 ${y} L10 ${y-8+i*4} L6 ${y+8}" stroke="${c2}" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M38 ${y} L54 ${y-8+i*4} L58 ${y+8}" stroke="${c2}" stroke-width="3" fill="none" stroke-linecap="round"/>`;}
+   return `${legs}<ellipse cx="32" cy="40" rx="13" ry="12" fill="${c1}" stroke="${c2}" stroke-width="2"/><circle cx="32" cy="24" r="8" fill="${c1}" stroke="${c2}" stroke-width="2"/><circle cx="28" cy="22" r="2" fill="${c3}"/><circle cx="36" cy="22" r="2" fill="${c3}"/><circle cx="32" cy="26" r="1.5" fill="${c3}"/><circle cx="32" cy="38" r="3.5" fill="${c2}"/>`;}
+  case 'golem':return `<rect x="6" y="26" width="10" height="22" rx="3" fill="${c2}"/><rect x="48" y="26" width="10" height="22" rx="3" fill="${c2}"/><rect x="16" y="24" width="32" height="26" rx="4" fill="${c1}" stroke="${c2}" stroke-width="2"/><rect x="22" y="6" width="20" height="18" rx="3" fill="${c1}" stroke="${c2}" stroke-width="2"/><rect x="26" y="12" width="4" height="4" fill="${c3}"/><rect x="34" y="12" width="4" height="4" fill="${c3}"/><rect x="20" y="50" width="10" height="10" rx="2" fill="${c2}"/><rect x="34" y="50" width="10" height="10" rx="2" fill="${c2}"/><path d="M24 34 H40 M24 40 H40" stroke="${c2}" stroke-width="2"/>`;
+  case 'undead':{
+   const hooded=/wraith|shade|ghost|bishop|queen|vael|miller|nyx|hollow god|deacon|ink|scholar|heir|echo/i.test(n);
+   if(hooded)return `<path d="M32 4 Q10 10 10 36 L6 58 L22 52 L32 58 L42 52 L58 58 L54 36 Q54 10 32 4Z" fill="${c1}" stroke="${c2}" stroke-width="2"/><ellipse cx="32" cy="28" rx="11" ry="13" fill="${dark}"/><circle cx="27" cy="27" r="3" fill="${c3}"/><circle cx="37" cy="27" r="3" fill="${c3}"/>`;
+   return `<ellipse cx="32" cy="26" rx="17" ry="19" fill="#e9e5d6" stroke="${c2}" stroke-width="2"/><rect x="22" y="38" width="20" height="14" rx="3" fill="#e9e5d6" stroke="${c2}" stroke-width="2"/><ellipse cx="25" cy="26" rx="5" ry="6" fill="${dark}"/><ellipse cx="39" cy="26" rx="5" ry="6" fill="${dark}"/><circle cx="25" cy="27" r="1.6" fill="${c3}"/><circle cx="39" cy="27" r="1.6" fill="${c3}"/><path d="M30 34 L32 38 L34 34Z" fill="${dark}"/><path d="M26 44 V52 M32 44 V52 M38 44 V52" stroke="${c2}" stroke-width="2"/>`;}
+  case 'imp':return `<path d="M16 22 L12 6 L26 16Z M48 22 L52 6 L38 16Z" fill="${c2}"/><path d="M46 52 Q62 50 58 36" stroke="${c2}" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="32" cy="48" rx="12" ry="10" fill="${c1}" stroke="${c2}" stroke-width="2"/><circle cx="32" cy="30" r="15" fill="${c1}" stroke="${c2}" stroke-width="2"/><circle cx="26" cy="28" r="3.4" fill="${c3}"/><circle cx="38" cy="28" r="3.4" fill="${c3}"/><circle cx="26" cy="28" r="1.4" fill="${dark}"/><circle cx="38" cy="28" r="1.4" fill="${dark}"/><path d="M24 37 Q32 44 40 37" stroke="${dark}" stroke-width="2.4" fill="#fff"/>`;
+  case 'dragon':return `<path d="M32 28 L2 10 Q10 38 26 42Z" fill="${c2}" stroke="${c1}" stroke-width="1.5"/><path d="M32 28 L62 10 Q54 38 38 42Z" fill="${c2}" stroke="${c1}" stroke-width="1.5"/><path d="M26 52 Q32 62 38 52 Q44 40 38 30 L26 30 Q20 40 26 52Z" fill="${c1}" stroke="${c2}" stroke-width="2"/><path d="M24 30 L22 12 L32 24 L42 12 L40 30 L32 36Z" fill="${c1}" stroke="${c2}" stroke-width="2"/><circle cx="27" cy="27" r="2.2" fill="${c3}"/><circle cx="37" cy="27" r="2.2" fill="${c3}"/><path d="M30 34 L32 38 L34 34Z" fill="${dark}"/>`;
+  case 'eye':return `<path d="M14 50 Q10 60 16 62 M26 54 Q24 62 28 63 M38 54 Q40 62 36 63 M50 50 Q54 60 48 62" stroke="${c2}" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="32" cy="30" r="24" fill="#f1eee6" stroke="${c2}" stroke-width="2"/><path d="M12 22 Q20 28 22 30 M52 22 Q44 28 42 30 M14 42 Q22 36 24 34" stroke="#c46" stroke-width="1" fill="none"/><circle cx="32" cy="30" r="12" fill="${c3}"/><circle cx="32" cy="30" r="6" fill="${dark}"/><circle cx="29" cy="27" r="2" fill="#fff"/>`;
+  case 'tree':return `<circle cx="18" cy="18" r="12" fill="${c3}"/><circle cx="46" cy="18" r="12" fill="${c3}"/><circle cx="32" cy="12" r="12" fill="${c1}"/><rect x="20" y="20" width="24" height="38" rx="8" fill="${c2}"/><path d="M20 40 L8 50 M44 40 L56 50" stroke="${c2}" stroke-width="4" stroke-linecap="round"/><circle cx="27" cy="32" r="3" fill="${c3}"/><circle cx="37" cy="32" r="3" fill="${c3}"/><path d="M27 42 Q32 47 37 42" stroke="${dark}" stroke-width="2.4" fill="none"/>`;
+  default:return `<rect x="22" y="8" width="20" height="18" rx="8" fill="${c3}" stroke="${c2}" stroke-width="2"/><rect x="18" y="26" width="28" height="24" rx="5" fill="${c1}" stroke="${c2}" stroke-width="2"/><rect x="12" y="28" width="8" height="18" rx="3" fill="${c2}"/><rect x="44" y="28" width="8" height="18" rx="3" fill="${c2}"/><circle cx="28" cy="17" r="2" fill="${dark}"/><circle cx="36" cy="17" r="2" fill="${dark}"/>`;
+ }
+}
+function monIcon(e,size){
+ size=size||48;const n=e.name||e.base||'?',tier=e.tier||'n',zi=e.zi||0;
+ const base=(e.base||n).replace(/^(Alpha|Ravenous|Ancient|Frenzied|Elder|Dread|Savage|Abyssal|Echo of) /,'').replace(/ Pack$/,'');
+ const h=hashStr(base),hue=(ZHUE[clamp(zi,0,5)]+(h%50)-25+360)%360;
+ const c1=`hsl(${hue},48%,52%)`,c2=`hsl(${hue},45%,26%)`,c3=`hsl(${(hue+45)%360},78%,64%)`;
+ const arch=archOf(base);
+ let body=icoBody(arch,base,c1,c2,c3);
+ const ring=tier==='e'?`<circle cx="32" cy="32" r="30" fill="none" stroke="#f0b94a" stroke-width="2.5" stroke-dasharray="4 3"/>`:tier==='b'?`<circle cx="32" cy="32" r="30" fill="none" stroke="#ff6b6b" stroke-width="3"/>`:'';
+ const crown=tier==='b'?`<path d="M20 8 L24 16 L32 6 L40 16 L44 8 L44 20 L20 20Z" fill="#f0b94a" stroke="#8a6d1e" stroke-width="1.5"/>`:'';
+ return `<svg class="mico" width="${size}" height="${size}" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="31" fill="hsl(${hue},30%,16%)"/>${body}${ring}${crown}</svg>`;
+}
+function packIcons(e,size){
+ const n=packAlive(e);let s='';
+ for(let i=0;i<n;i++)s+=`<span style="margin-left:${i?-size*.45:0}px;display:inline-block">${monIcon({name:e.base,base:e.base,tier:'n',zi:e.zi},size)}</span>`;
+ return `<span style="display:inline-flex;align-items:center">${s}</span>`;
+}
+const eIcon=(e,size)=>e.pack?packIcons(e,size*.8):monIcon(e,size);
+
+/* ---------- encyclopedia ---------- */
+const TOKINFO={a:['Strikes','A plain attack.'],h:['Heavy blow','Winds up first. Guard when you see the warning.'],p:['Poison','Poisons you. Bring a cleanse or healing.'],s:['Stunning blow','Can stun you. Kill it fast or stun it first.'],b:['Rage','Works itself up and hits harder.'],r:['Regenerates','Heals itself. Burst it down.'],d:['Life drain','Heals by hurting you.'],c:['Curse','Weakens your attacks.'],x:['Flurry','A rapid multi-strike.']};
+function codexEntries(){
+ const out=[];
+ ZONES.forEach((z,i)=>{
+  z.mon.forEach(m=>out.push({name:m.n,zi:i,sec:'z'+i,lvl:[z.min,z.max],tpl:m,tier:'n',pack:PACKS.includes(m.n),src:z.n}));
+  out.push({name:z.boss.n,zi:i,sec:'z'+i,lvl:[z.max,z.max],tpl:z.boss,tier:'b',src:z.n+' (boss)'});
+ });
+ DUNGEONS.filter(d=>!d.dyn).forEach(D=>{
+  D.mon.forEach(a=>out.push({name:a[0],zi:D.zi,sec:'dg',lvl:[D.lvl,D.lvl+2],tpl:{n:a[0],hp:a[1],atk:a[2],def:a[3],pat:a[4]},tier:'n',dg:D,src:D.n}));
+  out.push({name:D.kw,zi:D.zi,sec:'dg',lvl:[D.lvl+2,D.lvl+2],tpl:{n:D.kw,hp:D.mon[0][1],atk:D.mon[0][2],def:D.mon[0][3],pat:D.mon[0][4]},tier:'e',dg:D,src:D.n+' (key guardian)'});
+  out.push({name:D.boss.n,zi:D.zi,sec:'dg',lvl:[D.lvl+3,D.lvl+3],tpl:D.boss,tier:'b',dg:D,src:D.n+' (boss)'});
+ });
+ return out;
+}
+function entryEnemy(en,L){
+ const t=en.tpl,tier=en.tier;
+ const hm=en.dg?({n:1,e:1.5,b:2.1}[tier]*en.dg.diff*1.05):({n:1,e:1.9,b:3.6}[tier]),am=en.dg?({n:1,e:1.15,b:1.25}[tier]*en.dg.diff*1.05):({n:1,e:1.3,b:1.5}[tier]);
+ const base=14+13*L+.6*L*L,hp=Math.round(base*t.hp*hm*dm());
+ return{name:en.name,base:en.name,lvl:L,tier,zi:en.zi,hp,max:hp,atk:Math.round((2.5+2.4*L+.08*L*L)*1.35*t.atk*am*dm()),def:Math.round((2+1.3*L)*t.def),pat:t.pat,pack:0};
+}
+Object.assign(ACT,{
+ cxsec(x){S.cxs=x;S.cxo=null;},
+ cxopen(n){S.cxo=S.cxo===n?null:n;},
+ avoid(){
+  const en=S.enc,e=en.e,h=S.hero,p=P();
+  const ch=en.boss?100:clamp(78+(h.lvl-e.lvl)*4+(p.st.agi-10)*.3,30,95);
+  if(Math.random()*100<ch){S.enc=null;S.screen='hunt';note(`You slip away from ${e.name}.`);}
+  else{S.enc=null;note(`${e.name} spots you!`,'e');startCombat(e,en.boss,{type:'hunt',ambush:true});}
+ }
+});
+function avoidChance(e){const h=S.hero,p=P();return clamp(Math.round(78+(h.lvl-e.lvl)*4+(p.st.agi-10)*.3),30,95);}
+function codexView(){
+ const w=S.world,h=S.hero,sec=S.cxs||'z0',all=codexEntries();
+ const known=en=>!!(w.best[en.name]&&(w.best[en.name].seen||w.best[en.name].k>0));
+ const cnt=all.filter(known).length;
+ let t=`<p class="mut sm">Everything you've met in the wild. Encounter levels follow a <b>bell curve</b> around your level: usually close, but now and then something far stronger wanders in. Check the danger rating, and <b>run</b> when it's red. Discovered ${cnt}/${all.length}. Every 10 kills of a species grants +1% damage against it (max +25%), shared across your bloodline.</p>`;
+ const secs=ZONES.map((z,i)=>['z'+i,z.ic+' '+z.n.split(' ')[0]]).concat([['dg','🏰 Dungeons']]);
+ t+=`<div class="grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:8px">${secs.map(x=>btn(x[1],'cxsec',x[0],sec===x[0]?'pri c':'c')).join('')}</div>`;
+ const list=all.filter(en=>en.sec===sec);
+ let lastSrc='';
+ list.forEach(en=>{
+  const k=known(en),b=w.best[en.name]||{k:0},open=S.cxo===en.name;
+  if(en.sec==='dg'){const g=en.src.replace(/ \(.*\)$/,'');if(g!==lastSrc){t+=`<h3>${en.dg.ic} ${g} <span class="mut sm">Lv ${en.dg.lvl}+</span></h3>`;lastSrc=g;}}
+  const lo=entryEnemy(en,en.lvl[0]),hi=entryEnemy(en,en.lvl[1]),dlo=danger(lo),dhi=danger(hi);
+  t+=`<div class="item" data-a="cxopen" data-p="${esc(en.name)}" style="${k?'':'opacity:.55'}"><div style="display:flex;gap:10px;align-items:center">${k?monIcon({name:en.name,tier:en.tier,zi:en.zi},44):`<div class="mico" style="width:44px;height:44px;border-radius:50%;background:#0b0e14;display:flex;align-items:center;justify-content:center">❔</div>`}<div><div class="n">${k?esc(en.name):'Unknown creature'} ${en.tier==='e'?'⭐':''}${en.tier==='b'?'👑':''}</div><div class="s">${k?`Lv ${en.lvl[0]}${en.lvl[1]!==en.lvl[0]?'–'+en.lvl[1]:''} · for you: <span style="color:${dlo[1]}">${dlo[0]}</span>${dhi[0]!==dlo[0]?' → <span style="color:'+dhi[1]+'">'+dhi[0]+'</span>':''}`:esc(en.src)}</div></div></div><div class="s">${k?`×${b.k}`:''}</div></div>`;
+  if(open&&k){
+   const toks=[...new Set(en.tpl.pat.split(''))],seenT=b.tk||{},unk=toks.filter(x=>!seenT[x]).length;
+   const rec=en.lvl[1]+2;
+   t+=`<div class="card sm" style="margin-top:-2px"><div class="row2"><b>${esc(en.name)}</b><span class="tag">${esc(en.src)}</span></div>
+   <p>📈 <b>Native to Lv ${en.lvl[0]}${en.lvl[1]!==en.lvl[0]?'–'+en.lvl[1]:''}.</b> Comfortable from about <b>Lv ${rec}</b>. At your level (${h.lvl}) it ranges from <b style="color:${dlo[1]}">${dlo[0]}</b> to <b style="color:${dhi[1]}">${dhi[0]}</b>.</p>
+   <p>${danger(entryEnemy(en,Math.max(1,h.lvl+5)))[2]>=3?'⚠ If one turns up 5 levels above you, expect trouble. Run.':'Even a few levels above you, this one is manageable.'}</p>
+   ${en.pack?'<p>🐾 <b>Often found in packs.</b> A pack hits harder at full strength and weakens as you thin it.</p>':''}
+   <p><b>Known moves:</b></p>${toks.filter(x=>seenT[x]).map(x=>`<div>• <b>${TOKINFO[x][0]}</b> — ${TOKINFO[x][1]}</div>`).join('')||'<div class="mut">None observed yet.</div>'}${unk?`<div class="mut">• ??? (${unk} more to discover)</div>`:''}
+   <p class="mut">Kills: ${b.k} · damage bonus +${Math.round(bestBonus(en.name)*100)}%${UNDEAD.test(en.name)?' · weak to holy damage':''}</p></div>`;
+  }
+ });
+ return t;
+}
 
 /* ---------------- rendering ---------------- */
 const bar=(cur,max,cls)=>`<div class="bar ${cls}"><i style="width:${clamp(cur/max*100,0,100)}%"></i></div>`;
@@ -2634,7 +2769,7 @@ VIEWS.dungeon=function(){
  const retreat=dg.hist.length?btn('↩️ Retreat','dgRetreat',undefined,'c'):'';
  if(['fight','elite','key','boss'].includes(r.t)&&!r.d&&r.e){
   const e=r.e,dn=danger(e);
-  t+=`<h3>${r.t==='boss'?'👑':r.t==='key'?'🗝️':r.t==='elite'?'💀':'⚔️'} ${esc(e.name)} <span class="tag">Lv ${e.lvl}</span></h3><p>Danger: <b style="color:${dn[1]}">${dn[0]}</b> <span class="skull">${'💀'.repeat(dn[2])}</span></p>${r.t==='key'?'<p class="mut sm">It guards the key to the boss door.</p>':''}${r.t==='boss'?'<p class="dn sm">No escape once the fight begins.</p>':''}<div class="grid">${btn('⚔️ Fight','dgFight',undefined,'pri c')}${retreat||'<div></div>'}</div>`;
+  t+=`<h3 style="display:flex;align-items:center;gap:8px">${monIcon(e,52)} <span>${esc(e.name)}</span> <span class="tag">Lv ${e.lvl}</span></h3><p>Danger: <b style="color:${dn[1]}">${dn[0]}</b> <span class="skull">${'💀'.repeat(dn[2])}</span></p>${r.t==='key'?'<p class="mut sm">It guards the key to the boss door.</p>':''}${r.t==='boss'?'<p class="dn sm">No escape once the fight begins.</p>':''}<div class="grid">${btn('⚔️ Fight','dgFight',undefined,'pri c')}${retreat||'<div></div>'}</div>`;
  }else if((r.t==='treasure'||r.t==='vault')&&!r.d){
   t+=`<h3>${r.t==='vault'?'💎 Secret Vault':'📦 Chest'}</h3><p class="mut sm">${hasSpecial('delver')?(r.tr?'🏮 Your lantern shows: trapped.':'🏮 Your lantern shows: safe.'):'It might be trapped. It might bite.'}</p>
   ${btn('Open it','dgChest','open','pri')}<div style="height:6px"></div><div class="grid">${btn('Pick the lock','dgChest','pick','c',false,`AGI ${chkChance('agi',1,D.lvl)}%`)}${btn('Smash it','dgChest','smash','c',false,`STR ${chkChance('str',0,D.lvl)}% · worse loot`)}</div>`;
@@ -2701,7 +2836,7 @@ VIEWS.talk=function(){
 };
 VIEWS.journal=function(){
  const h=S.hero,w=S.world,tab=S.jtab;
- const tabs=[['quests','📜 Quests'],['places','🗺️ Places'],['best','📕 Bestiary'],['perks','🏘️ Perks & Lore']];
+ const tabs=[['quests','📜 Quests'],['places','🗺️ Places'],['best','📕 Codex'],['perks','🏘️ Perks & Lore']];
  let t=`<h1>📖 Journal</h1><div class="grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:8px">${tabs.map(x=>btn(x[1],'jtab',x[0],tab===x[0]?'pri c':'c')).join('')}</div>`;
  if(tab==='quests'){
   const act=Object.keys(h.q);
@@ -2715,9 +2850,7 @@ VIEWS.journal=function(){
   });
   if(w.anc.length)t+=`<div class="card sm">⚰️ <b>Crypt of Heirs</b> · ${w.anc.filter(a=>w.map.flags['echo'+a.gen]).length}/${w.anc.length} echoes at rest</div>`;
  }else if(tab==='best'){
-  const e=Object.keys(w.best).sort((a,b)=>w.best[b].k-w.best[a].k);
-  t+=`<p class="mut sm">Every 10 kills of a species grants +1% damage against it (max +25%). Bestiary entries are shared across your whole bloodline.</p>`;
-  t+=e.length?e.map(n=>`<div class="item" style="cursor:default"><div><div class="n">${esc(n)}</div><div class="s">${ZONES[w.best[n].zi].n}</div></div><div class="s">×${w.best[n].k} · +${Math.round(bestBonus(n)*100)}%</div></div>`).join(''):'<p class="mut">No creatures catalogued yet.</p>';
+  t+=codexView();
  }else{
   const pk=Object.keys(PERKS).filter(k=>wf(k));
   t+='<h2>Town perks</h2>'+(pk.length?pk.map(k=>`<div class="card sm"><b>${PERKS[k][0]}</b><br><span class="mut">${PERKS[k][1]}</span></div>`).join(''):'<p class="mut sm">Do favors for the townsfolk to earn lasting perks. They carry over to your heirs.</p>');
@@ -2794,8 +2927,8 @@ function render(){
 VIEWS.combat=function(){
  const c=S.cb,e=c.e,h=S.hero,p=P(),tk=e.pat[e.pi%e.pat.length],it=INTENT[tk];
  const st=`${e.poison?`☠${e.pn||1} `:''}${e.burn?'🔥 ':''}${e.bleed?'🩸 ':''}${e.chill?'❄️ ':''}${e.mark?'🎯 ':''}${e.stun?'💫 ':''}${e.buff?'😡 ':''}`;
- let t=`<div class="card"><div class="row2"><b>${e.tier==='b'?'👑 ':e.tier==='e'?'⭐ ':''}${esc(e.name)}</b><span class="tag">Lv ${e.lvl}</span></div>
- ${bar(e.hp,e.max,'ehp')}<div class="row2 sm mut"><span>${e.hp}/${e.max}</span><span>${st}</span></div>
+ let t=`<div class="card"><div class="row2"><div style="display:flex;align-items:center;gap:8px">${eIcon(e,e.pack?44:56)}<b>${e.tier==='b'?'👑 ':e.tier==='e'?'⭐ ':''}${esc(e.name)}</b></div><span class="tag">Lv ${e.lvl}</span></div>
+ ${e.pack?`<div class="sm mut">Pack: ${packAlive(e)}/${e.pack} remaining · deals ×${packF(e).toFixed(2)} damage</div>`:''}${bar(e.hp,e.max,'ehp')}<div class="row2 sm mut"><span>${e.hp}/${e.max}</span><span>${st}</span></div>
  <div class="sm" style="margin-top:4px">${it[1]} <span class="${tk==='h'||tk==='s'||tk==='x'?'dn':'mut'}">Next: ${it[0]}</span></div></div>`;
  t+=`<div class="card"><div class="row2"><b>${esc(h.name)}</b><span class="sm mut">Turn ${c.turn}</span></div>
  ${bar(h.hp,p.maxhp,'hp')}<div class="row2 sm"><span>❤ ${h.hp}/${p.maxhp}${c.pb.barrier>0?` 🛡️${c.pb.barrier}`:''}</span><span class="mut">${c.hb.poison?'☠ ':''}${c.hb.atk?'📣 ':''}${c.hb.def?'🪨 ':''}${c.hb.stun?'💫 ':''}${c.hb.weak?'🌑 ':''}${c.pb.dmg>0?'🎺 ':''}${c.pb.wall>0?'🛡️ ':''}</span></div>
@@ -2934,6 +3067,18 @@ VIEWS.convo=function(){
  return t;
 };
 
+VIEWS.enc=function(){
+ const en=S.enc,e=en.e,d=danger(e),h=S.hero,ood=e.lvl>=h.lvl+4&&!en.boss;
+ return `<h1>${e.tier==='b'?'👑':e.tier==='e'?'⭐':'❓'} Encounter</h1>
+ <div class="card"><div style="display:flex;gap:12px;align-items:center">${eIcon(e,64)}<div style="flex:1"><div class="row2"><b style="font-size:18px">${esc(e.name)}</b><span class="tag">Lv ${e.lvl}</span></div>
+ <p class="mut sm" style="margin:2px 0">${h.kills<4&&en.zi===0?'Something small and harmless-looking. A good first fight.':e.pack?`A pack of ${e.pack}. Fewer of them means less damage, so thin the pack.`:e.tier==='b'?'A boss.':e.tier==='e'?'An elite — tougher, but better loot.':'A common creature.'}</p></div></div>
+ <p>Danger: <b style="color:${d[1]}">${d[0]}</b> <span class="skull">${'💀'.repeat(d[2])}</span> <span class="mut sm">(you are Lv ${h.lvl})</span></p>
+ ${ood?`<p class="dn sm">⚠ <b>Out of depth.</b> This one is far stronger than usual for your level. Running is the smart move.</p>`:''}
+ <p class="mut sm">Your HP: ${h.hp}/${P().maxhp} · Enemy HP ≈ ${e.hp}</p></div>
+ ${d[2]>=3&&!ood?`<p class="dn sm">⚠ Death is permanent. Heal first or avoid.</p>`:''}
+ <div class="grid">${btn('⚔️ Fight','fight',undefined,'pri c',h.sta<(en.boss?BOSS_COST:FIGHT_COST),`${en.boss?BOSS_COST:FIGHT_COST}⚡`)}${btn('🏃 Slip away','avoid',undefined,'c',false,en.boss?'free':`${avoidChance(e)}% · fail = it strikes first`)}</div>`;
+};
+
 function main(){
  S=load();
  if(S&&S.world&&S.hero){S.modal=null;ensureState();} else S=null;
@@ -2954,7 +3099,7 @@ function main(){
  render();
 }
 if(typeof document!=='undefined'&&typeof window!=='undefined'&&!window.__TQ_TEST){main();}
-if(typeof window!=='undefined')window.TQ={meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
+if(typeof window!=='undefined')window.TQ={monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>
 </html>
