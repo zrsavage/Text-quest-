@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Hollowmere: Bloodline</title>
 <style>
-:root{--bg:#0f1218;--panel:#1a1f2a;--panel2:#232a38;--line:#2d3649;--tx:#e8ecf3;--mut:#8b95a7;--acc:#f0b94a;--good:#5fd38d;--bad:#ff6b6b;--blue:#4aa3ff;--purple:#c077ff}
+:root{--warn:#ff9a3c;--bg:#0f1218;--panel:#1a1f2a;--panel2:#232a38;--line:#2d3649;--tx:#e8ecf3;--mut:#8b95a7;--acc:#f0b94a;--good:#5fd38d;--bad:#ff6b6b;--blue:#4aa3ff;--purple:#c077ff}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--tx);font:1rem/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;touch-action:manipulation}
 body{-webkit-user-select:none;user-select:none}
@@ -97,6 +97,19 @@ textarea{height:110px;font-size:0.75rem}
 .pc{display:inline-block;min-width:40px;padding:8px 5px;border-radius:7px;background:#f4efe3;color:#15151c;font-weight:700;text-align:center;margin:2px;font-size:1rem;box-shadow:0 1px 0 #0006}.pc.r{color:#c0332b}.pc.back{background:#3a4a8a;color:#9bb0ff}.pcb{background:none;border:2px solid transparent;border-radius:10px;padding:2px;margin:2px;color:inherit;font-family:inherit}.pcb.hold{border-color:var(--acc)}.roul{display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:50%;font-size:1.6rem;font-weight:800;color:#fff;border:3px solid #0006}.roul.red{background:#b3261e}.roul.black{background:#1c1c24}.roul.green{background:#1f7a3a}
 body.calm #nav button span{display:none}
 body.calm .btn small,body.calm .tag{letter-spacing:.01em}
+body.hc{--bg:#000;--panel:#10131a;--panel2:#181c26;--line:#5a6a88;--tx:#fff;--mut:#c4cddd}
+body.cb{--good:#4aa3ff;--bad:#ff4fd8;--warn:#f0c94a;--acc:#ffd24a}
+body.big .btn{min-height:60px;padding-top:14px;padding-bottom:14px}body.big .item{padding:16px 12px}body.big .hb,body.big .chipb{min-height:46px}
+.foldh{display:flex;justify-content:space-between;width:100%;background:none;border:0;border-bottom:1px solid var(--line);color:var(--acc);font-family:inherit;font-size:1rem;font-weight:700;padding:12px 2px;margin:14px 0 8px;text-align:left}
+.foldh span:last-child{color:var(--mut);font-weight:400;font-size:.8125rem}
+.nextline{border-left:3px solid var(--acc);padding:6px 10px;margin:4px 0 10px;color:var(--tx);font-size:.9375rem}.nextline b{color:var(--acc);margin-right:6px}
+.intent{border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin-top:8px;font-size:.9375rem}.intent.warn{border-color:var(--warn);background:#2a1e0c}
+@keyframes hitf{0%{box-shadow:0 0 0 2px var(--bad)}100%{box-shadow:0 0 0 0 transparent}}
+.hitflash,.hitflash2{animation:hitf .6s ease-out}
+@media (prefers-reduced-motion:reduce){.hitflash,.hitflash2{animation:none}}
+.chips2{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}.chipb{background:var(--panel2);color:var(--tx);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-family:inherit;font-size:.8125rem;min-height:34px}.chipb.on{border-color:var(--acc);color:var(--acc)}
+.savewarn{position:sticky;top:0;z-index:50;background:#6b1d1d;color:#fff;padding:8px 12px;font-size:.875rem;text-align:center}
+.log .e{color:#ff9a8a}.log .g{color:#7be3a4}.log .y{color:var(--acc)}
 </style>
 </head>
 <body>
@@ -410,7 +423,7 @@ function danger(e){
  const hd=Math.max(1,p.atk*(1-mit(e.def,h.lvl)))*(1+p.crit/100*(p.critdmg/100-1));
  const ed=Math.max(1,e.atk*avg*(1-mit(p.def,e.lvl)))*(1-p.dodge/100)*(e.pack?.55*(e.pack+1)/2:1);
  const pd2=partyDanger(hd,ed);const r=(h.hp/pd2[1])/(e.hp/pd2[0]);
- return r>=3?['Easy','var(--good)',1]:r>=1.8?['Fair','var(--acc)',2]:r>=1.15?['Risky','#ff9a3c',3]:['Deadly','var(--bad)',4];
+ return r>=3?['Easy','var(--good)',1]:r>=1.8?['Fair','var(--acc)',2]:r>=1.15?['Risky','var(--warn)',3]:['Deadly','var(--bad)',4];
 }
 
 /* ---------------- combat ---------------- */
@@ -511,7 +524,7 @@ const ACT={
   const gain=(.35+Math.random()*.15)*catchMult()*(wf('brannock')?1.15:1)*(1+bgv('train')+.15*estLv('train',k))/(1+h.st[k]/30);
   const before=Math.floor(h.st[k]);h.st[k]+=gain;
   const x=addXP(Math.max(1,Math.round(2*catchMult())));
-  note(`${TRAIN[k][0]}: ${STAT_NAME[k]} +${gain.toFixed(2)}${Math.floor(h.st[k])>before?' — a whole point!':''}`,Math.floor(h.st[k])>before?'g':'');
+  note(`${TRAIN[k][0]}: ${STAT_NAME[k]} +${gain.toFixed(2)}${Math.floor(h.st[k])>before?' — a whole point.':''}`,Math.floor(h.st[k])>before?'g':'');
   x.forEach(t=>note(t,'y'));
   if(h.tc===(S.world.gen>1?HEIR_TC:UNLOCK_TC))note('You finally feel strong enough to leave the gates and face the weakest creatures outside.','y');
  },
@@ -809,7 +822,7 @@ const DGE=[ // dungeon NPC events
   {l:'Offer a prayer',o:{t:'The ghost nods and fades. You feel lighter.',fx:'bless'}},
   {l:'Ignore it',o:{t:'It follows you for a moment, then fades.'}}]},
  {id:'gobmerch',t:'A hunched merchant sits on a crate of suspicious goods. "Cheap! Very cheap!"',ch:[
-  {l:'Buy a mystery box',cost:{gold:2},o:[[.5,{t:'Inside: something decent.',item:1}],[.35,{t:'Inside: something good!',item:2}],[.15,{t:'Inside: a rat. Just a rat.',xp:.1}]]},
+  {l:'Buy a mystery box',cost:{gold:2},o:[[.5,{t:'Inside: something decent.',item:1}],[.35,{t:'Inside: something worth keeping.',item:2}],[.15,{t:'Inside: a rat. Just a rat.',xp:.1}]]},
   {l:'Buy a potion',cost:{gold:1},o:{t:'He hands over a sloshing vial.',pot:'hp1'}},
   {l:'Haggle (INT)',chk:{s:'int',d:1},ok:{t:'He sighs and gives you a fair deal.',gold:.5,pot:'hp1'},no:{t:'He takes offense and chases you off.'}}]},
  {id:'knight',t:'A wounded knight leans against the wall, armor cracked. "Not many come this deep."',ch:[
@@ -859,7 +872,7 @@ const EVD=[
   {l:'Pray quietly',o:[[.5,{t:'A small peace settles over you.',hp:.15,xp:.2}],[.5,{t:'Nothing, but it felt right.'}]]},
   {l:'Loot the offerings',o:[[.6,{t:'A few coins.',gold:.4}],[.4,{t:'The shrine seems to scowl.',fx:'curse'}]]}]},
  {id:'cache',z:[0,5],t:'Disturbed earth near a gnarled root. Something was buried here.',ch:[
-  {l:'Dig (STR)',chk:{s:'str',d:0},ok:{t:'A small strongbox!',item:2,gold:.6},no:{t:'Just worms and old bones. You pull a muscle.',hp:-.06}},
+  {l:'Dig (STR)',chk:{s:'str',d:0},ok:{t:'A small strongbox.',item:2,gold:.6},no:{t:'Just worms and old bones. You pull a muscle.',hp:-.06}},
   {l:'Search around (AGI)',chk:{s:'agi',d:-1},ok:{t:'You spot a hidden lid.',item:1,gold:.5},no:{t:'You find nothing.'}}]},
  {id:'ambush',z:[0,5],t:'Three shadows step out of the brush. "Your gold, or your life."',ch:[
   {l:'Pay them off',cost:{gold:1},o:{t:'They grin and vanish.'}},
@@ -886,7 +899,7 @@ const EVD=[
   {l:'Take the catch',o:{t:'You pocket a decent pelt.',mat:3}},
   {l:'Set the poacher\'s trap for him',o:{t:'You wait. The poacher returns... and regrets it.',gold:.8,xp:.3}}]},
  {id:'merchant',z:[0,5],t:'A cloaked peddler beckons from the shade. "Special goods for special people."',ch:[
-  {l:'Buy a mystery box',cost:{gold:2},o:[[.45,{t:'A decent haul.',item:1}],[.4,{t:'Something good!',item:2}],[.15,{t:'A very good find.',item:3}]]},
+  {l:'Buy a mystery box',cost:{gold:2},o:[[.45,{t:'A decent haul.',item:1}],[.4,{t:'Something of value.',item:2}],[.15,{t:'A very good find.',item:3}]]},
   {l:'Buy a potion',cost:{gold:.8},o:{t:'You take the vial.',pot:'hp1'}},
   {l:'Rob him (AGI)',chk:{s:'agi',d:2},ok:{t:'You vanish with his goods.',item:2},no:{t:'He is faster than he looks.',hp:-.15,gold:-.5}}]},
  {id:'battlefield',z:[1,5],t:'Rusted weapons poke from the earth, the remains of an old battle.',ch:[
@@ -914,7 +927,7 @@ const EVD=[
   {l:'Follow them',o:{t:'You find what made them.',fight:'e'}},
   {l:'Avoid them',o:{t:'You steer wide of the trail.'}}]},
  {id:'sinkhole',z:[0,5],t:'The ground has collapsed, leaving a sinkhole with a glint of metal below.',ch:[
-  {l:'Climb down (AGI)',chk:{s:'agi',d:1},ok:{t:'A small buried cache!',item:2,gold:.6},no:{t:'You fall the last stretch.',hp:-.14}},
+  {l:'Climb down (AGI)',chk:{s:'agi',d:1},ok:{t:'A small buried cache.',item:2,gold:.6},no:{t:'You fall the last stretch.',hp:-.14}},
   {l:'Peer from above',o:{t:'Too risky. You move on.'}}]},
  {id:'duelist',z:[0,5],t:'A lone swordsman salutes you. "I have been waiting for a worthy opponent."',ch:[
   {l:'Accept the duel',o:{t:'Steel meets steel.',fight:'e'}},
@@ -1184,7 +1197,7 @@ const bestBonus=n=>{const b=S.world.best[n];return b?Math.min(.25,Math.floor(b.k
 function learnTome(zi){
  const h=S.hero,pool=Object.keys(SK).filter(k=>SK[k].t<=Math.max(zi,0)+1&&(h.skills[k]||0)<SKMAX&&!skCapped(h.skills[k]||0));
  if(!pool.length)return null;const k=pick(pool);h.skills[k]=(h.skills[k]||0)+1;
- return `📖 <b>${SK[k].n}</b> ${h.skills[k]===1?'learned!':'upgraded to Lv '+h.skills[k]+'!'}`;
+ return `📖 <b>${SK[k].n}</b> ${h.skills[k]===1?'learned.':'upgraded to Lv '+h.skills[k]+'!'}`;
 }
 /* generic outcome applier used by events, dungeons and quests */
 function applyOut(o,zi,qid){
@@ -1480,7 +1493,7 @@ function victory(){
  });
  qEvent('kill',e);if(e.tier==='b'&&!e.dg)qEvent('boss',{zi:e.zi});
  lines.push(...bountyKill(e));
- if(h.active.some(ct=>ct.type!=='gather'&&contractDone(ct)))lines.push('📜 A contract is ready to turn in!');
+ if(h.active.some(ct=>ct.type!=='gather'&&contractDone(ct)))lines.push('📜 A contract is ready to turn in.');
  if(!w.guild&&w.kills>=GUILD_KILLS){w.guild=true;refreshBoard();lines.push(`🏮 <b>The ${GUILD} has noticed you!</b> Visit them in town.`);note(`The ${GUILD} now accepts you.`,'y');}
  if(e.tier==='b')lines.push(`👑 ${esc(e.name)} has fallen!`);
  fxTick();
@@ -1788,7 +1801,7 @@ Object.keys(ALLY_OF).forEach(k=>DG[k].ally=ALLY_OF[k]);
 function addRelic(id){
  const w=S.world;if(w.relics[id])return [`🔮 You find another ${RELICS[id].n}, but you already have one. (+1 stat point)`].concat((S.hero.pts+=1,[]));
  w.relics[id]=1;note(`Relic found: ${RELICS[id].n}!`,'y');
- return [`⚡ <b>POWER SPIKE!</b> ${RELICS[id].ic} <b>${RELICS[id].n}</b> — ${RELICS[id].d}`];
+ return [`⚡ <b>Power gained.</b> ${RELICS[id].ic} <b>${RELICS[id].n}</b> — ${RELICS[id].d}`];
 }
 
 /* ----- companions ----- */
@@ -1913,10 +1926,10 @@ function comboMult(e,tags,crit){
  const sy=synFx(),pr=rel('prism')?2:1;let m=1;const msgs=[];
  if(e.mark>0)m*=1+.25*pr;
  if(e.stun>0)m*=1.3;
- if(tags.includes('fire')&&e.burn>0){m*=1+.6*pr;e.burn=0;msgs.push('🔥 CONFLAGRATION! The flames flare!');}
- if(crit&&e.chill>0){m*=1+.5*pr;e.chill=0;msgs.push('❄️ SHATTER! The frozen foe cracks!');}
- if(tags.includes('poison')&&e.poison>0&&(e.pn||0)>=3){m*=1+.4*pr;e.pn=1;msgs.push('☠️ TOXIC BURST!');}
- if(tags.includes('holy')&&UNDEAD.test(e.name)){m*=1.35;msgs.push('✨ The unholy burns!');}
+ if(tags.includes('fire')&&e.burn>0){m*=1+.6*pr;e.burn=0;msgs.push('🔥 Conflagration. The flames flare.');}
+ if(crit&&e.chill>0){m*=1+.5*pr;e.chill=0;msgs.push('❄️ Shatter. The frozen foe cracks.');}
+ if(tags.includes('poison')&&e.poison>0&&(e.pn||0)>=3){m*=1+.4*pr;e.pn=1;msgs.push('☠️ Toxic burst.');}
+ if(tags.includes('holy')&&UNDEAD.test(e.name)){m*=1.35;msgs.push('✨ The unholy burns.');}
  if(!tags.includes('bleed')&&tags.includes('phys')&&e.bleed>0)m*=1.1;
  if(sy.tagx)tags.forEach(t=>{if(sy.tagx[t])m*=1+sy.tagx[t];});
  if(rel('emberheart')&&tags.includes('fire'))m*=1.1;
@@ -1967,7 +1980,7 @@ function companionAct(u){
    case 'ember':allyHit(u,2.2,{tags:['fire','magic'],label:'engulfs'});applyBurn(e,Math.round(u.atk*.5),4);say(`🔥 ${esc(e.name)} is burning fiercely!`,'g');break;
    case 'rime':allyHit(u,1.5,{tags:['ice','magic'],label:'freezes'});if(tryStun(e,1))say(`💫 ${esc(e.name)} is frozen solid!`,'g');applyChill(e,3);break;
    case 'venn':{const n=healHero(Math.round(p.maxhp*.22*(1+(sy.healx||0))));c.hb.atk=Math.max(c.hb.atk,.2);c.hb.atkT=3;say(`⚗️ You recover ${n} HP and your attacks quicken.`,'g');break;}
-   case 'orla':c.pb.dmg=3;say('🎺 The whole party fights with fury!','g');break;
+   case 'orla':c.pb.dmg=3;say('🎺 The whole party fights with fury.','g');break;
    case 'gorm':u.rage=3;allyHit(u,1.8,{label:'cleaves'});break;
    case 'nyx':e.mark=3;allyHit(u,.8,{crit:30,tags:['phys','shadow'],label:'strikes'});say(`🎯 ${esc(e.name)} is marked!`,'g');break;
    case 'seraph':c.pb.barrier=Math.round(p.maxhp*.2);say(`🛡️ A holy barrier shields you (${c.pb.barrier}).`,'g');break;
@@ -2052,7 +2065,7 @@ function strike(mult,o){
 const skillCost=id=>Math.max(1,SK[id].c-(rel('mirror')?1:0)-(skRank((S.hero.skills||{})[id]||0)>=1?1:0));
 function castSkill(id,free){
  const c=S.cb,h=S.hero,p=P(),e=c.e,l=h.skills[id],s=SK[id];
- if(!free){if(c.focus<skillCost(id)){say('Not enough Focus!','e');return false;}c.focus-=skillCost(id);}
+ if(!free){if(c.focus<skillCost(id)){say('Not enough Focus.','e');return false;}c.focus-=skillCost(id);}
  const T=SKT[id];c.curSk=id;
  switch(id){
   case 'power':strike(1.6+.15*(l-1),{label:'💪 Power Strike hits',tags:T});break;
@@ -2100,8 +2113,8 @@ function enemyTurn(){
   if(c.pb.counter>0){const ref=Math.round(taken*.6);e.hp=Math.max(0,e.hp-ref);say(`🥋 The counter stance reflects ${ref} damage!`,'g');}
   if(tk==='d'){const n=Math.round(d*.6);e.hp=Math.min(e.max,e.hp+n);say(`🩸 ${esc(e.name)} drains ${n} HP from you.`,'e');}
   if(tk==='c'){c.hb.weak=3;say('🌑 A curse saps your strength!','e');}
-  if(tk==='p'){c.hb.poison=3;c.hb.pd=Math.max(1,Math.round(e.atk*.12));say('☠ You are poisoned!','e');}
-  if(tk==='s'&&Math.random()<.4){c.hb.stun=1;say('💫 You are stunned!','e');}
+  if(tk==='p'){c.hb.poison=3;c.hb.pd=Math.max(1,Math.round(e.atk*.12));say('☠ You are poisoned.','e');}
+  if(tk==='s'&&Math.random()<.4){c.hb.stun=1;say('💫 You are stunned.','e');}
  }else{
   const u=tgt,D=COMP[u.id];
   let d=e.atk*mult*rnd(.9,1.1)*(1-mit(u.def,e.lvl))*wallm*(u.rage>0?1.3:1);
@@ -2142,7 +2155,7 @@ function playerAct(type,arg){
  const c=S.cb;if(!c||c.over)return;
  const h=S.hero,p=P(),e=c.e;
  c.guard=false;
- if(c.hb.stun>0){c.hb.stun=0;say('💫 You are stunned and cannot act!','e');return afterPlayer();}
+ if(c.hb.stun>0){c.hb.stun=0;say('💫 You are stunned and cannot act.','e');return afterPlayer();}
  if(type==='atk'){strike(c.rh?1.25:1);c.rh=false;c.st.atk++;c.focus=Math.min(p.maxfocus,c.focus+1);}
  else if(type==='guard'){c.guard=true;c.st.guard++;c.focus=Math.min(p.maxfocus,c.focus+3);say('🛡️ You brace yourself.');}
  else if(type==='skill'){
@@ -2157,10 +2170,10 @@ function playerAct(type,arg){
   say(`🧪 ${po.n}: +${n} HP${free?' (not consumed!)':''}.`,'g');
  }
  else if(type==='flee'){
-  if(c.boss){say('You cannot flee from a boss!','e');return;}
+  if(c.boss){say('You cannot flee from a boss.','e');return;}
   const ch=hasSpecial('runner')?100:clamp(45+p.st.agi*.6-e.lvl*.4,15,90);
   if(Math.random()*100<ch){c.over=true;fleeOK();return;}
-  say('You fail to get away!','e');
+  say('You fail to get away.','e');
  }
  afterPlayer();
 }
@@ -6598,7 +6611,8 @@ function calmText(s){
   .replace(/💰️?\s*/g,'Gold ')
   .replace(/Gold\s+([\d,.kK]+)\s+gold/g,'$1 gold')
   .replace(/❤️?\s*/g,'HP ')
-  .replace(/🔷️?\s*/g,'Focus ')
+  .replace(/🔷[\uFE0F]?\s*(?=Focus)/g,'')
+  .replace(/🔷[\uFE0F]?\s*/g,'Focus ')
   .replace(/(\d[\d,.]*)\s*🕯️?/g,'$1 wicks')
   .replace(/🕯️?\s*(\d[\d,.]*)/g,'Wicks $1')
   .replace(/✅️?/g,'✓').replace(/⬜️?/g,'○')
@@ -6615,6 +6629,7 @@ function calmIcons(){
   nodes.forEach(n=>{
    const v=n.nodeValue;if(!v||!/[^\x00- ]/.test(v))return;
    const p=n.parentElement;if(!p||p.closest('.keep,.pc,.pcb,.roul,svg,textarea,input,script,style'))return;
+   if(/💰[\uFE0F]?\s*$/.test(v)){const nb=n.nextSibling,nn=nb&&nb.nextSibling;if(nn&&nn.nodeType===3&&/^\s*(g|gold)\b/.test(nn.nodeValue)){n.nodeValue=v.replace(/💰[\uFE0F]?\s*$/,'');return;}}
    let t=calmText(v);if(t===v)return;
    if(!n.previousSibling||n.previousSibling.nodeType!==3)t=t.replace(/^\s+/,'');
    n.nodeValue=t;
@@ -6654,6 +6669,196 @@ VIEWS.journal=function(){
  return t;
 };
 
+/* =====================================================================
+   Quality pass: folds, next-step line, confirmations, combat clarity,
+   pack tools, save safety, accessibility, playtest report
+   ===================================================================== */
+// ---------- folding sections ----------
+const foldOpen=id=>{const f=(S.fold=S.fold||{});return f[id]!==false;};
+function foldHtml(id,title,inner){
+ const o=foldOpen(id);
+ return `<button class="foldh" data-a="fold" data-p="${id}"><span>${title}</span><span>${o?'Hide':'Show'}</span></button>${o?inner:''}`;
+}
+ACT.fold=function(id){S.fold=S.fold||{};S.fold[id]=!foldOpen(id);};
+// ---------- a quiet "next" line ----------
+function nextStep(){
+ const h=S.hero,w=S.world,p=P();
+ if(w.gen===1&&!h.qd.firstchores){const n=h.chores==null?0:h.chores;return n>=3?'Mira is waiting. Report to her from the Training Yard.':'Haul Mira\'s flour sacks in the Training Yard.';}
+ if(h.hp<p.maxhp*.45&&h.lvl<8)return 'You are hurt. Sleep, and keep training while you mend.';
+ if(!huntUnlocked())return `Train ${Math.max(0,(w.gen>1?HEIR_TC:UNLOCK_TC)-h.tc)} more sessions before the gates open.`;
+ if(h.odd)return `Finish your odd job: ${ODD_BY[h.odd.id].n}.`;
+ if(h.pts>0)return 'You have unspent attribute points (Hero tab).';
+ if(Object.keys(h.skills).some(k=>skCapped(h.skills[k])&&h.sx&&h.sx[k]>=skNeed(h.skills[k])))return 'A skill is ready for a breakthrough (Hero tab).';
+ if(h.active&&h.active.some(c=>c.type!=='gather'&&contractDone(c)))return 'A guild contract is ready to hand in.';
+ if(Object.keys(h.q).some(id=>stepDone(id)))return 'A quest is ready to report.';
+ if(!w.guild&&w.kills<GUILD_KILLS)return `${GUILD_KILLS-w.kills} more kills before the guild notices you.`;
+ return null;
+}
+const _townFold=VIEWS.town;
+VIEWS.town=function(){
+ let t=_townFold();
+ if(S.trip||!atHome())return t;
+ const nx=nextStep();
+ if(nx)t=t.replace('</h1>','</h1><div class="nextline"><b>Next</b> '+nx+'</div>');
+ t=t.replace(/<div class="grid">((?:(?!<\/div>)[\s\S])*?data-p="train"(?:(?!<\/div>)[\s\S])*?)<\/div>/,(m,i)=>foldHtml('places','Places',`<div class="grid">${i}</div>`));
+ t=t.replace(/<h2>About town<\/h2><div class="grid">([\s\S]*?)<\/div>/,(m,i)=>foldHtml('svc','Services',`<div class="grid">${i}</div>`));
+ t=t.replace(/<h2>Recent events<\/h2>([\s\S]*)$/,(m,i)=>foldHtml('log','Recent events',i));
+ return t;
+};
+// ---------- confirmations ----------
+const _sellC=ACT.sell;
+Object.assign(ACT,{
+ sell(id){
+  const f=findItem(id);if(!f)return;
+  if(f.it.lock){note('That item is locked. Unlock it first.','e');return;}
+  if(f.it.rar>=2){S.sellId=id;S.modal={t:'confirm',a:'sellYes',q:`Sell ${esc(f.it.name)} (${RAR[f.it.rar].n}) for ${sellVal(f.it)}g?`};return;}
+  _sellC(id);
+ },
+ sellYes(){S.modal=null;const id=S.sellId;S.sellId=null;if(id!=null)_sellC(id);},
+ sellAll(r){
+  r=+r;const L=S.world.inv.filter(it=>it.rar<=r&&it.rar<3&&!it.lock);
+  if(!L.length){note('Nothing to sell.');return;}
+  if(r>=1&&!S.sellOk){S.sellR=r;S.modal={t:'confirm',a:'sellAllYes',q:`Sell ${L.length} item${L.length>1?'s':''} up to Uncommon for ${L.reduce((a,i)=>a+sellVal(i),0)}g? Locked items are kept.`};return;}
+  ACT.sellAllDo(r);
+ },
+ sellAllYes(){S.modal=null;ACT.sellAllDo(S.sellR||1);},
+ sellAllDo(r){let g=0,n=0;S.world.inv=S.world.inv.filter(it=>{if(it.rar<=r&&it.rar<3&&!it.lock){g+=sellVal(it);n++;return false;}return true;});S.world.gold+=g;note(`Sold ${n} item${n===1?'':'s'} for ${g}g.`);},
+ lock(id){const f=findItem(id);if(!f)return;f.it.lock=!f.it.lock;}
+});
+const _fightC=ACT.fight;
+ACT.fight=function(){
+ const en=S.enc;
+ if(en&&!en.deadlyOk&&danger(en.e)[2]>=4){S.modal={t:'confirm',a:'fightYes',q:'This looks <b>deadly</b>. Death is permanent. Fight anyway?'};return;}
+ _fightC();
+};
+ACT.fightYes=function(){S.modal=null;if(S.enc){S.enc.deadlyOk=true;ACT.fight();}};
+const _potC=ACT.pot;
+ACT.pot=function(id){if(S.hero.hp>=P().maxhp){note('You are already at full health.','e');return;}_potC(id);};
+// ---------- combat readability ----------
+const _logHtmlR=logHtml;
+logHtml=function(arr,n){if(S&&S.cb&&arr===S.cb.log)n=S.fullLog?40:7;return _logHtmlR(arr,n);};
+ACT.fullLog=function(){S.fullLog=!S.fullLog;};
+const _combatR=VIEWS.combat;
+VIEWS.combat=function(){
+ const c=S.cb;let t=_combatR();
+ const h=S.hero,e=c.e;
+ // intent as a proper warning when it matters
+ t=t.replace(/<div class="sm" style="margin-top:4px">([^<]*)<span class="(dn|mut)">Next: ([^<]*)<\/span><\/div>/,(m,ic,cls,txt)=>`<div class="intent ${cls==='dn'?'warn':''}"><b>Enemy intends</b> ${txt}${cls==='dn'?'. Guarding halves it.':''}</div>`);
+ // flash on change
+ const dh=c.prevHp!=null&&h.hp<c.prevHp,de=c.prevEhp!=null&&e.hp<c.prevEhp;
+ if(dh)t=t.replace('<div class="card"><div class="row2"><b>'+esc(h.name),'<div class="card hitflash"><div class="row2"><b>'+esc(h.name));
+ if(de)t=t.replace('<div class="card"><div class="row2"><div style="display:flex','<div class="card hitflash2"><div class="row2"><div style="display:flex');
+ c.prevHp=h.hp;c.prevEhp=e.hp;
+ return t.replace(/(<div class="log" id="log">[\s\S]*?<\/div>)(<div style="margin-top:10px">)/,`$1<div style="text-align:right"><button class="hb mutb" data-a="fullLog">${S.fullLog?'Show less':'Show full log'}</button></div>$2`);
+};
+// ---------- pack tools ----------
+const PSORT=[['rarity','Rarity'],['level','Level'],['slot','Slot'],['value','Value'],['upgrade','Upgrade']];
+ACT.psort=function(k){S.psort=k;};
+ACT.pslot=function(k){S.pslot=k;};
+function upDiff(it){const cur=S.hero.equip[it.slot];return score(it)-score(cur);}
+const _packR=VIEWS.pack;
+VIEWS.pack=function(){
+ let t=_packR();const h=S.hero,w=S.world;
+ const i=t.indexOf('<h2>Inventory</h2>');if(i<0)return t;
+ let head=t.slice(0,i);
+ const sort=S.psort||'rarity',sl=S.pslot||'all';
+ let inv=w.inv.slice();
+ if(sl!=='all')inv=inv.filter(x=>x.slot===sl);
+ const cmp={rarity:(a,b)=>b.rar-a.rar||b.il-a.il,level:(a,b)=>b.il-a.il,slot:(a,b)=>SLOTS.indexOf(a.slot)-SLOTS.indexOf(b.slot)||b.il-a.il,value:(a,b)=>b.val-a.val,upgrade:(a,b)=>upDiff(b)-upDiff(a)}[sort];
+ inv.sort(cmp);
+ let s=`<h2>Inventory</h2><div class="grid">${btn('Sell Commons','sellAll',0,'c')}${btn('Sell up to Uncommon','sellAll',1,'c')}</div>
+ <div class="sm mut" style="margin-top:8px">Sort</div><div class="chips2">${PSORT.map(x=>`<button class="chipb ${sort===x[0]?'on':''}" data-a="psort" data-p="${x[0]}">${x[1]}</button>`).join('')}</div>
+ <div class="sm mut" style="margin-top:6px">Show</div><div class="chips2">${['all'].concat(SLOTS).map(x=>`<button class="chipb ${sl===x?'on':''}" data-a="pslot" data-p="${x}">${x==='all'?'All':cap1(x)}</button>`).join('')}</div>`;
+ s+=inv.length?inv.map(it=>{
+  const d=upDiff(it),can=h.lvl>=it.req,a=Object.keys(it.st).slice(0,4).map(k=>statLine(k,it.st[k])).join(' · ');
+  const mark=!can?`<span class="dn">Req Lv ${it.req}</span>`:h.equip[it.slot]?(d>0?`<span class="up">+${d} better</span>`:`<span class="mut">${d} vs worn</span>`):'<span class="up">empty slot</span>';
+  return `<div class="item" data-a="open" data-p="${it.id}"><div><div class="n">${SLOT_ICON[it.slot]} ${rarName(it)}${it.lock?' <span class="tag">locked</span>':''}</div><div class="s">Lv ${it.il} · ${a}</div></div><div class="s" style="text-align:right">${mark}<br><button class="hb mutb" data-a="lock" data-p="${it.id}">${it.lock?'Unlock':'Lock'}</button></div></div>`;
+ }).join(''):'<p class="mut sm">Nothing here.</p>';
+ return head+s;
+};
+// ---------- saving that does not lose your story ----------
+const BAK_KEY='tq_bloodline_bak';
+function save(){
+ try{
+  const s=JSON.stringify(S),prev=localStorage.getItem(SAVE_KEY);
+  localStorage.setItem(SAVE_KEY,s);
+  const now=Date.now();
+  if(prev&&now-(window.__bakT||0)>90000){try{localStorage.setItem(BAK_KEY,prev);localStorage.setItem(BAK_KEY+'_t',String(now));window.__bakT=now;}catch(e){}}
+  window.__saveFail=false;
+ }catch(e){window.__saveFail=true;}
+}
+function loadBackup(){try{const t=localStorage.getItem(BAK_KEY);const o=t?JSON.parse(t):null;return o&&o.world&&o.hero?o:null;}catch(e){return null;}}
+TA.tbak=function(){const o=loadBackup();if(!o)return;window.__save=o;window.__ui={step:'title',pg:0};};
+const _tvTitleS=TV.title;
+TV.title=function(){
+ let t=_tvTitleS();const b=loadBackup();
+ if(b){const m=Math.max(1,Math.round((Date.now()-(+localStorage.getItem(BAK_KEY+'_t')||Date.now()))/60000));t=t.replace(btn('Settings','tgo','settings','c'),btn('Settings','tgo','settings','c')+'<div style="height:8px"></div>'+btn('Restore last backup','tbak',undefined,'c',false,`${esc(b.hero.name)} ${esc(b.hero.fam)} · Lv ${b.hero.lvl} · about ${m} min before your last save`));}
+ return t;
+};
+const _renderSave=render;
+render=function(){
+ _renderSave();
+ if(typeof document==='undefined')return;
+ const el=document.getElementById('savewarn');
+ if(window.__saveFail){if(!el){const d=document.createElement('div');d.id='savewarn';d.className='savewarn';d.textContent='Your progress could not be saved on this device. Open Menu and use Export to keep a copy.';document.body.prepend(d);}}
+ else if(el)el.remove();
+ applyA11y();
+};
+// ---------- accessibility ----------
+function applyA11y(){
+ if(typeof document==='undefined')return;
+ const b=document.body.classList;
+ b.toggle('hc',!!PRE.hc);b.toggle('cb',!!PRE.cb);b.toggle('big',!!PRE.big);
+}
+ACT.a11y=function(k){PRE[k]=!PRE[k];prefSave();};
+TA.ta11y=function(k){PRE[k]=!PRE[k];prefSave();};
+const A11Y=[['hc','High contrast'],['cb','Color-blind safe colors'],['big','Large tap targets']];
+const _setA=settingsHtml;
+settingsHtml=function(){return _setA()+A11Y.map(a=>`<div style="height:8px"></div>${btn(a[1]+': '+(PRE[a[0]]?'ON':'OFF'),'a11y',a[0],'')}`).join('');};
+const _tvSetA=TV.settings;
+TV.settings=function(){const t=_tvSetA();const add=A11Y.map(a=>btn(a[1]+': '+(PRE[a[0]]?'ON':'OFF'),'ta11y',a[0],'')+'<div style="height:8px"></div>').join('');return t.replace(btn('Back','tgo','title','c'),add+btn('Back','tgo','title','c'));};
+// ---------- playtest report ----------
+function tele(){const h=S.hero;return h.tele=h.tele||{fights:0,wins:0,flees:0,lossSum:0,gold:0,ms:{},kills:0,deadly:0};}
+const _startCombatT=startCombat;
+startCombat=function(e,boss,ctx){_startCombatT(e,boss,ctx);if(S.cb)S.cb.t0hp=S.hero.hp;};
+const _victoryT=victory;
+victory=function(){
+ const c=S.cb,h=S.hero,w=S.world,g0=w.gold,hp0=c?c.t0hp:null,mx=P().maxhp;
+ _victoryT();
+ const t=tele();t.fights++;t.wins++;if(hp0!=null)t.lossSum+=Math.max(0,(hp0-h.hp)/mx);t.gold+=Math.max(0,w.gold-g0);
+};
+const _fleeT=fleeOK;
+fleeOK=function(){const c=S.cb;_fleeT();const t=tele();t.fights++;t.flees++;if(c&&c.t0hp!=null)t.lossSum+=Math.max(0,(c.t0hp-S.hero.hp)/P().maxhp);};
+const _dieT=die;
+die=function(cause){const h=S.hero,w=S.world,t=tele();t.fights++;
+ w.hist=w.hist||[];w.hist.push({gen:h.gen,name:h.name,lvl:h.lvl,day:h.day,cause,fights:t.fights,wins:t.wins,flees:t.flees,loss:t.fights?+(t.lossSum/t.fights).toFixed(2):0,gold:t.gold,ms:Object.assign({},t.ms),tc:h.tc,kills:h.kills,contracts:h.contracts});
+ _dieT(cause);};
+const _sleepT=sleepDay;
+sleepDay=function(){
+ _sleepT();
+ try{const h=S.hero,t=tele(),m=t.ms,d=h.day;
+  if(h.tc>=UNLOCK_TC&&!m.gates)m.gates=d;if(h.kills>=1&&!m.firstKill)m.firstKill=d;if(S.world.guild&&!m.guild)m.guild=d;
+  [3,5,8,10,15,20,30].forEach(L=>{if(h.lvl>=L&&!m['lvl'+L])m['lvl'+L]=d;});
+  if(h.contracts>=1&&!m.contract)m.contract=d;if(Object.keys(S.world.map.cleared).length&&!m.dungeon)m.dungeon=d;
+  if(Object.keys(h.skills).some(k=>skRank(h.skills[k])>=1)&&!m.brk)m.brk=d;
+ }catch(e){}
+};
+function reportText(){
+ const h=S.hero,w=S.world,t=tele(),L=[];
+ L.push(`Hollowmere playtest report`);
+ L.push(`Current: gen ${w.gen}, ${h.name} ${h.fam}, level ${h.lvl}, day ${h.day}, age ${heroAge()}, training sessions ${h.tc}, kills ${h.kills}, contracts ${h.contracts}`);
+ L.push(`Fights ${t.fights} (wins ${t.wins}, escapes ${t.flees}), average health lost per fight ${t.fights?Math.round(t.lossSum/t.fights*100):0}%, gold from fights ${Math.round(t.gold)}, per day ${h.day>1?Math.round(t.gold/(h.day-1)):0}`);
+ L.push('Milestone days: '+(Object.keys(t.ms).length?Object.keys(t.ms).map(k=>k+' '+t.ms[k]).join(', '):'none yet'));
+ (w.hist||[]).forEach(x=>L.push(`Past hero gen ${x.gen} ${x.name}: died day ${x.day} at level ${x.lvl} (${x.cause}); fights ${x.fights}, avg loss ${Math.round(x.loss*100)}%, milestones ${Object.keys(x.ms).map(k=>k+' '+x.ms[k]).join(', ')||'none'}`));
+ return L.join('\n');
+}
+VIEWS.report=function(){
+ return `<h1>Playtest report</h1><p class="mut sm">Numbers from your current and past heroes. Copy this and send it along with your notes.</p><div class="card sm"><textarea readonly onclick="this.select()" style="height:260px">${esc(reportText())}</textarea></div>`+btn('← Back','go','menu','c');
+};
+const _menuR=VIEWS.menu;
+VIEWS.menu=function(){return _menuR()+`<h2>Playtesting</h2>${btn('View playtest report','go','report','c',false,'deaths, health lost per fight, pacing')}`;};
+NAV[5][3].push('report');
+
 /* ----- a slow start: bodies heal over days, not overnight, until you are properly seasoned ----- */
 const nightRecovery=()=>{const L=S.hero.lvl;return L>=8?1:Math.min(1,.38+.09*(L-1));};
 const _sleepDayRec=sleepDay;
@@ -6677,7 +6882,7 @@ Object.assign(ACT,{
   ['str','vit'].forEach(k=>{
    const gain=.8*(.35+Math.random()*.15)*catchMult()*(wf('brannock')?1.15:1)*(1+bgv('train'))/(1+h.st[k]/30);
    const before=Math.floor(h.st[k]);h.st[k]+=gain;
-   lines.push(`${STAT_NAME[k]} +${gain.toFixed(2)}${Math.floor(h.st[k])>before?' — a whole point!':''}`);
+   lines.push(`${STAT_NAME[k]} +${gain.toFixed(2)}${Math.floor(h.st[k])>before?' — a whole point.':''}`);
   });
   note(`🥖 You haul a load of flour sacks (${h.chores}/3). ${lines.join(', ')}.`,'g');
   addXP(Math.max(1,Math.round(2*catchMult()))).forEach(t=>note(t,'y'));
@@ -6694,7 +6899,7 @@ VIEWS.train=function(){
  return s.replace(/(<\/p>)/,'$1'+card);
 };
 if(typeof document!=='undefined'&&typeof window!=='undefined'&&!window.__TQ_TEST){try{render();}catch(e){}}
-if(typeof window!=='undefined')window.TQ={skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
+if(typeof window!=='undefined')window.TQ={nextStep,foldHtml,upDiff,reportText,tele,loadBackup,skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>
 </html>

@@ -105,3 +105,13 @@ Skills now climb in ranks: **Drizzle** (Lv 1-2), **Gale** (3-4), **Squall** (5-6
 ## A calmer look
 
 Emoji decoration is off by default. The game now shows plain text labels (Gold, Stamina, HP, Focus, wicks) and keeps pictures only where they carry information: the monster portraits, playing cards, dice, slot reels and the roulette wheel. You can switch to the old look with **Icons: Playful** in the Menu or on the title screen's Settings. The Training Yard now has a Back to town button, and dropping an odd job moved to the Journal with a confirmation.
+
+## Quality pass
+- **Calmer Town**: a one-line "Next" hint; Places, Services and Recent events fold away.
+- **Confirmations**: rare gear sales, bulk sells, Deadly fights and wasted potions ask first; locked items can't be sold.
+- **Combat clarity**: the enemy's intent is shown before it acts, the log shows the last 7 lines (toggle for full), and hits flash.
+- **Pack tools**: sort chips, slot filter, "better than equipped" marker, lock favourites.
+- **Save safety**: rolling backup, "Restore last backup" on the title screen, warning if a write fails.
+- **Accessibility** (Menu → Settings): high contrast, colour-blind safe danger colours, large tap targets.
+- **Playtest report**: Menu → "View playtest report" shows balance telemetry you can copy and share.
+- **Voice**: system text uses a calm, consistent tone; humour stays in NPC dialogue.
