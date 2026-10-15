@@ -127,3 +127,8 @@ Emoji decoration is off by default. The game now shows plain text labels (Gold, 
 
 ## Skills log
 Hero tab → Skills log. Abilities improve by use (success teaches more than failure) and appear the first time you try them: **Haggling** (sell goods: odds, tries per day, better offers), **Carousing** (buying a round: cheaper, more reliable, sometimes a second rumour; Listen in counts too), **Bluffing** (tolls and rough quarters). Trading is shown read-only. New skills register in `LSK` and call `lsUse(id, success)`.
+
+## Hereditary growth and market keepers
+- Heirs keep 15% of each life skill's experience from their predecessor (shown in the Skills log). It compounds a little each generation.
+- Every town's Market has a keeper to chat with (once a day) and ask for odd jobs. Friendship tiers give 3/6/10% cheaper buying and better selling prices; regulars get a good piece set aside at each restock. Friendships belong to the family and carry across heirs.
+- Old stale shop stock (e.g. Plate on a Lv 3 hero) is refreshed when the Market opens.
