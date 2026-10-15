@@ -145,3 +145,6 @@ Hero tab → Skills log. Abilities improve by use (success teaches more than fai
 ## Swap list and more portraits
 - Tapping something you wear now lists every item in your pack for that slot, with green up / red down arrows for each stat gained or lost, a rating change, and an Equip button.
 - 16 more portraits (highroad, sea, two mine monsters). Remaining without portraits: mine/frontier/rough/far monsters and the dungeon bosses (see `/tmp/ml2.js` approach: list names in HAB templates and DG bosses not in `MONPIC`).
+
+## Loot order
+Loot lines now read item/material, then its description, then the next item. Art queue (portraits): monsters, companions, locals, stronger adventurers and employees, then item and material pictures.

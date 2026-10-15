@@ -4369,16 +4369,22 @@ function newMatLines(){
 }
 const _addItemK=addItem;
 addItem=function(it){const r=_addItemK(it);(window.__pend=window.__pend||[]).push(it);return r;};
-function flushQuips(){
- const L=(window.__pend||[]).filter(it=>it&&it.slot&&!it.lore).map(it=>`<span class="mut"><i>“${itemQuip(it)}”</i></span>`);
- window.__pend=[];return L.concat(newMatLines());
+function flushQuips(lines){
+ const P=(window.__pend||[]).filter(it=>it&&it.slot&&!it.lore),out=[],left=P.map(it=>({n:esc(it.name),h:`<span class="mut"><i>“${itemQuip(it)}”</i></span>`}));
+ newMatLines().forEach(h=>{const m=/📝 ([^:<]+):/.exec(h);left.push({n:m?m[1]:'\u0000',h});});
+ (lines||[]).forEach(l=>{
+  out.push(l);
+  if(typeof l==='string')for(let i=0;i<left.length;i++){if(left[i].n&&l.includes(left[i].n)){out.push(left[i].h);left.splice(i,1);break;}}
+ });
+ left.forEach(x=>out.push(x.h));
+ window.__pend=[];return out;
 }
 const _victoryQ=victory;
-victory=function(){window.__pend=[];_victoryQ();if(S.res&&S.res.lines)S.res.lines.push(...flushQuips());};
+victory=function(){window.__pend=[];_victoryQ();if(S.res&&S.res.lines)S.res.lines=flushQuips(S.res.lines);};
 const _chestLootQ=chestLoot;
-chestLoot=function(...a){window.__pend=[];const L=_chestLootQ(...a);return L.concat(flushQuips());};
+chestLoot=function(...a){window.__pend=[];const L=_chestLootQ(...a);return flushQuips(L);};
 const _applyOutQ=applyOut;
-applyOut=function(o,zi,qid){window.__pend=[];const out=_applyOutQ(o,zi,qid);return out.concat(flushQuips());};
+applyOut=function(o,zi,qid){window.__pend=[];const out=_applyOutQ(o,zi,qid);return flushQuips(out);};
 const _renderQ=render;
 render=function(){_renderQ();window.__pend=[];};
 
