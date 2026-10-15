@@ -137,3 +137,7 @@ Hero tab → Skills log. Abilities improve by use (success teaches more than fai
 - **Gear rarity**: Uncommon needs item level 3+, Rare 16+, Epic 36+; below that, rarer rolls are demoted. Every drop also has a level-scaled chance to drop one more step (about 55% at Lv 5, 15% from Lv 56). Shops sell mostly Common, at most one Uncommon early (two later), and Rare only from friendly keepers at Lv 16+. Tier names (Iron, Steel...) start at item levels 9, 20, 34, 48, 64.
 - **Levels**: XP needed per level is 2.3x what it was. 
 - **Rank**: Rank (Unranked, Copper, Bronze, Silver, Gold, Mythril, Adamant) is shown beside the name at the top, in the Hero tab and in the guild. Rank caps level: 10 / 20 / 30 / 40 / 52 / 66 / 99. Contracts raise your rank; rank also unlocks regions, stamina, party size and more.
+
+## Monster portraits and reward pop-ups
+- 78 monster portraits (every zone monster and boss) were generated with Hugging Face's Z-Image Turbo, 16 per sprite sheet, then cropped to 96px WebP (`mon/`) and embedded in `index.html` as `MONPIC`. Elites get a gold frame, bosses a red one. Monsters without a portrait (habitat monsters) still use the drawn icons. To add more: generate a 4x4 sheet, slice it, and add entries to `MONPIC`.
+- Notice Board and odd-job rewards now pop up in the middle of the screen and fade after about 1.5 seconds (tap to dismiss). The inline result card remains.
