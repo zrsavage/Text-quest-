@@ -227,7 +227,7 @@ function newWorld(){return{gold:0,inv:[],mats:{},pots:{hp1:0,hp2:0,hp3:0},gen:1,
 function newHero(name,fam,gen){
  const w=S.world,fl=(w.map&&w.map.flags)||{},f=gen>1?Math.min(.5,.1*(gen-1)+.02*Object.keys(fl).filter(k=>k.startsWith('echo')).length+(fl.ancestors?.05:0)):0,st={};
  STATS.forEach(k=>st[k]=3+Math.floor((w.legacy[k]||0)*f));
- return{name,fam,gen,lvl:1,xp:0,st,pts:0,hp:1,day:1,sta:1,tc:0,kills:0,contracts:0,equip:{},skills:{},active:[],q:{},qd:{},fl:{},fx:[],dgc:{},dgsave:{},pz:0,party:[],rel:[]};
+ return{name,fam,gen,lvl:1,xp:0,st,pts:0,hp:1,day:1,sta:1,tc:0,kills:0,contracts:0,equip:{},skills:{},active:[],q:{},qd:{},fl:{},fx:[],dgc:{},dgsave:{},pz:0,party:[],rel:[],su:{},sx:{}};
 }
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}}
 function load(){try{const t=localStorage.getItem(SAVE_KEY);return t?JSON.parse(t):null;}catch(e){return null;}}
@@ -458,6 +458,8 @@ const ACT={
  sleep(){sleepDay();playSleep(S.screen==='death');},
  zone(zi){
   const h=S.hero;zi=+zi;if(h.sta<FIGHT_COST){note('Too tired to hunt. Sleep first.','e');S.screen='town';return;}
+  const pct=S.world.map.explore[zi];
+  if(pct>=10&&Math.random()<Math.min(.14,.03+pct*.0012)){huntSpecial(zi);return;}
   S.enc={zi,boss:false,e:makeEnemy(zi,false)};S.screen='enc';
  },
  boss(zi){
@@ -508,7 +510,7 @@ const ACT={
  },
  shopView(i){S.modal={t:'shop',i:+i};},
  buyTome(id){
-  const w=S.world,h=S.hero,l=h.skills[id]||0;if(l>=5)return;const pr=tomePrice(id,l);
+  const w=S.world,h=S.hero,l=h.skills[id]||0;if(l>=SKMAX)return;const pr=tomePrice(id,l);
   if(w.gold<pr){note('Not enough gold.','e');return;}w.gold-=pr;h.skills[id]=l+1;note(`${SK[id].n} ${l?'upgraded to Lv '+(l+1):'learned'}.`,'g');
  },
  // guild
@@ -1105,7 +1107,7 @@ function ensureState(){
  w.map=w.map||{};w.map.explore=w.map.explore||[0,0,0,0,0,0];w.map.found=w.map.found||{};
  w.map.lore=w.map.lore||{};w.map.cleared=w.map.cleared||{};w.map.flags=w.map.flags||{};
  w.best=w.best||{};w.comp=w.comp||{};w.relics=w.relics||{};w.delve=w.delve||{best:0,who:''};
- h.party=h.party||[];h.rel=h.rel||[];S.set=S.set||{autosell:false};if(S.set.diff==null)S.set.diff=1;S.easy=S.easy||0;if(S.dl===undefined)S.dl=null;S.htab=S.htab||'stats';
+ h.party=h.party||[];h.rel=h.rel||[];h.su=h.su||{};h.sx=h.sx||{};S.set=S.set||{autosell:false};if(S.set.diff==null)S.set.diff=1;S.easy=S.easy||0;if(S.dl===undefined)S.dl=null;S.htab=S.htab||'stats';
  h.q=h.q||{};h.qd=h.qd||{};h.fl=h.fl||{};h.fx=h.fx||[];h.dgc=h.dgc||{};h.dgsave=h.dgsave||{};h.pz=h.pz||0;
  if(S.dg===undefined)S.dg=null;if(S.pz===undefined)S.pz=null;if(S.ev===undefined)S.ev=null;if(S.talk===undefined)S.talk=null;
  if(S.pz&&S.pz.d&&S.pz.d.show)S.pz.d.show=false;
@@ -1118,7 +1120,7 @@ function addFx(id){const h=S.hero;h.fx=h.fx.filter(f=>f.id!==id);h.fx.push({id,l
 function fxTick(){const h=S.hero;h.fx.forEach(f=>f.left--);h.fx=h.fx.filter(f=>f.left>0);}
 const bestBonus=n=>{const b=S.world.best[n];return b?Math.min(.25,Math.floor(b.k/10)*.01):0;};
 function learnTome(zi){
- const h=S.hero,pool=Object.keys(SK).filter(k=>SK[k].t<=Math.max(zi,0)+1&&(h.skills[k]||0)<5);
+ const h=S.hero,pool=Object.keys(SK).filter(k=>SK[k].t<=Math.max(zi,0)+1&&(h.skills[k]||0)<SKMAX);
  if(!pool.length)return null;const k=pick(pool);h.skills[k]=(h.skills[k]||0)+1;
  return `📖 <b>${SK[k].n}</b> ${h.skills[k]===1?'learned!':'upgraded to Lv '+h.skills[k]+'!'}`;
 }
@@ -1354,6 +1356,27 @@ function completeDungeon(D){
  return lines;
 }
 
+/* ---------------- region familiarity & hunt specials ---------------- */
+function regionProgress(e){
+ const w=S.world,m=w.map,zi=e.zi,z=ZONES[zi],lines=[];
+ const before=m.explore[zi];
+ if(before>=100)return lines;
+ const gain={n:.6,e:1.3,b:4}[e.tier]*(S.hero.lvl>z.max+8?.5:1);
+ m.explore[zi]=Math.min(100,before+gain);
+ for(const lm of LANDMARKS[zi]){
+  if(!m.found[lm.id]&&m.explore[zi]>=lm.p){m.found[lm.id]=1;const D=DG[lm.id];lines.push(`🗺️ <b>Discovery!</b> After all this hunting, you spot a path to <b>${D.ic} ${D.n}</b> (Lv ${D.lvl}+).`);note(`Discovered ${D.n}.`,'y');}
+ }
+ if(before<100&&m.explore[zi]>=100){lines.push('🏅 <b>You know every corner of this region.</b>');lines.push(...applyOut({t:'A hidden cache marks the spot.',item:3,gold:2,pts:2},zi));}
+ return lines;
+}
+function huntSpecial(zi){
+ const h=S.hero;h.sta-=FIGHT_COST;
+ const ev={zi,kind:'ev',res:null,dgroom:null,hunt:true},r=Math.random();
+ if(r<.2){ev.kind='res';ev.lines=applyOut({t:'While tracking your prey you find something useful.',mat:ri(1,3),xp:.15},zi);}
+ else if(r<.4){ev.kind='fight';ev.e=makeEnemy(zi,false,true);}
+ else ev.def=pick(eventPool(zi));
+ S.ev=ev;S.screen='explore';
+}
 /* ---------------- victory (replaces original) ---------------- */
 function victory(){
  const c=S.cb,e=c.e,h=S.hero,w=S.world,p=P();c.over=true;
@@ -1364,6 +1387,7 @@ function victory(){
  lines.push(...addXP(xp));
  lines.push(...partyReward(xp));
  h.kills++;w.kills++;
+ if((ctx.type==='hunt'||ctx.type==='ev')&&!e.dg)lines.push(...regionProgress(e));
  const z=ZONES[e.zi],ch=({n:.16,e:.6,b:1}[e.tier])*(1+p.dropf/100)*(ctx.type==='dg'?1.3:1)*dr();
  if(Math.random()<ch){
   const ws={n:[60,28,9,3],e:[30,40,22,8],b:[0,20,55,25]}[e.tier];
@@ -1530,7 +1554,7 @@ function pzWin(){
 
 /* ---------------- actions ---------------- */
 Object.assign(ACT,{
- explore(zi){const h=S.hero;zi=+zi;if(h.sta<1){note('Too tired to explore. Sleep first.','e');return;}doExplore(zi);},
+ explore(zi){const h=S.hero;zi=+zi;if(h.sta<1){note('Too tired to explore. Sleep first.','e');return;}if(S.world.map.explore[zi]<20){note('You need to know this region better (20%) before you can scout it. Keep hunting here.','e');return;}doExplore(zi);},
  evch(i){
   const ev=S.ev,E=ev.def,c=E.ch[+i];if(!c||ev.res)return;
   const zi=ev.zi,L=lvlRef(zi),u=10+L*3,h=S.hero,w=S.world;
@@ -1545,7 +1569,7 @@ Object.assign(ACT,{
   const lines=applyOut(o,zi,E.q);
   ev.res={lines,fight:o.fight||null};
  },
- evfight(){const ev=S.ev,k=ev.res&&ev.res.fight;const e=ev.kind==='fight'?ev.e:makeEnemy(ev.zi,false,k==='e');S.ev=null;startCombat(e,false,{type:'ev',zi:ev.zi,free:true});},
+ evfight(){const ev=S.ev,k=ev.res&&ev.res.fight;const e=ev.kind==='fight'?ev.e:makeEnemy(ev.zi,false,k==='e');S.ev=null;startCombat(e,false,{type:'ev',zi:ev.zi,free:true,hunt:ev.hunt});},
  evslip(){const ev=S.ev;if(Math.random()*100<chkChance('agi',0,lvlRef(ev.zi))){note('You slip away unseen.');S.ev=null;S.screen='hunt';}else{S.ev.slipFail=true;}},
  evdone(){
   const ev=S.ev;S.ev=null;
@@ -1948,6 +1972,7 @@ function castSkill(id,free){
   case 'exec':strike(1.2+(1-e.hp/e.max)*(2+.4*(l-1)),{label:'☠️ Execute strikes',tags:T});break;
   case 'meteor':strike(4+.5*(l-1),{magic:1,label:'☄️ Meteor crashes into',tags:T});applyBurn(e,Math.round(p.int*1.2+p.atk*.15),3);break;
  }
+ if(!free){const m=skillUse(id);if(m)say(m,'y');}
  return true;
 }
 function enemyTurn(){
@@ -2253,7 +2278,7 @@ const VIEWS={
   t+=`<h2>Combat</h2><div class="card sm">❤ HP ${p.maxhp} · ⚔ ATK ${p.atk} · 🛡 DEF ${p.def}<br>🎯 Crit ${p.crit.toFixed(1)}% (×${(p.critdmg/100).toFixed(2)}) · 💨 Dodge ${p.dodge.toFixed(1)}%<br>🩸 Lifesteal ${p.lifesteal}% · 🌵 Thorns ${p.thorns}% · 🌿 Regen ${p.regen}/turn<br>💰 Gold +${p.goldf}% · 🎁 Loot +${p.dropf}% · ✨ XP +${p.xpf}%<br>⚡ Stamina ${h.sta}/${p.maxsta} · 🔷 Max Focus ${p.maxfocus}<br>🏅 Guild renown ×${p.ren.toFixed(3)}</div>`;
   t+=`<h2>Skills</h2>`;
   const ks=Object.keys(h.skills);
-  t+=ks.length?ks.map(k=>`<div class="card"><div class="row2"><b>${SK[k].n}</b><span class="tag">Lv ${h.skills[k]}/5</span></div><div class="sm mut">🔷${SK[k].c} · ${SK[k].d(h.skills[k])}</div></div>`).join(''):'<p class="mut sm">None. Skills drop from monsters or can be bought at the Old Library. They are lost when you die.</p>';
+  t+=ks.length?ks.map(k=>`<div class="card"><div class="row2"><b>${SK[k].n}</b><span class="tag">Lv ${h.skills[k]}/${SKMAX}</span></div><div class="sm mut">🔷${SK[k].c} · ${SK[k].d(h.skills[k])}</div>${h.skills[k]<SKMAX?bar((h.sx&&h.sx[k])||0,skNeed(h.skills[k]),'xp')+`<div class="sm mut">Used ${(h.su&&h.su[k])||0}× · mastery ${Math.floor((h.sx&&h.sx[k])||0)}/${skNeed(h.skills[k])}</div>`:'<div class="sm up">Mastered</div>'}</div>`).join('')+'<p class="sm mut">Mastery grows with every cast, but spamming one skill slows its gain. Neglected skills train up to twice as fast, so rotate your abilities.</p>':'<p class="mut sm">None. Skills drop from monsters or can be bought at the Old Library. They are lost when you die.</p>';
   return t;
  },
  guild(){
@@ -2281,9 +2306,9 @@ const VIEWS={
  },
  library(){
   const w=S.world,h=S.hero,r=rankIdx(h.contracts);
-  let t=`<h1>📚 Old Library</h1><p class="mut">💰 <b>${fmt(w.gold)}</b> · Tomes teach or upgrade skills (max Lv 5). Skills are forgotten when you die. Higher tomes appear as your rank grows.</p>`;
+  let t=`<h1>📚 Old Library</h1><p class="mut">💰 <b>${fmt(w.gold)}</b> · Tomes teach or upgrade skills. Skills also level by use, (max Lv 10). Skills are forgotten when you die. Higher tomes appear as your rank grows.</p>`;
   Object.keys(SK).filter(k=>SK[k].t<=r+1).forEach(k=>{const l=h.skills[k]||0,pr=tomePrice(k,l);
-   t+=btn(`${SK[k].n} <span class="tag">${l?'Lv '+l:'unknown'}</span>`,'buyTome',k,'',l>=5||w.gold<pr,l>=5?'Mastered':`${pr}g → Lv ${l+1} · ${SK[k].d(l+1)}`);});
+   t+=btn(`${SK[k].n} <span class="tag">${l?'Lv '+l:'unknown'}</span>`,'buyTome',k,'',l>=SKMAX||w.gold<pr,l>=SKMAX?'Mastered':`${pr}g → Lv ${l+1} · ${SK[k].d(l+1)}`);});
   return t+'<div style="height:8px"></div>'+btn('← Back to town','go','town','c');
  },
  tinker(){
@@ -2403,14 +2428,14 @@ VIEWS.crypt=function(){
 };
 VIEWS.hunt=function(){
  const h=S.hero,w=S.world,r=rankIdx(h.contracts);
- let t=`<h1>🗡️ Beyond the Gate</h1><p class="mut">Hunt (${FIGHT_COST}⚡) for a fight, Explore (1⚡) for events, secrets and hidden places, or challenge a boss (${BOSS_COST}⚡). Rank unlocks new regions.</p>`;
+ let t=`<h1>🗡️ Beyond the Gate</h1><p class="mut">Hunting (${FIGHT_COST}⚡) is the heart of the game: find a monster, kill it. Every kill teaches you the region. As your familiarity grows, dungeons and wanderers turn up, odd things happen on the hunt, and scouting (1⚡) unlocks at 20%. Rank opens new regions.</p>`;
  if(S.dg)t+=`<div class="card" style="border-color:var(--acc)">You are inside <b>${DG[S.dg.id].n}</b>.${btn('Return to the dungeon','go','dungeon','pri c')}</div>`;
  ZONES.forEach((z,i)=>{
   const lock=r<i,ex=Math.floor(w.map.explore[i]);
   t+=`<div class="card"><div class="row2"><b>${z.ic} ${z.n}</b><span class="tag">Lv ${z.min}–${z.max}</span></div>`;
   if(lock){t+=`<div class="mut sm">Requires ${RANKS[i].n} rank</div></div>`;return;}
-  t+=`<div class="mut sm">Explored ${ex}%</div>${bar(ex,100,'sta')}
-  <div class="grid" style="margin-top:6px">${btn('Hunt','zone',i,'pri',h.sta<FIGHT_COST||!!S.dg,FIGHT_COST+'⚡')}${btn('🧭 Explore','explore',i,'',h.sta<1||!!S.dg,'1⚡')}</div>
+  t+=`<div class="mut sm">Familiarity ${ex}% ${ex<20?'· scouting unlocks at 20%':''}</div>${bar(ex,100,'sta')}
+  <div class="grid" style="margin-top:6px">${btn('Hunt','zone',i,'pri',h.sta<FIGHT_COST||!!S.dg,FIGHT_COST+'⚡')}${btn('🧭 Scout','explore',i,'',h.sta<1||!!S.dg||ex<20,ex<20?'at 20% familiarity':'1⚡ · events & secrets')}</div>
   <div style="margin-top:6px">${btn('Boss: '+z.boss.n,'boss',i,'bad',h.sta<BOSS_COST||!!S.dg,BOSS_COST+'⚡ · rare+ drop')}</div>`;
   const dgs=LANDMARKS[i].map(l=>l.id).concat(DUNGEONS.filter(d=>d.hidden&&d.zi===i).map(d=>d.id)).filter(id=>w.map.found[id]);
   if(dgs.length){t+='<h3>Dungeons</h3>';dgs.forEach(id=>{const D=DG[id],cl=w.map.cleared[id]||0;
@@ -2423,7 +2448,7 @@ VIEWS.hunt=function(){
 VIEWS.explore=function(){
  const ev=S.ev,z=ZONES[ev.zi],h=S.hero,L=lvlRef(ev.zi),u=10+L*3;
  let t=`<h1>🧭 ${z.ic} ${z.n}</h1><p class="mut sm">Explored ${Math.floor(S.world.map.explore[ev.zi])}%</p>`;
- const cont=()=>ev.dgroom!=null?btn('Continue','evdone',undefined,'pri c'):`<div class="grid">${btn('Explore again','explore',ev.zi,'pri c',h.sta<1,'1⚡')}${btn('Back','evdone',undefined,'c')}</div>`;
+ const cont=()=>ev.dgroom!=null?btn('Continue','evdone',undefined,'pri c'):ev.hunt?`<div class="grid">${btn('Keep hunting','zone',ev.zi,'pri c',h.sta<FIGHT_COST,FIGHT_COST+'⚡')}${btn('Back','evdone',undefined,'c')}</div>`:`<div class="grid">${btn('Explore again','explore',ev.zi,'pri c',h.sta<1,'1⚡')}${btn('Back','evdone',undefined,'c')}</div>`;
  if(ev.kind==='disc'){const D=DG[ev.id];
   t+=`<div class="card"><h3>🗺️ Discovery: ${D.ic} ${D.n}</h3><p>${esc(D.desc)}</p><p class="mut sm">Recommended level ${D.lvl}+ · ${D.sz[0]*D.sz[1]} rooms · puzzles, traps, treasure${D.key?', a locked boss door':''}${D.secret?' and secrets':''}.</p></div>`+cont();}
  else if(ev.kind==='full'){t+=`<div class="card"><h3>🏅 Region mapped!</h3>${ev.lines.map(l=>`<p>${l}</p>`).join('')}</div>`+cont();}
@@ -2573,7 +2598,7 @@ VIEWS.result=function(){
  if(!ctx.type||ctx.type==='hunt')return _result();
  let b;
  if(ctx.type==='dg')b=r.done?btn('🌀 Leave the dungeon','dgFinish',undefined,'pri c'):btn('Continue','go','dungeon','pri c');
- else b=`<div class="grid">${btn('Keep exploring','explore',ctx.zi,'pri c',h.sta<1,'1⚡')}${btn('Back','go','hunt','c')}</div>`;
+ else b=ctx.hunt?`<div class="grid">${btn('Keep hunting','zone',ctx.zi,'pri c',h.sta<FIGHT_COST,FIGHT_COST+'⚡')}${btn('Back','go','hunt','c')}</div>`:`<div class="grid">${btn('Keep exploring','explore',ctx.zi,'pri c',h.sta<1,'1⚡')}${btn('Back','go','hunt','c')}</div>`;
  return `<h1>🏆 Victory</h1><p class="mut">${esc(r.name)} (Lv ${r.lvl}) defeated.</p><div class="card">${r.lines.map(l=>`<p>${l}</p>`).join('')}</div><p class="sm mut">❤ ${h.hp}/${P().maxhp} · ⚡ ${h.sta}/${P().maxsta}</p>${b}`;
 };
 const _hero=VIEWS.hero;
@@ -2587,6 +2612,18 @@ Object.assign(ACT,{
  dgEscape(){S.modal={t:'confirm',a:'dgEscapeYes',q:'Flee the dungeon? You lose all progress in it and 10% of your gold.'};},
  dgEscapeYes(){const w=S.world;S.modal=null;w.gold-=Math.round(w.gold*.1);delete S.hero.dgsave[S.dg.id];S.dg=null;S.screen='hunt';note('You fled the dungeon, shaken.','e');}
 });
+const SKMAX=10;
+const skNeed=l=>Math.round(5*Math.pow(l,1.5));
+function skillUse(id){
+ const h=S.hero;h.su=h.su||{};h.sx=h.sx||{};
+ h.su[id]=(h.su[id]||0)+1;
+ const ks=Object.keys(h.skills),mean=ks.reduce((a,k)=>a+(h.su[k]||0),0)/Math.max(1,ks.length);
+ const even=clamp((mean+1)/(h.su[id]),.25,2),weight=Math.sqrt(SK[id].c/3);
+ h.sx[id]=(h.sx[id]||0)+even*weight;
+ const l=h.skills[id];
+ if(l<SKMAX&&h.sx[id]>=skNeed(l)){h.sx[id]-=skNeed(l);h.skills[id]=l+1;return `📈 <b>${SK[id].n}</b> improves through use: Lv ${l+1}!`;}
+ return null;
+}
 const NAV=[
  ['town','🏘️','Town',['town','train','hunt','enc','result','shop','library','tinker','square','tavern','crypt','explore','dungeon','puzzle','talk','delve']],
  ['journal','📖','Journal',['journal']],['hero','🧍','Hero',['hero']],['pack','🎒','Pack',['pack']],['guild','📜','Guild',['guild']],['menu','⚙️','Menu',['menu']]
