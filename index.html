@@ -6408,6 +6408,102 @@ const _buyPotM5=ACT.buyPot;
 ACT.buyPot=function(id){const g0=S.world.gold;_buyPotM5(id);if(S.world.gold<g0&&POTQ[id])note(`🧪 ${POTQ[id]}`);};
 
 
+/* =====================================================================
+   Odd jobs: walk around Hollowmere and someone may need a hand.
+   Easy starter loot, but you have to go looking for it.
+   ===================================================================== */
+const ODD=[
+ {id:'sweep',ic:'🧹',n:'Sweep the Smithy',who:'Garrick\'s apprentice',txt:'"The apprentice quit and the floor did not. Two sweeps, a bucket, and I will not tell anyone you did it."',k:'work',n2:2,st:'vit',done:'The floor shines. Garrick nods, which is a speech for him.'},
+ {id:'water',ic:'🪣',n:'Carry Water',who:'A woman at the well',txt:'"My back is out, my husband is out, and the washing is very much in. Three buckets?"',k:'work',n2:3,st:'str',done:'She pats your arm. Her husband is still out.'},
+ {id:'crates',ic:'📦',n:'Stack Crates',who:'A market stallholder',txt:'"Somebody delivered forty crates to the wrong stall. Rather than argue, I will pay you to move them."',k:'work',n2:2,st:'str',done:'The stack leans slightly. It is Art, now.'},
+ {id:'laundry',ic:'🧺',n:'Hang the Laundry',who:'A busy laundress',txt:'"Pegs, line, shirts. In that order. Do not mix the pink ones, they have feelings."',k:'work',n2:2,st:'agi',done:'The shirts flutter like a small parade.'},
+ {id:'note',ic:'📝',n:'Deliver a Note',who:'A harried clerk',txt:'"Take this to the market stalls. Do not read it. It is about a goose."',k:'visit',at:'shop',st:'agi',done:'You hand over the note. The stallholder reads it, sighs, and pays you for the trouble.'},
+ {id:'book',ic:'📕',n:'Return a Book',who:'A sleepy student',txt:'"I borrowed this from the Old Library four years ago. Could you... return it? Quietly?"',k:'visit',at:'library',st:'int',done:'The librarian takes the book without a word. Her eye twitches. You are paid in relief.'},
+ {id:'rope',ic:'🪢',n:'Fetch Rope',who:'A flustered builder',txt:'"I need rope from the training yard. Do not ask. Just run, if you are able."',k:'visit',at:'train',st:'agi',done:'You hand over the rope. He is in tears, or sawdust.'},
+ {id:'stall',ic:'🏪',n:'Mind a Stall Overnight',who:'A tired merchant',txt:'"Watch the stall tonight. Nobody should buy anything. If they do, say it is not for sale."',k:'wait',n2:1,done:'The stall survived the night. So did your dignity, mostly.'},
+ {id:'cat',ic:'🐈',n:'Look After a Cat',who:'A neighbor going away',txt:'"Two nights. He bites. He is not at fault. Please."',k:'wait',n2:2,done:'The cat has decided you are furniture. This is a compliment.'},
+ {id:'goat',ic:'🐐',n:'Catch the Goat',who:'A shepherd with no shepherd\'s luck',txt:'"The goat is on the roof again. I need it off. Do not tell me how."',k:'work',n2:3,st:'agi',done:'The goat is back in its pen. It looks at you the way a cat would.'},
+ {id:'wicks',ic:'🕯️',n:'Trim Lantern Wicks',who:'The lamplighter',txt:'"Fifty wicks. Trim them level. They are not level. They will never be level, but try."',k:'work',n2:2,st:'int',done:'The lamplighter holds one up and squints. It is level, probably.'},
+ {id:'dishes',ic:'🍽️',n:'Wash Dishes',who:'A cook with a mountain',txt:'"A wedding ate here last night. The dishes ate the wedding."',k:'work',n2:3,st:'vit',done:'You scrubbed until the plates agreed.'},
+ {id:'roof',ic:'🏠',n:'Patch a Roof',who:'A worried homeowner',txt:'"The rain keeps getting in. It has been very persistent. Could you make it stop?"',k:'work',n2:3,sta:2,st:'str',done:'The roof is patched. The rain will be furious.'},
+ {id:'mail',ic:'✉️',n:'Sort the Mail',who:'The postmaster',txt:'"Half of this is addressed to people who died. The other half to people who should."',k:'work',n2:2,st:'int',done:'The postmaster mutters thanks into a pile of envelopes.'},
+ {id:'garden',ic:'🌱',n:'Weed the Garden',who:'An old gardener',txt:'"The weeds are winning. I would like them to stop."',k:'work',n2:3,st:'vit',done:'The weeds have been informed of the new management.'},
+ {id:'cart',ic:'🛒',n:'Free a Stuck Cart',who:'A swearing carter',txt:'"The mud has my wheel. The mud will not negotiate. Push."',k:'work',n2:2,st:'str',done:'The cart pops free with a noise like a cork. The carter cheers.'}
+];
+const ODD_BY=Object.fromEntries(ODD.map(j=>[j.id,j]));
+const oddOK=()=>S.world.gen>=1&&S.hero.lvl<12&&!S.dg;
+function oddDone(){return S.hero.oddDone=S.hero.oddDone||{};}
+function oddRewardLines(j){
+ const h=S.hero,w=S.world,lines=[j.done],nth=oddDone()[j.id]||0,sc=nth?.6:1;
+ const kinds=['coin','gear','gear','pot','mat','stat'];
+ const picks=[pick(kinds)];if(Math.random()<.45)picks.push(pick(kinds));
+ picks.forEach(k=>{
+  if(k==='coin'){const g=Math.round((8+h.lvl*5+ri(0,8))*sc);w.gold+=g;lines.push(`💰 +${g} gold`);}
+  else if(k==='gear'){const slot=pick(['weapon','armor','armor','boots','boots','helm','helm','ring','amulet']);const it=genItem(Math.max(1,h.lvl),Math.random()<.12?1:0,slot);it.req=1;const r=addItem(it);lines.push(`🎁 ${rarName(it)} <span class="mut">(${RAR[it.rar].n})</span>${r==='full'?' — pack full, sold':r==='sold'?' — auto-sold':''}`);}
+  else if(k==='pot'){w.pots.hp1=(w.pots.hp1||0)+1;lines.push('🧪 A Healing Potion');}
+  else if(k==='mat'){const m=pick(ZGATHER[0].concat(ZPRIM[0]));w.mats[m]=(w.mats[m]||0)+ri(1,2);lines.push(`🧶 ${m}`);}
+  else if(k==='stat'&&j.st){const g=.5*catchMult()/(1+h.st[j.st]/30);h.st[j.st]+=g;lines.push(`💪 ${STAT_NAME[j.st]} +${g.toFixed(2)}`);}
+ });
+ lines.push(...addXP(Math.round(4*catchMult())));
+ return lines;
+}
+Object.assign(ACT,{
+ walk(){
+  const h=S.hero;if(h.walkDay===h.day||S.dg)return;
+  h.walkDay=h.day;S.oddRes=null;
+  if(h.odd){S.walkMsg=['You wander the streets with your job in mind. Nobody stops you.'];return;}
+  const left=ODD.filter(j=>(oddDone()[j.id]||0)===0);
+  const first=!Object.keys(oddDone()).length&&!h.oddOffer;
+  if(oddOK()&&(first||Math.random()<.5)){
+   const pool=left.length?left:ODD,j=pick(pool);
+   h.oddOffer=j.id;S.walkMsg=[`You wander for a while. ${j.who} spots you. "You. Yes, you. Do you have a free pair of hands?"`];
+  }else S.walkMsg=[pick(AMB),pick(AMB)].filter((x,i,a)=>a.indexOf(x)===i);
+ },
+ oddAccept(){const h=S.hero,j=ODD_BY[h.oddOffer];if(!j)return;h.odd={id:j.id,p:0,t:0};h.oddOffer=null;if(j.k==='wait')h.odd.t=h.day;S.walkMsg=null;note(`📌 You take the job: ${j.n}.`,'y');},
+ oddDecline(){S.hero.oddOffer=null;S.walkMsg=['You wave them off. They find somebody else, or a goat.'];},
+ oddWork(){
+  const h=S.hero,o=h.odd,j=o&&ODD_BY[o.id];if(!j||j.k!=='work')return;
+  const c=j.sta||1;if(h.sta<c){note('Too tired. Sleep first.','e');return;}
+  h.sta-=c;o.p++;
+  if(o.p>=j.n2)oddFinish();else note(`${j.ic} ${j.n}: ${o.p}/${j.n2}.`);
+ },
+ oddQuit(){const h=S.hero;if(!h.odd)return;h.odd=null;note('You drop the job. They will not hold it against you for long.','e');}
+});
+function oddFinish(){
+ const h=S.hero,o=h.odd,j=ODD_BY[o.id];
+ S.oddRes={ic:j.ic,n:j.n,lines:oddRewardLines(j)};
+ oddDone()[j.id]=(oddDone()[j.id]||0)+1;h.odd=null;
+}
+// errands that ask you to go somewhere finish when you get there
+const _goOdd=ACT.go;
+ACT.go=function(p,b){
+ _goOdd(p,b);
+ const h=S.hero,o=h&&h.odd,j=o&&ODD_BY[o.id];
+ if(j&&j.k==='visit'&&S.screen===j.at)oddFinish();
+};
+// a night passes
+const _sleepOdd=sleepDay;
+sleepDay=function(){
+ _sleepOdd();
+ const h=S.hero,o=h&&h.odd,j=o&&ODD_BY[o.id];
+ if(j&&j.k==='wait'&&S.screen!=='death'){o.p++;if(o.p>=j.n2)oddFinish();else note(`${j.ic} ${j.n}: night ${o.p}/${j.n2}.`);}
+};
+const _townOdd=VIEWS.town;
+VIEWS.town=function(){
+ let t=_townOdd();
+ if(!atHome()||S.trip)return t;
+ const h=S.hero;if(!oddOK()&&!h.odd&&!S.oddRes)return t;
+ const j=h.odd?ODD_BY[h.odd.id]:null,off=h.oddOffer?ODD_BY[h.oddOffer]:null;
+ let b=`<h2>Around town</h2>`;
+ if(S.oddRes){const r=S.oddRes;S.oddRes=null;b+=`<div class="card" style="border-color:var(--good)"><b>${r.ic} ${r.n}: done</b>${r.lines.map(l=>`<p>${l}</p>`).join('')}</div>`;}
+ if(S.walkMsg){b+=`<div class="card">${S.walkMsg.map(l=>`<p>${l}</p>`).join('')}</div>`;S.walkMsg=null;}
+ if(off&&!j)b+=`<div class="card" style="border-color:var(--acc)"><div class="row2"><b>${off.ic} ${off.n}</b><span class="tag" style="color:var(--acc)">odd job</span></div><p class="sm"><i>${off.txt}</i></p><div class="mut sm">${off.k==='work'?`Work ${off.n2} time${off.n2>1?'s':''} (${off.sta||1}⚡ each)`:off.k==='visit'?'Take it to '+({shop:'the Market',library:'the Old Library',train:'the Training Yard'}[off.at]):`Wait ${off.n2} night${off.n2>1?'s':''}`}</div><div class="grid" style="margin-top:6px">${btn('Take the job','oddAccept',undefined,'pri c')}${btn('Not now','oddDecline',undefined,'c')}</div></div>`;
+ if(j)b+=`<div class="card" style="border-color:var(--acc)"><div class="row2"><b>${j.ic} ${j.n}</b><span class="tag">${j.k==='wait'?'night '+h.odd.p+'/'+j.n2:j.k==='work'?h.odd.p+'/'+j.n2:'errand'}</span></div><div class="mut sm">${j.who}</div>${j.k==='work'?btn('Get to work','oddWork',undefined,'pri c',h.sta<(j.sta||1),(j.sta||1)+'⚡'):j.k==='visit'?`<div class="sm">Go to ${({shop:'the Market',library:'the Old Library',train:'the Training Yard'}[j.at])} to hand it over.</div>`:'<div class="sm">Sleep through the night and the job is done.</div>'}${btn('Drop it','oddQuit',undefined,'c')}</div>`;
+ b+=btn('🚶 Walk around town','walk',undefined,'c',h.walkDay===h.day||!!S.dg,h.walkDay===h.day?'you have already walked today':'see what turns up · free');
+ return t.replace('<div class="grid">',b+'<div class="grid">');
+};
+HINTS.push({id:'walk',scr:['town'],when:()=>S.world.gen===1&&S.hero.tc>=4&&!Object.keys(S.hero.oddDone||{}).length&&!S.hero.odd,t:'Keep an eye out. Walking around town sometimes turns up odd jobs for people who have nothing better to do.'});
+
 /* ----- a slow start: bodies heal over days, not overnight, until you are properly seasoned ----- */
 const nightRecovery=()=>{const L=S.hero.lvl;return L>=8?1:Math.min(1,.38+.09*(L-1));};
 const _sleepDayRec=sleepDay;
