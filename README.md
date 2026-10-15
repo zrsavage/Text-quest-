@@ -30,3 +30,6 @@ Companions can't be bought. You meet them naturally (tavern regulars who notice 
 - Some creatures appear in **packs** that hit harder at full strength and weaken as you thin them out.
 - Every monster has a **procedurally drawn SVG icon** (generated per species, with elite and boss markers).
 - The **Codex** (Journal) lists every creature by region and dungeon, with native level range, how hard it is for *you* right now, observed moves and hunting tips.
+
+## A new cast every generation
+Companions are **procedurally generated**: each generation gets a fresh cast of 14, built from 17 role archetypes (tank, healer, pyromancer, marksman, monk, hexcaster, and more) with random names, personalities and tones, ability names, passives, traits, stat variance, trial and personal quests, and a drawn portrait. They are placed in tavern, dungeon and quest slots. When you fall, your companions retire; those you bonded with (bond 3+) become **Veterans** who pass a share of their gifts on to your heirs, and your heir meets a brand-new cast and earns their trust all over again.

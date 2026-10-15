@@ -258,7 +258,7 @@ function P(){
  if(am)p.atk=Math.round(p.atk*(1+am));if(dm)p.def=Math.round(p.def*(1+dm));
  hm+=wf('healer')?.05:0;if(hm)p.maxhp=Math.round(p.maxhp*(1+hm));
  if(wf('orphan'))p.goldf+=5;if(wf('pip'))p.dropf+=5;if(wf('bard'))p.xpf+=5;
- if(h.party&&h.party.length){const sy=synFx();p.def=Math.round(p.def*(1+partyPass('def')));p.crit+=partyPass('crit');p.dodge+=partyPass('dodge')+(sy.dodge||0);p.regen+=Math.round(partyPass('regen')+(sy.regen||0));p.lifesteal+=partyPass('lifesteal')+(sy.lifesteal||0);p.xpf+=partyPass('xpf')+(sy.xpf||0);p.critdmg+=(sy.critdmg||0)+partyPass('critdmg');if(sy.atkm)p.atk=Math.round(p.atk*(1+sy.atkm));}
+ if((h.party&&h.party.length)||(S.world.vets&&S.world.vets.length)){const sy=synFx();p.def=Math.round(p.def*(1+partyPass('def')));p.crit+=partyPass('crit');p.dodge+=partyPass('dodge')+(sy.dodge||0);p.regen+=Math.round(partyPass('regen')+(sy.regen||0));p.lifesteal+=partyPass('lifesteal')+(sy.lifesteal||0);p.xpf+=partyPass('xpf')+(sy.xpf||0);p.critdmg+=(sy.critdmg||0)+partyPass('critdmg');if(sy.atkm)p.atk=Math.round(p.atk*(1+sy.atkm));}
  if(h.rel&&h.rel.length){if(rel('crown')){p.thorns+=40;p.lifesteal+=3;}if(rel('gambler'))p.crit+=12;if(rel('sunstone')){p.xpf+=25;p.goldf+=25;}if(rel('guildseal'))p.maxsta+=3;}
  p.crit=clamp(p.crit,0,80);p.dodge=clamp(p.dodge,0,50);p.lifesteal=clamp(p.lifesteal,0,30);
  return p;
@@ -400,7 +400,7 @@ function makeHeir(){
  SLOTS.forEach(s=>{if(old.equip[s])w.inv.push(old.equip[s]);});
  w.gen++;
  S.hero=newHero(pick(FIRST),old.fam,w.gen);
- S.hero.contracts=Math.floor(old.contracts*.4);S.hero.party=(old.party||[]).slice();S.hero.rel=(old.rel||[]).slice();
+ S.hero.contracts=Math.floor(old.contracts*.4);retireCast();w.cast=genCast(w.gen);registerCast(w.cast);S.hero.party=[];S.hero.rel=(old.rel||[]).slice();
  S.hero.hp=P().maxhp;S.hero.sta=P().maxsta;
  w.board=[];if(w.guild)refreshBoard();refreshShop();
  S.death=null;S.screen='town';
@@ -439,7 +439,7 @@ const ACT={
  start(){
   const n=($('#in-name').value||'').trim()||'Wanderer',f=($('#in-fam').value||'').trim()||'Ashford';
   S={v:1,world:newWorld(),hero:null,screen:'town',log:[],cb:null,enc:null,res:null,death:null,modal:null,set:{autosell:false},tab:'town',tcount:0};
-  S.hero=newHero(n.slice(0,16),f.slice(0,16),1);ensureState();
+  S.hero=newHero(n.slice(0,16),f.slice(0,16),1);ensureState();S.world.cast=genCast(1);registerCast(S.world.cast);
   S.world.gold=30;S.world.pots.hp1=2;
   S.hero.hp=P().maxhp;S.hero.sta=P().maxsta;
   refreshShop();
@@ -1107,7 +1107,7 @@ function ensureState(){
  const w=S.world,h=S.hero;
  w.map=w.map||{};w.map.explore=w.map.explore||[0,0,0,0,0,0];w.map.found=w.map.found||{};
  w.map.lore=w.map.lore||{};w.map.cleared=w.map.cleared||{};w.map.flags=w.map.flags||{};
- w.best=w.best||{};w.comp=w.comp||{};w.meet=w.meet||{};w.relics=w.relics||{};w.delve=w.delve||{best:0,who:''};
+ w.best=w.best||{};w.comp=w.comp||{};w.meet=w.meet||{};w.vets=w.vets||[];if(!w.cast)w.cast=legacyCast();registerCast(w.cast);w.relics=w.relics||{};w.delve=w.delve||{best:0,who:''};
  h.party=h.party||[];h.rel=h.rel||[];h.talked=h.talked||{};if(h.guest===undefined)h.guest=null;h.su=h.su||{};h.sx=h.sx||{};S.set=S.set||{autosell:false};if(S.set.diff==null)S.set.diff=1;S.easy=S.easy||0;if(S.dl===undefined)S.dl=null;S.htab=S.htab||'stats';
  h.q=h.q||{};h.qd=h.qd||{};h.fl=h.fl||{};h.fx=h.fx||[];h.dgc=h.dgc||{};h.dgsave=h.dgsave||{};h.pz=h.pz||0;
  if(S.dg===undefined)S.dg=null;if(S.pz===undefined)S.pz=null;if(S.ev===undefined)S.ev=null;if(S.talk===undefined)S.talk=null;
@@ -1779,7 +1779,7 @@ const SYN=[
  {n:'Full Party',d:'Three or more companions: +5% XP.',t:(h,a,sk,ids)=>ids.length>=3,e:{xpf:5}}
 ];
 function synList(){
- const h=S.hero,ids=(h&&h.party)||[],has=x=>ids.includes(x),any=(...xs)=>xs.some(has),sk=(h&&h.skills)||{};
+ const h=S.hero,ids=((h&&h.party)||[]).map(id=>(COMP[id]&&COMP[id].k)||id),has=x=>ids.includes(x),any=(...xs)=>xs.some(has),sk=(h&&h.skills)||{};
  return SYN.filter(s=>s.t(has,any,sk,ids));
 }
 function synFx(){
@@ -1792,6 +1792,7 @@ const bondOf=id=>(S.world.comp[id]&&S.world.comp[id].bond)||1;
 function partyPass(key){
  const h=S.hero;let v=0;
  ((h&&h.party)||[]).forEach(id=>{const d=COMP[id];if(d&&d.pass&&d.pass[key])v+=d.pass[key]*(1+.12*(bondOf(id)-1));});
+ v+=vetPass(key);
  return v;
 }
 const maxParty=()=>2+(rankIdx(S.hero.contracts)>=4?1:0)+(rel('packleader')?1:0);
@@ -1825,14 +1826,14 @@ function buildParty(){
  (h.party||[]).slice(0,maxParty()).forEach(id=>{
   const cs=w.comp[id];if(!cs)return;const D=COMP[id],L=Math.max(1,Math.min(cs.lvl,h.lvl+2));
   const max=Math.round((30+L*8)*D.hp*(rel('oak')?1.4:1));
-  out.push({id,lvl:L,hp:max,max,atk:Math.round((2+L*1.2)*D.atk),def:Math.round((1+L*.7)*D.def),cd:0,down:false,rage:0});
+  const M=D.m||{},mx2=Math.round(max*(M.hp||1));out.push({id,lvl:L,hp:mx2,max:mx2,atk:Math.round((2+L*1.2)*D.atk*(M.atk||1)),def:Math.round((1+L*.7)*D.def*(M.def||1)),cd:0,down:false,rage:0,pw:D.pw||1,mcrit:M.crit||0});
  });
  const g=h.guest;
  if(g&&COMP[g.id]&&!out.some(u=>u.id===g.id)){const D=COMP[g.id],L=Math.max(1,h.lvl-1),max=Math.round((30+L*8)*D.hp);out.push({id:g.id,lvl:L,hp:max,max,atk:Math.round((2+L*1.2)*D.atk),def:Math.round((1+L*.7)*D.def),cd:0,down:false,rage:0,guest:true});}
  return out;
 }
 function allyUnit(id){return S.cb.party.find(u=>u.id===id);}
-function cdVal(u){const cs=COMP[u.id].spec[2],b=bondOf(u.id),sy=synFx();return Math.max(2,cs-(b>=3?1:0)-(sy.cdr||0));}
+function cdVal(u){const cs=COMP[u.id].spec[2],b=bondOf(u.id),sy=synFx(),mc=(COMP[u.id].m&&COMP[u.id].m.cd)||0;return Math.max(2,cs-(b>=3?1:0)-(sy.cdr||0)+mc);}
 function healUnit(u,n){const sy=synFx();n=Math.round(n*(1+(sy.healx||0)+(rel('oak')?.25:0)));const b=u.hp;u.hp=Math.min(u.max,u.hp+n);return u.hp-b;}
 function healAllies(frac,heroFrac){
  const c=S.cb,p=P(),sy=synFx(),hx=1+(sy.healx||0)+(rel('oak')?.25:0);let tot=0;
@@ -1862,8 +1863,8 @@ function comboMult(e,tags,crit){
 const firstName=D=>D.n.split(' ')[0];
 function allyHit(u,mult,o){
  o=o||{};const c=S.cb,e=c.e,sy=synFx(),D=COMP[u.id];
- let b=u.atk*mult*rnd(.9,1.1)*(c.pb.dmg>0?1.3:1)*(rel('banner')?1.35:1)*(1+(sy.atkm||0))*(u.rage>0?1.5:1)*(1+.1*(bondOf(u.id)-1));
- const crit=Math.random()*100<(o.crit||6);if(crit)b*=1.6+(sy.critdmg||0)/100+partyPass('critdmg')/100;
+ let b=u.atk*mult*(u.pw||1)*rnd(.9,1.1)*(c.pb.dmg>0?1.3:1)*(rel('banner')?1.35:1)*(1+(sy.atkm||0))*(u.rage>0?1.5:1)*(1+.1*(bondOf(u.id)-1));
+ const crit=Math.random()*100<((o.crit||6)+(u.mcrit||0));if(crit)b*=1.6+(sy.critdmg||0)/100+partyPass('critdmg')/100;
  b*=comboMult(e,o.tags||['phys'],crit);
  const d=Math.max(1,Math.round(b*(1-mit(e.def,u.lvl)*(1-(o.pierce||(o.tags&&o.tags.includes('magic')?.3:0))))));
  e.hp=Math.max(0,e.hp-d);
@@ -1872,24 +1873,26 @@ function allyHit(u,mult,o){
 }
 function partyHurt(){const p=P(),c=S.cb;return S.hero.hp<p.maxhp*.6||c.party.some(u=>!u.down&&u.hp<u.max*.55);}
 function companionAct(u){
- const c=S.cb,e=c.e,h=S.hero,p=P(),D=COMP[u.id],sy=synFx(),f=firstName(D);
+ const c=S.cb,e=c.e,h=S.hero,p=P(),D=COMP[u.id],sy=synFx(),f=firstName(D),K=D.k||u.id;
  const forced=c.q[u.id];delete c.q[u.id];
  const ready=u.cd<=0;
  let useSpec=false;
  if(ready){
   if(forced)useSpec=true;
-  else switch(u.id){
-   case 'brom':case 'gorm':case 'ember':case 'rime':case 'kael':case 'zephyr':case 'cogsworth':case 'orla':case 'thorn':useSpec=u.id==='thorn'?partyHurt():true;break;
+  else switch(K){
+   case 'brom':case 'gorm':case 'ember':case 'rime':case 'kael':case 'zephyr':case 'cogsworth':case 'orla':case 'thorn':useSpec=K==='thorn'?partyHurt():true;break;
    case 'lyssa':useSpec=partyHurt();break;
    case 'venn':useSpec=h.hp<p.maxhp*.7||c.turn===1;break;
    case 'nyx':useSpec=!(e.mark>0);break;
    case 'seraph':useSpec=!(c.pb.barrier>0)&&h.hp<p.maxhp*.9;break;
    case 'mortis':useSpec=!(c.thrall&&c.thrall.t>0);break;
+   case 'witch':case 'sniper':useSpec=true;break;
+   case 'monk':useSpec=!(c.pb.counter>0);break;
   }
  }
  if(useSpec){u.cd=cdVal(u);c.st.spec[u.id]=(c.st.spec[u.id]||0)+1;
   say(`${D.ic} <b>${f}: ${D.spec[0]}!</b>`,'y');
-  switch(u.id){
+  switch(K){
    case 'brom':c.pb.wall=2;c.pb.taunt=2;break;
    case 'lyssa':{const n=healAllies(.18);if(S.cb.hb.poison)c.hb.poison=0;c.hb.stun=0;c.hb.weak=0;say(`✨ The party is healed for ${n} total.`,'g');break;}
    case 'kael':allyHit(u,2.3,{crit:40,tags:['phys','bleed'],label:'backstabs'});applyBleed(e,Math.round(u.atk*.3));say(`🩸 ${esc(e.name)} is bleeding!`,'g');break;
@@ -1903,12 +1906,15 @@ function companionAct(u){
    case 'thorn':c.pb.regen={t:3,pct:.07};say('🌿 Healing vines wrap the party.','g');break;
    case 'mortis':c.thrall={t:4,atk:Math.round(u.atk*(.8+(sy.thrallx||0))),by:u.id};say('💀 A thrall claws out of the ground.','g');break;
    case 'zephyr':for(let i=0;i<3&&e.hp>0;i++)allyHit(u,.65,{crit:20,pierce:.2,label:'shoots'});break;
-   case 'cogsworth':c.party.forEach(x=>{if(x.id!=='cogsworth')x.cd=Math.max(0,x.cd-2);});allyHit(u,1.4,{tags:['magic'],label:'blasts'});break;
+   case 'cogsworth':c.party.forEach(x=>{if(x!==u)x.cd=Math.max(0,x.cd-2);});allyHit(u,1.4,{tags:['magic'],label:'blasts'});break;
+   case 'witch':e.wk=3;allyHit(u,.8,{tags:['magic','shadow'],label:'hexes'});applyPoison(e,Math.round(u.atk*.3));say(`🧙 ${esc(e.name)} is weakened and poisoned!`,'g');break;
+   case 'sniper':allyHit(u,3,{crit:60,pierce:.5,label:'snipes'});break;
+   case 'monk':c.pb.counter=2;say('🥋 The party braces in a counter stance.','g');break;
   }
   return;
  }
  // basic actions
- switch(u.id){
+ switch(K){
   case 'brom':allyHit(u,1,{label:'bashes'});if(tryStun(e,.25))say(`💫 ${esc(e.name)} reels!`,'g');break;
   case 'lyssa':{let w=null,best=.65;if(h.hp/p.maxhp<best){w='hero';best=h.hp/p.maxhp;}c.party.forEach(x=>{if(!x.down&&x.hp/x.max<best){w=x;best=x.hp/x.max;}});
    if(w==='hero'){const n=healHero(Math.round(p.maxhp*.1*(1+(sy.healx||0))));say(`✨ ${f} heals you for ${n}.`,'g');}
@@ -1926,6 +1932,9 @@ function companionAct(u){
   case 'mortis':{const d=allyHit(u,1,{tags:['shadow','magic'],label:'drains'});const n=healUnit(u,d*.3);break;}
   case 'zephyr':allyHit(u,1,{crit:20,pierce:.2,label:'shoots'});break;
   case 'cogsworth':allyHit(u,.9,{tags:['magic'],label:'fires sparks at'});break;
+  case 'witch':allyHit(u,.9,{tags:['magic','shadow'],label:'hexes'});if(Math.random()<.3){e.wk=2;say(`🧙 ${esc(e.name)} is weakened!`,'g');}break;
+  case 'sniper':allyHit(u,1.1,{crit:20,pierce:.3,label:'shoots'});break;
+  case 'monk':{allyHit(u,1,{label:'strikes'});healUnit(u,u.max*.05);break;}
  }
 }
 function partyTurn(){
@@ -1938,7 +1947,7 @@ function partyTurn(){
 }
 function pickTarget(){
  const c=S.cb,alive=c.party.filter(u=>!u.down);if(!alive.length)return 'hero';
- const w=[3];alive.forEach(u=>w.push(c.pb.taunt>0&&u.id==='brom'?14:.5));
+ const w=[3];alive.forEach(u=>w.push(c.pb.taunt>0&&(COMP[u.id].k||u.id)==='brom'?14:.5));
  const i=wroll(w);return i===0?'hero':alive[i-1];
 }
 function hurtHero(d){
@@ -1993,10 +2002,10 @@ function enemyTurn(){
  const tk=e.pat[e.pi%e.pat.length];e.pi++;trackTk(e,tk);
  if(tk==='r'){const n=Math.round(e.max*.12);e.hp=Math.min(e.max,e.hp+n);say(`💚 ${esc(e.name)} recovers ${n} HP.`);return;}
  if(tk==='b'){e.buff=3;say(`🔥 ${esc(e.name)} rages! Its attacks grow stronger.`,'e');return;}
- const mult=PAT_MULT[tk]*(e.buff>0?1.3:1)*(e.chill>0?(rel('frost')?.65:.75):1)*packF(e);
+ const mult=PAT_MULT[tk]*(e.buff>0?1.3:1)*(e.chill>0?(rel('frost')?.65:.75):1)*packF(e)*(e.wk>0?.75:1);
  if(e.buff>0)e.buff--;
  let tgt=pickTarget();
- if(tgt==='hero'){const sr=c.party.find(u=>u.id==='seraph'&&!u.down);if(sr&&Math.random()<.3){tgt=sr;say('⚜️ Seraph steps in front of you!','g');}}
+ if(tgt==='hero'){const sr=c.party.find(u=>(COMP[u.id].k||u.id)==='seraph'&&!u.down);if(sr&&Math.random()<.3){tgt=sr;say(`⚜️ ${firstName(COMP[sr.id])} steps in front of you!`,'g');}}
  const wallm=(c.pb.wall>0?.7:1)*(1-Math.min(.5,sy.pdr||0));
  if(tgt==='hero'){
   if(Math.random()*100<p.dodge){say(`💨 You dodge ${esc(e.name)}'s attack!`,'g');return;}
@@ -2007,6 +2016,7 @@ function enemyTurn(){
   const taken=hurtHero(d);
   say(`${esc(e.name)} ${tk==='h'?'smashes':'hits'} you for <b>${d}</b>${c.guard?' (guarded)':''}.`,'e');
   if(p.thorns&&taken>0){const t=Math.round(taken*p.thorns/100);if(t>0){e.hp=Math.max(0,e.hp-t);say(`🌵 Thorns deal ${t} back.`,'g');}}
+  if(c.pb.counter>0){const ref=Math.round(taken*.6);e.hp=Math.max(0,e.hp-ref);say(`🥋 The counter stance reflects ${ref} damage!`,'g');}
   if(tk==='d'){const n=Math.round(d*.6);e.hp=Math.min(e.max,e.hp+n);say(`🩸 ${esc(e.name)} drains ${n} HP from you.`,'e');}
   if(tk==='c'){c.hb.weak=3;say('🌑 A curse saps your strength!','e');}
   if(tk==='p'){c.hb.poison=3;c.hb.pd=Math.max(1,Math.round(e.atk*.12));say('☠ You are poisoned!','e');}
@@ -2016,6 +2026,7 @@ function enemyTurn(){
   let d=e.atk*mult*rnd(.9,1.1)*(1-mit(u.def,e.lvl))*wallm*(u.rage>0?1.3:1);
   d=Math.max(1,Math.round(d));u.hp-=d;
   say(`${esc(e.name)} ${tk==='h'?'smashes':'hits'} ${D.ic} ${firstName(D)} for <b>${d}</b>.`,'e');
+  if(c.pb.counter>0){const ref=Math.round(d*.6);e.hp=Math.max(0,e.hp-ref);say(`🥋 The counter stance reflects ${ref} damage!`,'g');}
   if(tk==='d'){const n=Math.round(d*.6);e.hp=Math.min(e.max,e.hp+n);}
   if(u.hp<=0){u.hp=0;u.down=true;c.st.down[u.id]=1;say(`💔 ${D.n} is down!`,'e');}
  }
@@ -2042,8 +2053,8 @@ function afterPlayer(){
  if(c.hb.defT>0&&--c.hb.defT===0)c.hb.def=0;
  if(c.hb.weak>0)c.hb.weak--;
  c.party.forEach(u=>{if(u.cd>0)u.cd--;if(u.rage>0)u.rage--;});
- ['dmg','wall','taunt'].forEach(k=>{if(c.pb[k]>0)c.pb[k]--;});
- if(e.chill>0)e.chill--;if(e.mark>0)e.mark--;
+ ['dmg','wall','taunt','counter'].forEach(k=>{if(c.pb[k]>0)c.pb[k]--;});
+ if(e.chill>0)e.chill--;if(e.mark>0)e.mark--;if(e.wk>0)e.wk--;
  c.turn++;c.guard=false;c.panel=null;
 }
 function playerAct(type,arg){
@@ -2075,11 +2086,11 @@ function playerAct(type,arg){
 function startCombat(e,boss,ctx){
  const h=S.hero,p=P();
  if(!(ctx&&ctx.free))h.sta-=boss?BOSS_COST:FIGHT_COST;
- ['burn','bd','chill','mark','bleed','bld','pn'].forEach(k=>{if(e[k]==null)e[k]=0;});
+ ['burn','bd','chill','mark','bleed','bld','pn','wk'].forEach(k=>{if(e[k]==null)e[k]=0;});
  const party=buildParty();
  if(party.length&&!e.scaled){e.scaled=1;e.hp=e.max=Math.round(e.max*(1+.14*party.length));}
  seeMon(e);
- S.cb={e,boss,ctx:ctx||{type:'hunt'},log:[],turn:1,focus:Math.floor(p.maxfocus/2),panel:null,hb:{atk:0,atkT:0,def:0,defT:0,poison:0,pd:0,stun:0,weak:0},pb:{dmg:0,wall:0,taunt:0,regen:null,barrier:0},party,q:{},thrall:null,lb:false,hp0:h.hp,st:{atk:0,guard:0,skill:0,crit:0,fire:0,heal:0,combo:0,spec:{},down:{}},over:false};
+ S.cb={e,boss,ctx:ctx||{type:'hunt'},log:[],turn:1,focus:Math.floor(p.maxfocus/2),panel:null,hb:{atk:0,atkT:0,def:0,defT:0,poison:0,pd:0,stun:0,weak:0},pb:{dmg:0,wall:0,taunt:0,regen:null,barrier:0,counter:0},party,q:{},thrall:null,lb:false,hp0:h.hp,st:{atk:0,guard:0,skill:0,crit:0,fire:0,heal:0,combo:0,spec:{},down:{}},over:false};
  say(`${e.tier==='b'?'👑':e.tier==='e'?'⭐':'⚔️'} ${esc(e.name)} (Lv ${e.lvl}) appears!`,'y');
  if(party.length)say(`Your party: ${party.map(u=>COMP[u.id].ic+' '+firstName(COMP[u.id])).join(', ')}`);
  if(e.intro)say(`<i>${e.intro}</i>`);
@@ -2100,6 +2111,7 @@ applyOut=function(o,zi,qid){
  const out=_applyOut(o,zi,qid);
  if(o.comp)out.push(...recruit(o.comp));
  if(o.meet)out.push(...meetComp(o.meet,6));
+ if(o.meetSlot){const sid=S.world.cast&&S.world.cast.slots.quest[o.meetSlot];if(sid)out.push(...meetComp(sid,6));}
  if(o.pass){const m=S.world.meet[o.pass];if(m){m.test=1;out.push(`🤝 <b>${COMP[o.pass].n} trusts you.</b> (trust ${trustOf(o.pass)}/100)`);}}
  if(o.fail){const m=S.world.meet[o.fail];if(m){m.cool=S.hero.day+3;m.chat=Math.max(0,m.chat-5);out.push(`💔 ${COMP[o.fail].n} is not convinced. Try again in a few days.`);S.talkRetry='t_'+o.fail;}}
  if(o.relic)out.push(...addRelic(o.relic));
@@ -2117,8 +2129,8 @@ PQ('c_rime','rime',"Rime's breath fogs the air. \"I do not remember who froze me
 PQ('c_venn','venn',"Venn rubs his hands. \"The perfect elixir needs Ectoplasm. Three of them. I will name it after you. Possibly after myself.\"",[{k:'gather',m:'Ectoplasm',n:3,j:'Bring 3 Ectoplasm to Venn.',tk:T_('Venn holds up a glowing flask. "Do not drink this."',CH('Drink it anyway','You feel... remarkable.',{bond:'venn',fx:'bless',xp:.8}),CH('Bottle it for later','He hands you a batch.',{bond:'venn',pot:'hp3'}))}]);
 PQ('c_gorm','gorm',"Gorm cracks his knuckles. \"I want a duel with something worthy. That old oak in Whisperwood. Kill Grandmother Oak.\"",[{k:'boss',zi:1,j:'Defeat Grandmother Oak with Gorm.',tk:T_('Gorm roars with laughter. "A worthy foe!"',CH('Laugh with him','He claps you on the shoulder.',{bond:'gorm',xp:1,pts:1}),CH('Share the spoils','He takes the lesser share.',{bond:'gorm',item:2}))}]);
 PQ('c_nyx','nyx',"Nyx's voice comes from the shadow. \"I leave contracts unfinished. A puzzle-locked vault holds my final one. Solve three puzzles, and I will be free.\"",[{k:'puzzle',n:3,j:'Solve 3 puzzles with Nyx.',tk:T_('Nyx reads a name, and burns the paper.',CH('Ask no questions','She exhales. "Thank you."',{bond:'nyx',xp:1,pts:1}),CH('Ask who it was','She tells you. It is a long, bad story.',{bond:'nyx',item:2}))}]);
-QS.valeria.steps[0].tk.ch.push(CH('Ask about her novice, Lyssa','Lyssa peeks out from behind a bookshelf, shy but curious. "Maybe I will see you at the tavern?"',{meet:'lyssa',xp:.6}));
-QS.hob.steps[0].tk.ch.push(CH('Meet Cogsworth, his clockwork helper','Cogsworth whirs and salutes. "GREETINGS. I WILL BE AT THE TAVERN."',{meet:'cogsworth',xp:.6}));
+QS.valeria.steps[0].tk.ch.push(CH('Ask about the young helper who wants to see the world','A young helper peeks out from behind a bookshelf, shy but curious. "Maybe I will see you at the tavern?"',{meetSlot:'valeria',xp:.6}));
+QS.hob.steps[0].tk.ch.push(CH('Meet the helper Hob keeps in the wagon','A helper steps out of the wagon. "We will be at the tavern, if you want to talk."',{meetSlot:'hob',xp:.6}));
 QLIST.splice(0,QLIST.length,...Object.keys(QS));
 const _qAvail=qAvail;
 qAvail=function(q){
@@ -2429,6 +2441,159 @@ function codexView(){
  return t;
 }
 
+/* =====================================================================
+   EXPANSION H — GENERATED COMPANIONS (a fresh cast every generation)
+   ===================================================================== */
+// three new role templates (the original 14 double as role templates)
+Object.assign(COMP,{
+ witch:{n:'Hexcaster',ic:'🧙',role:'Hexcaster',hp:.85,atk:1,def:.8,from:'',intro:'',basic:['Hex Bolt','A magic bolt; 30% chance to weaken the enemy (−25% damage dealt).'],spec:['Curse of Frailty','Weakens the enemy for 3 turns and poisons it.',5],pass:{xpf:4},passd:'+4% XP.'},
+ sniper:{n:'Marksman',ic:'🎯',role:'Marksman',hp:.8,atk:1.15,def:.7,from:'',intro:'',basic:['Aimed Shot','A precise, armor-piercing shot.'],spec:['Headshot','A devastating 300% armor-piercing shot with huge crit chance.',5],pass:{crit:4},passd:'+4% crit.'},
+ monk:{n:'Monk',ic:'🥋',role:'Monk',hp:1.3,atk:.9,def:1.2,from:'',intro:'',basic:['Palm Strike','A strike that restores a little of their own HP.'],spec:['Counter Stance','For 2 turns, reflects 60% of all damage the party takes back at the enemy.',4],pass:{dodge:4,restheal:.1},passd:'+4% dodge. Rests heal more.'}
+});
+Object.keys(COMP).forEach(id=>{COMP[id].k=COMP[id].k||id;});
+SYN.push(
+ {n:'Hex & Burn',d:'Hexcaster + a damage-over-time ally: DoTs +30%.',t:(h,a)=>h('witch')&&a('ember','venn','thorn','mortis'),e:{poisonx:.3}},
+ {n:'Sharpshooters',d:'Marksman + Archer/Rogue/Assassin: +25% crit damage.',t:(h,a)=>h('sniper')&&a('zephyr','kael','nyx'),e:{critdmg:25}},
+ {n:'Stillness',d:'Monk + Tank/Paladin: party takes 8% less damage.',t:(h,a)=>h('monk')&&a('brom','seraph'),e:{pdr:.08}}
+);
+
+/* ---------- name & flavour pools ---------- */
+const ROLEKEYS=['brom','lyssa','kael','ember','rime','venn','orla','gorm','nyx','seraph','thorn','mortis','zephyr','cogsworth','witch','sniper','monk'];
+const FIRSTN=['Aldric','Brisa','Corwin','Dara','Edric','Fenna','Garrick','Hale','Isolde','Joren','Kestrel','Lorne','Mira','Nolan','Odessa','Perrin','Quenby','Rowan','Sable','Tavish','Ulla','Vance','Wynne','Xander','Yara','Zane','Alma','Bram','Cato','Delia','Eamon','Freya','Gideon','Hesper','Ivar','Junia','Kell','Liora','Marek','Nessa','Orrin','Petra','Quill','Rhea','Soren','Thea','Ulric','Vera','Willa','Xenia','Yorick','Zora','Ansel','Briar','Cassia','Drake','Elara','Finnian','Greta','Harlan','Ilse','Jasper','Kira','Leif','Maren','Nikolai','Opal','Pax','Reva','Silas','Tamsin','Una','Vesper','Wren','Yvain','Zelda','Arlo','Bryn','Calla','Dorian','Emmeline','Fergus','Gwen','Hollis','Imogen','Jago','Katya','Lucan','Mabel','Nell','Osric','Phaedra','Rurik','Sabine','Torin','Valen','Wilhelm','Yusra','Zeke','Ayla','Bodhi','Cora','Dmitri','Esme','Fitz','Gaia','Hugo'];
+const EPI={brom:['Ironhide','Stonewall','the Unbroken','Greyshield','Holdfast','Oakenfist'],lyssa:['the Gentle','Brightwater','Lightbringer','Mendwell','Softhand','Dawnbloom'],kael:['Quickfingers','the Fox','Nightjar','Lightfoot','Coinwise','Slyboots'],ember:['Ashvale','Cindermoor','Kindle','the Bright','Sparkwright','Embersong'],rime:['Frostwhisper','Winterbourne','Hoarfrost','the Pale','Snowmantle','Icevein'],venn:['Corkwright','Brewmaster','Retort','Vialborne','Quicksalve','Dropwise'],orla:['the Skald','Hornblower','Songweaver','Merrylute','Bellwether','the Loud'],gorm:['Bloodhowl','Skullsplitter','the Mad','Axeborn','Ragefist','Boarsbane'],nyx:['Shadowstep','Nightveil','Hushblade','the Quiet','Duskwalker','Inkwell'],seraph:['Dawnguard','the Faithful','Sunshield','Oathkeeper','Lightsworn','Hallow'],thorn:['Greenmantle','Briarwood','Mossfoot','Thistledown','Barkskin','Fernlaw'],mortis:['Gravewright','Boneharp','Duskbane','the Pallid','Crowfeather','Tombwise'],zephyr:['Longshot','Windrider','Swiftbow','Skyhook','Featherfall','Driftwood'],cogsworth:['Mk. II','Cogwheel','Tinkerbound','Gearheart','Brasswork','Ratchet'],witch:['Hexwhisper','Nightbloom','Crowsong','Wickerbright','Thornspell','Murkwater'],sniper:['Farsight','Deadeye','Steadyhand','Hawkeye','Longbarrel','Pinpoint'],monk:['Stillwater','Openpalm','Ironbreath','the Calm','Humblefist','Quietstorm']};
+const ABIL={brom:[['Shield Bash','Buckler Slam','Pommel Strike','Rim Smash'],['Shield Wall','Bulwark','Hold the Line','Iron Curtain']],lyssa:[['Mending Light','Soft Touch','Kind Word','Healing Hymn'],['Prayer','Sanctuary',"Mercy's Call",'Dawn Chorus']],kael:[['Quick Slash','Nick','Flicker Cut','Pocket Knife'],['Backstab','Cheap Shot','Gutter Trick','Opening Gambit']],ember:[['Firebolt','Spark','Ember Dart','Cinder Flick'],['Inferno','Pyre','Firestorm','Sunburst']],rime:[['Frost Shard','Ice Lance','Chill Touch','Rime Dart'],['Deep Freeze',"Winter's Grip",'Glacial Wall','Cold Snap']],venn:[['Poison Flask','Acid Splash','Bad Brew','Toxic Dram'],['Elixir Toss','Restorative','Quick Tonic','Miracle Draught']],orla:[['Rousing Tune','Pep Chorus','Jaunty Jig','Marching Beat'],['War Chant','Battle Hymn','Ballad of Heroes','Anthem']],gorm:[['Rampage','Wild Swing','Skull Crack','Berserker Blow'],['Bloodrage','Frenzy','Red Mist','Howl of Wrath']],nyx:[['Shadow Stab','Needle','Dark Cut','Whisper Blade'],['Mark for Death','Death Sentence','Fatal Mark',"Hunter's Brand"]],seraph:[['Holy Strike','Radiant Cut','Sunblade','Righteous Blow'],['Aegis','Halo of Dawn','Guardian Light','Ward of Faith']],thorn:[['Thorn Lash','Bramble Whip','Briar Cut','Nettle Sting'],['Regrowth','Verdant Embrace',"Spring's Blessing",'Green Mending']],mortis:[['Death Bolt','Soul Siphon','Grave Touch','Wither'],['Raise Thrall','Call the Dead','Bone Servant','Rise, Wretch']],zephyr:[['Arrow','Quick Shot','Fletch','Sky Shot'],['Volley','Rain of Arrows','Triple Draw','Skyfall']],cogsworth:[['Spark Cannon','Zap','Arc Burst','Coil Shot'],['Overclock','Power Surge','Gear Rush','Tune-Up']],witch:[['Hex Bolt','Jinx','Evil Eye','Bad Omen'],['Curse of Frailty','Wither Hex',"Crone's Curse",'Fading Light']],sniper:[['Aimed Shot','Steady Round','Long Shot','Scope Fire'],['Headshot','Dead Reckoning','The Long Dark','One Bullet']],monk:[['Palm Strike','Open Hand','Flowing Strike','Still Fist'],['Counter Stance','Reversal','Mirror Palm','Flowing Water']]};
+const TONES=['gruff','warm','formal','wry','bubbly','cold'];
+const OPENS={gruff:['"Hm. A {r} does not drink alone. Sit, if you can stand my company."','"You look like someone who finishes what they start. Rare."','"Do not waste my time. But do not go, either."'],warm:['"Oh! Hello! A {r} like me does not get many visitors. Sit, sit!"','"You have kind eyes. I notice these things."','"Welcome! Please, make yourself comfortable."'],formal:['"Good day. I am a {r} of some experience. I would hear your name."','"Forgive the intrusion. I have been observing you, and I find myself curious."','"A pleasure. I trust you are not here to waste my time."'],wry:['"Another hero. How charming. Sit, tell me a story, and I will tell you which parts I do not believe."','"A new face. Marvelous. I was running low on disappointments."','"A {r}, a drink, and you. The evening improves."'],bubbly:['"Hi hi hi! I am a {r}! Are you an adventurer?! You look like an adventurer!"','"Oh wow, you came over! Nobody comes over!"','"Hello! I have a LOT of questions!"'],cold:['"State your business."','"You are loud. But you are here. Speak."','"I do not make friends. I make arrangements."']};
+const REAC={gruff:[['"Good answer."','"That is what I wanted to hear."'],['"Hm. Fair enough."','"Could be worse."'],['"...Not what I expected."','"We may not see eye to eye."']],warm:[['"Oh, that is lovely."','"You are wonderful."'],['"I see. Thank you for telling me."','"That is fair."'],['"Oh... I hoped you would say something else."','"That stings a little."']],formal:[[ '"A principled answer."','"I find that agreeable."'],['"Acceptable."','"Noted."'],['"I find that... disappointing."','"We differ, it seems."']],wry:[['"Ha! Now we are talking."','"Finally, someone with taste."'],['"Sure. Why not."','"Hm. Safe."'],['"Oh, how dreadfully dull."','"Wow. Okay."']],bubbly:[['"Yes! Exactly!"','"Oh I LOVE that!"'],['"Okay!"','"Huh, interesting!"'],['"Aww, boo!"','"Oh. That is... okay, I guess."']],cold:[['"Acceptable."','"That is sensible."'],['"Hm."','"If you say so."'],['"Foolish."','"I expected better."']]};
+const QVERB={guard:'braced before the hit',crit:'landed those critical hits',skill:'used your skills with flair',atk:'swung straight and honest',heal:'tended wounds in the thick of it',fire:'used fire',combo:'chained a clean combination'};
+const QSUF={gruff:'Good.',warm:'That was lovely.',formal:'Commendable.',wry:'Not bad at all.',bubbly:'Amazing!!',cold:'Efficient.'};
+const ROLEQ={brom:['guard'],lyssa:['heal'],kael:['crit','skill'],ember:['fire'],rime:['combo'],venn:['heal'],orla:['skill'],gorm:['atk'],nyx:['crit'],seraph:['guard'],thorn:['heal'],mortis:['skill'],zephyr:['skill','crit'],cogsworth:['combo'],witch:['combo'],sniper:['crit'],monk:['guard','atk']};
+const QMIN={guard:1,crit:1,skill:2,atk:3,heal:1,fire:1,combo:1};
+const PASSK={def:[.04,.10,v=>`You gain +${Math.round(v*100)}% defense.`],crit:[3,6,v=>`+${Math.round(v)}% crit.`],regen:[1,3,v=>`You regenerate ${Math.round(v)} HP per turn.`],lifesteal:[1,3,v=>`+${Math.round(v)}% lifesteal.`],dodge:[3,6,v=>`+${Math.round(v)}% dodge.`],xpf:[3,6,v=>`+${Math.round(v)}% XP.`],potion:[.15,.30,v=>`Potions heal ${Math.round(v*100)}% more.`],pick:[.10,.20,v=>`Better at picking locks (+${Math.round(v*100)}%).`],disarm:[.25,.45,v=>`Disarms traps (+${Math.round(v*100)}%).`],search:[.10,.25,v=>`Finds secret passages (+${Math.round(v*100)}%).`],restheal:[.10,.25,v=>`Rests heal ${Math.round(v*100)}% more.`],lore:[.5,1,v=>`Lore gives +${Math.round(v*100)}% XP.`],critdmg:[6,14,v=>`+${Math.round(v)}% crit damage.`]};
+const ROLEPASS={brom:['def','dodge'],lyssa:['regen','restheal','potion'],kael:['crit','pick','search'],ember:['xpf','critdmg'],rime:['critdmg','dodge'],venn:['potion','restheal'],orla:['xpf','regen'],gorm:['lifesteal','crit'],nyx:['search','crit','dodge'],seraph:['def','regen'],thorn:['restheal','regen'],mortis:['lifesteal','lore'],zephyr:['dodge','crit'],cogsworth:['disarm','search'],witch:['xpf','lore','critdmg'],sniper:['crit','critdmg'],monk:['dodge','restheal','def']};
+const AFFIX=[{n:'Veteran',d:'+12% HP',m:{hp:1.12}},{n:'Prodigy',d:'+10% damage',m:{atk:1.1}},{n:'Stalwart',d:'+12% defense',m:{def:1.12}},{n:'Quick Study',d:'specials recharge 1 turn faster',m:{cd:-1}},{n:'Sharp-Eyed',d:'+5% crit',m:{crit:5}},{n:'Hardy',d:'+8% HP, +6% defense',m:{hp:1.08,def:1.06}},{n:'Gifted',d:'+8% damage, +4% crit',m:{atk:1.08,crit:4}}];
+const ADJ=['weathered','wary','cheerful','scarred','sharp-eyed','weary','young','grizzled','quiet','restless','proud','nervous'];
+const CAPT={warren:'tied to a chair among the nests',cellar:'locked in a storeroom behind rows of barrels',weaver:'cocooned in silk, one arm free',chapel:'kneeling in the flooded pews',bonewright:'sorting bones at a workbench',forge:'caged in a slag-crusted cell',glacier:'frozen in ice up to the chin',spire:'bound in a harpy nest at the top of the spire'};
+const CAPTSP={gruff:'"About time someone showed up."',warm:'"Oh, thank goodness. I knew someone would come."',formal:'"I would be most grateful for assistance."',wry:'"Ah. The rescue. I was just getting comfortable."',bubbly:'"HI! Oh wow, hi! Please get me out of here!"',cold:'"Do not stand there. Cut the ropes."'};
+const ROLENOUN={brom:'shield-bearer',lyssa:'healer',kael:'rogue',ember:'fire-mage',rime:'frost-mage',venn:'alchemist',orla:'bard',gorm:'berserker',nyx:'assassin',seraph:'paladin',thorn:'druid',mortis:'necromancer',zephyr:'archer',cogsworth:'clockwork automaton',witch:'hexcaster',sniper:'marksman',monk:'monk'};
+const DGPREF={warren:['zephyr','kael','sniper','gorm'],cellar:['venn','witch','cogsworth','kael'],weaver:['thorn','witch','nyx','zephyr'],chapel:['seraph','lyssa','monk','mortis'],bonewright:['mortis','witch','nyx','kael'],forge:['ember','cogsworth','gorm','brom'],glacier:['rime','witch','monk','lyssa'],spire:['nyx','sniper','zephyr','orla']};
+const HEALISH=['lyssa','thorn','venn','monk'],TANKISH=['brom','seraph','monk'],FRONT=['brom','kael','orla','gorm','monk','sniper'];
+
+/* ---------- procedural portraits ---------- */
+function rngFrom(seed){let s=hashStr(String(seed))||1;return()=>{s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;};}
+function faceFor(seed,k){
+ const r=rngFrom(seed),pk=a=>a[Math.floor(r()*a.length)];
+ return{sk:Math.floor(r()*6),hh:Math.floor(r()*360),hs:30+Math.floor(r()*50),hl:15+Math.floor(r()*50),hair:Math.floor(r()*4),ch:(hashStr(k||'x')%360+Math.floor(r()*50))%360,eye:pk(['#2a1f14','#3a5a8a','#2f6b3f','#6b3a3a']),k};
+}
+function portrait(id,size){
+ size=size||40;const D=COMP[id];if(!D)return '';
+ const f=D.face||faceFor(id,D.k),skin=['#f2d4b7','#e0b48a','#c68d5f','#a56b43','#7a4b2e','#f6dfd0'][f.sk];
+ const hair=`hsl(${f.hh},${f.hs}%,${f.hl}%)`,cloth=`hsl(${f.ch},45%,38%)`,bg=`hsl(${f.ch},30%,18%)`;
+ const robot=f.k==='cogsworth',necro=f.k==='mortis';
+ const sk=robot?'#9aa4b2':necro?'#cfd4c8':skin;
+ let hairSvg='';
+ if(!robot){hairSvg=f.hair===0?`<path d="M19 28 Q19 12 32 12 Q45 12 45 28 Q40 20 32 20 Q24 20 19 28Z" fill="${hair}"/>`:f.hair===1?`<path d="M18 30 Q18 10 32 10 Q46 10 46 30 L46 44 L40 44 L40 26 Q32 18 24 26 L24 44 L18 44Z" fill="${hair}"/>`:f.hair===2?`<path d="M16 34 Q14 8 32 8 Q50 8 48 34 L44 34 Q44 20 32 20 Q20 20 20 34Z" fill="${cloth}"/>`:'';}
+ const head=robot?`<rect x="20" y="16" width="24" height="24" rx="5" fill="${sk}" stroke="#5a6472" stroke-width="1.5"/><rect x="23" y="24" width="18" height="6" rx="2" fill="#14161c"/><circle cx="28" cy="27" r="2" fill="#7fe3ff"/><circle cx="36" cy="27" r="2" fill="#7fe3ff"/>`:`<ellipse cx="32" cy="28" rx="12" ry="14" fill="${sk}"/><circle cx="27" cy="28" r="1.8" fill="${f.eye}"/><circle cx="37" cy="28" r="1.8" fill="${f.eye}"/><path d="M28 36 Q32 39 36 36" stroke="#6b3a3a" stroke-width="1.6" fill="none" stroke-linecap="round"/>`;
+ return `<svg class="mico" width="${size}" height="${size}" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="31" fill="${bg}"/><path d="M8 62 Q10 46 32 44 Q54 46 56 62Z" fill="${cloth}"/>${head}${hairSvg}<text x="44" y="60" font-size="16">${D.ic}</text></svg>`;
+}
+
+/* ---------- companion generator ---------- */
+const sample=(a,n)=>shuffle(a).slice(0,n);
+function randTrait(){return Object.keys(TRAITS);}
+function genTrialDefs(id,D,tone){
+ const first=D.n.split(' ')[0],r=Math.random();let st,obj;
+ if(r<.3){const n=ri(2,3);st={k:'kill',n,tier:'e',with:id,j:`Defeat ${n} elite monsters with ${first} beside you.`};obj=`Defeat ${n} elite monsters with me beside you`;}
+ else if(r<.6){const n=ri(6,9);st={k:'kill',n,with:id,j:`Defeat ${n} monsters with ${first}.`};obj=`Defeat ${n} monsters with me beside you`;}
+ else if(r<.8){st={k:'puzzle',n:2,with:id,j:`Solve 2 dungeon puzzles with ${first}.`};obj='Solve two puzzles in the dungeons together';}
+ else{st={k:'room',t:'treasure',n:3,with:id,j:`Open 3 dungeon chests with ${first}.`};obj='Open three chests in the dungeons together';}
+ const OFFER={gruff:`"Talk is cheap. ${obj}. Then we will see."`,warm:`"I would feel better if we tried something together. ${obj}, if you are willing."`,formal:`"I propose a test of compatibility. ${obj}."`,wry:`"A trial. How romantic. ${obj}, and try not to die."`,bubbly:`"Ooh, let's do a quest together! ${obj}!"`,cold:`"A test. ${obj}. Do not fail."`};
+ const DONE={gruff:'They lower their weapon. "Not bad. Not bad at all."',warm:'They smile, a little tired. "That was good. We work well together."',formal:'They incline their head. "The results are satisfactory."',wry:'They raise an eyebrow. "Well. You did not get me killed."',bubbly:'They bounce. "That was SO fun!"',cold:'They nod once. "Adequate."'};
+ const PASSRE={gruff:['"Aye."','He grunts, pleased.'],warm:['"I felt that too."','They beam.'],formal:['"Agreed."','A rare smile.'],wry:['"Ha. Cheers."','"I accept."'],bubbly:['"YES!"','They hug you.'],cold:['"Hm."','"Good."']}[tone];
+ const FAILRE={gruff:'"Is that so."',warm:'Their face falls. "Oh."',formal:'"I see. That is regrettable."',wry:'"Oh, is that how it is."',bubbly:'"Hey! That is not fair!"',cold:'"No."'}[tone];
+ st.tk=T_(DONE[tone],CH('"We worked well together."',PASSRE[0],{pass:id}),CH('Nod, and buy them a drink.',PASSRE[1],{pass:id}),CH('"I did most of the work."',FAILRE,{fail:id}));
+ return{t:`${D.n}'s Trial`,npc:D.n,w:'town',req:{trial:id},offer:T_(OFFER[tone]),steps:[st]};
+}
+function genBondQuest(id,D,tone){
+ const first=D.n.split(' ')[0],r=Math.random();let st,obj;
+ if(r<.4){const n=ri(8,12);st={k:'kill',n,with:id,j:`Defeat ${n} monsters alongside ${first}.`};obj=`Defeat ${n} monsters beside me`;}
+ else if(r<.7){st={k:'room',t:'treasure',n:3,with:id,j:`Open 3 dungeon chests with ${first}.`};obj='Open three dungeon chests with me';}
+ else{st={k:'puzzle',n:3,with:id,j:`Solve 3 dungeon puzzles with ${first}.`};obj='Solve three dungeon puzzles with me';}
+ const OFFER={gruff:`"I have unfinished business. ${obj}."`,warm:`"There is something I would love your help with. ${obj}."`,formal:`"I have a personal matter. ${obj}, if you would."`,wry:`"A favour. ${obj}. I will make it worth your while. Probably."`,bubbly:`"Can you help me with a thing?! ${obj}!"`,cold:`"I need a task done. ${obj}."`};
+ const DONE={gruff:'They let out a long breath. "Done. Thanks."',warm:'They squeeze your hand. "Thank you, truly."',formal:'"I am in your debt."',wry:'"Well. That went better than expected."',bubbly:'"We DID IT!"',cold:'"It is finished. Good."'};
+ st.tk=T_(DONE[tone],CH('"I am glad to help."','They nod.',{bond:id,xp:1,pts:1}),CH('Ask what it meant to them.','They tell you, haltingly.',{bond:id,item:2}));
+ return{t:`${D.n}'s Request`,npc:D.n,w:'town',req:{comp:id,bond:2},offer:T_(OFFER[tone]),steps:[st]};
+}
+function genCompanion(id,roleKey,slot,usedNames,gen){
+ const T0=COMP[roleKey],tone=pick(TONES);
+ let name;for(let i=0;i<50;i++){name=`${pick(FIRSTN)} ${pick(EPI[roleKey])}`;if(!usedNames.has(name))break;}
+ usedNames.add(name);
+ const first=name.split(' ')[0];
+ const ab=ABIL[roleKey],bn=pick(ab[0]),sn=pick(ab[1]);
+ const m={hp:1,atk:1,def:1,cd:0,crit:0};
+ const aff=pick(AFFIX);for(const k in aff.m){if(k==='cd'||k==='crit')m[k]=aff.m[k];else m[k]=aff.m[k];}
+ const jit=()=>+(rnd(.88,1.12)).toFixed(2);
+ const pk=pick(ROLEPASS[roleKey]),pk2=pick(Object.keys(PASSK).filter(x=>x!==pk));
+ const pv=(key,f)=>{const [lo,hi]=PASSK[key];let v=rnd(lo,hi)*f;return key==='def'||key==='potion'||key==='pick'||key==='disarm'||key==='search'||key==='restheal'||key==='lore'?+v.toFixed(2):Math.round(v*10)/10;};
+ const pass={};pass[pk]=pv(pk,1);if(Math.random()<.5)pass[pk2]=pv(pk2,.6);
+ const passd=Object.keys(pass).map(k=>PASSK[k][2](pass[k])).join(' ');
+ const traits=shuffle(Object.keys(TRAITS)),like=traits.slice(0,2),dis=[traits[2]];
+ const qs=pick(ROLEQ[roleKey]);
+ const sc=[];
+ shuffle([...Array(12).keys()].map(i=>i+1)).forEach(i=>{if(sc.length<3&&SCEN[i].ch.some(c=>like.includes(c[1])))sc.push(i);});
+ while(sc.length<3)sc.push(ri(1,12));
+ const re=[pick(REAC[tone][0]),pick(REAC[tone][1]),pick(REAC[tone][2])];
+ let from,intro='',meetReq=null;
+ if(slot.type==='tavern'){meetReq=slot.req;from=`Tavern (appears ${slot.req.kills?`after ${slot.req.kills} kills`:`at Lv ${slot.req.lvl}`}), then earn their trust`;}
+ else if(slot.type==='dungeon'){const D2=DG[slot.dg];from=`Find them in ${D2.n}, then earn their trust`;intro=`A ${pick(ADJ)} ${ROLENOUN[roleKey]}, ${CAPT[slot.dg]}. ${CAPTSP[tone]}`;}
+ else{from=`Introduced through ${slot.npc}'s errand, then earn their trust`;}
+ const c={n:name,ic:T0.ic,k:roleKey,role:T0.role,hp:+(T0.hp*jit()).toFixed(2),atk:+(T0.atk*jit()).toFixed(2),def:+(T0.def*jit()).toFixed(2),from,intro,
+  basic:[bn,T0.basic[1]],spec:[sn,T0.spec[1],Math.max(3,T0.spec[2]+ri(-1,1))],pass,passd,m,pw:+(rnd(.92,1.15)).toFixed(2),aff:aff.n+' ('+aff.d+')',tone,face:faceFor(id+name,roleKey),values:like};
+ const x={like,dis,meetReq,sc,open:pick(OPENS[tone]).replace('{r}',ROLENOUN[roleKey]),re,quirk:[qs,QMIN[qs],`You ${QVERB[qs]}. ${QSUF[tone]}`]};
+ return{c,x,trial:genTrialDefs(id,c,tone),bq:genBondQuest(id,c,tone)};
+}
+function genCast(gen){
+ const used=new Set();((S.world&&S.world.vets)||[]).forEach(v=>used.add(v.n));
+ const slots={tavern:[],dungeon:{},quest:{}};
+ let pool=shuffle(ROLEKEYS.slice());
+ const take=(prefs)=>{const f=pool.find(r=>prefs.includes(r));const r=f||pool[0];pool=pool.filter(x=>x!==r);return r;};
+ const roleOf={};
+ // dungeon captives pick themed roles first
+ Object.keys(DGPREF).forEach(dg=>{roleOf['d:'+dg]=take(DGPREF[dg]);});
+ roleOf['q:valeria']=take(HEALISH);roleOf['q:hob']=take(['cogsworth','venn','witch','sniper']);
+ const tavReq=shuffle([{kills:8},{kills:20},{lvl:8},{kills:30}]);
+ for(let i=0;i<4;i++)roleOf['t:'+i]=take(FRONT);
+ // guarantee at least one tank-ish and one healer-ish role in the cast
+ const have=Object.values(roleOf);
+ if(!have.some(r=>TANKISH.includes(r))){const dgk=Object.keys(roleOf).find(k=>k.startsWith('t:'));roleOf[dgk]=pick(TANKISH);}
+ if(!Object.values(roleOf).some(r=>HEALISH.includes(r)||r==='orla')){roleOf['q:valeria']=pick(HEALISH);}
+ const defs={};let n=0;
+ const mk=(key,slot)=>{const id=`g${gen}_${n++}`;const d=genCompanion(id,roleOf[key],slot,used,gen);defs[id]=d;return id;};
+ for(let i=0;i<4;i++)slots.tavern.push(mk('t:'+i,{type:'tavern',req:tavReq[i]}));
+ Object.keys(DGPREF).forEach(dg=>{slots.dungeon[dg]=mk('d:'+dg,{type:'dungeon',dg});});
+ slots.quest.valeria=mk('q:valeria',{type:'quest',npc:'Sister Valeria'});
+ slots.quest.hob=mk('q:hob',{type:'quest',npc:'Hob the Tinker'});
+ return{gen,legacy:false,defs,slots};
+}
+function legacyCast(){return{gen:1,legacy:true,defs:{},slots:{tavern:['brom','kael','orla','gorm'],dungeon:Object.assign({},ALLY_OF),quest:{valeria:'lyssa',hob:'cogsworth'}}};}
+function registerCast(cast){
+ if(!cast)return;
+ Object.keys(cast.defs).forEach(id=>{const d=cast.defs[id];COMP[id]=d.c;COMPX[id]=d.x;QS['t_'+id]=Object.assign({id:'t_'+id},d.trial);QS['c_'+id]=Object.assign({id:'c_'+id},d.bq);});
+ QLIST.splice(0,QLIST.length,...Object.keys(QS));
+ Object.keys(ALLY_OF).forEach(dg=>{DG[dg].ally=cast.slots.dungeon[dg]||null;});
+}
+const castIds=()=>{const c=S.world.cast;return(!c||c.legacy)?COMPIDS.filter(id=>!['witch','sniper','monk'].includes(id)):Object.keys(c.defs);};
+const tavernIds=()=>(S.world.cast&&S.world.cast.slots.tavern)||['brom','kael','orla','gorm'];
+function vetPass(key){
+ const vs=((S.world&&S.world.vets)||[]).filter(v=>v.bond>=3).sort((a,b)=>b.bond-a.bond).slice(0,6);
+ let v=0;vs.forEach(x=>{if(x.pass&&x.pass[key])v+=x.pass[key]*.5;});return v;
+}
+function retireCast(){
+ const w=S.world;w.vets=w.vets||[];
+ Object.keys(w.comp).forEach(id=>{const D=COMP[id],cs=w.comp[id];if(!D)return;w.vets.push({id,n:D.n,ic:D.ic,role:D.role,bond:cs.bond||1,pass:Object.assign({},D.pass),gen:w.gen});});
+ if(w.vets.length>14)w.vets=w.vets.slice(-14);
+ w.comp={};w.meet={};
+}
+
 /* ---------------- rendering ---------------- */
 const bar=(cur,max,cls)=>`<div class="bar ${cls}"><i style="width:${clamp(cur/max*100,0,100)}%"></i></div>`;
 const btn=(label,act,p,cls,dis,sub)=>`<button class="btn ${cls||''}" data-a="${act}" ${p!==undefined?`data-p="${p}"`:''} ${dis?'disabled':''}>${label}${sub?`<small>${sub}</small>`:''}</button>`;
@@ -2608,7 +2773,7 @@ const VIEWS={
   const items=w.inv.length+SLOTS.filter(s=>S.hero.equip[s]).length;
   return `<h1>⚰️ ${esc(d.name)} ${esc(d.fam)} has fallen</h1><p class="dn">${esc(d.cause)}</p>
   <div class="card sm">Level ${d.lvl} · Day ${d.day} · ${d.contracts} contracts · ${d.kills} kills</div>
-  <h2>What passes on</h2><div class="card sm">💰 ${fmt(w.gold)} gold<br>🎒 ${items} pieces of gear<br>🧶 Materials & potions<br>🏮 The guild remembers you (heir starts with ${Math.floor(d.contracts*.4)} contracts)<br>🩸 Bloodline stat bonus & catch-up XP until your heir reaches level ${Math.max(w.bestLevel,d.lvl)}</div>
+  <h2>What passes on</h2><div class="card sm">💰 ${fmt(w.gold)} gold<br>🎒 ${items} pieces of gear<br>🧶 Materials & potions<br>🏮 The guild remembers you (heir starts with ${Math.floor(d.contracts*.4)} contracts)<br>🩸 Bloodline stat bonus & catch-up XP until your heir reaches level ${Math.max(w.bestLevel,d.lvl)}<br>🤝 Your companions retire. Those who trusted you most pass on their counsel, and new faces await your heir.</div>
   <p class="mut sm">Lost: levels, skills, trained stats.</p>${btn('Continue the bloodline','heir',undefined,'pri c')}`;
  }
 };
@@ -2959,9 +3124,9 @@ VIEWS.combat=function(){
 function compCard(id,inParty){
  const D=COMP[id],cs=S.world.comp[id],h=S.hero,L=Math.min(cs.lvl,h.lvl+2),b=cs.bond;
  const lo=BOND[b-1],hi=BOND[b]||BOND[4];
- return `<div class="card"><div class="row2"><b>${D.ic} ${D.n}</b><span class="tag">${D.role} · Lv ${L}</span></div>
+ return `<div class="card"><div class="row2"><b style="display:flex;align-items:center;gap:8px">${portrait(id,40)} ${D.n}</b><span class="tag">${D.role} · Lv ${L}</span></div>
  <div class="sm mut">Bond ${b}/5 ${b>=3?'· special recharges faster':''}</div>${bar(b>=5?1:cs.bx-lo,b>=5?1:hi-lo,'xp')}
- <div class="sm">▸ <b>${D.basic[0]}:</b> ${D.basic[1]}</div><div class="sm">★ <b>${D.spec[0]}</b> (recharge ${cdVal({id})}): ${D.spec[1]}</div><div class="sm up">Passive: ${D.passd}</div>
+ <div class="sm">▸ <b>${D.basic[0]}:</b> ${D.basic[1]}</div><div class="sm">★ <b>${D.spec[0]}</b> (recharge ${cdVal({id})}): ${D.spec[1]}</div><div class="sm up">Passive: ${D.passd}</div>${D.aff?`<div class="sm mut">Trait: ${D.aff}${D.pw&&D.pw!==1?' · special power ×'+D.pw:''}</div>`:''}
  <div style="margin-top:8px">${inParty?btn('Remove from party','prem',id,'c'):btn('Add to party','padd',id,'pri c',h.party.length>=maxParty())}</div></div>`;
 }
 VIEWS.party=function(){
@@ -2971,12 +3136,12 @@ VIEWS.party=function(){
  if(h.guest){const gd=COMP[h.guest.id];t+=`<div class="card sm" style="border-color:var(--acc)">${gd.ic} <b>${gd.n}</b> is working with you${h.guest.trial?' on a trial':` (${h.guest.fights}/${h.guest.need} fights)`}.</div>`;}
  t+=`<h2>Synergies</h2>`+(sl.length?sl.map(s=>`<div class="card sm" style="border-color:var(--good)"><b class="up">${s.n}</b><br>${s.d}</div>`).join(''):'<p class="mut sm">No active synergies. Try pairing a tank with a healer, or a pyromancer with a cryomancer.</p>');
  t+=`<h2>In your party</h2>`+(h.party.length?h.party.map(id=>compCard(id,true)).join(''):'<p class="mut sm">Empty. Meet people at the Tavern, in dungeons and through quests, then earn their trust.</p>');
- const bench=COMPIDS.filter(id=>w.comp[id]&&!h.party.includes(id));
+ const bench=castIds().filter(id=>w.comp[id]&&!h.party.includes(id));
  if(bench.length)t+=`<h2>Roster</h2>`+bench.map(id=>compCard(id,false)).join('');
- const acq=COMPIDS.filter(id=>!w.comp[id]&&w.meet[id]);
+ const acq=castIds().filter(id=>!w.comp[id]&&w.meet[id]);
  if(acq.length)t+=`<h2>Acquaintances</h2>`+acq.map(id=>`<div class="item" style="cursor:default"><div><div class="n">${COMP[id].ic} ${COMP[id].n}</div><div class="s">Trust ${trustOf(id)}/100 · find them at the Tavern</div></div></div>`).join('');
- const un=COMPIDS.filter(id=>!w.comp[id]&&!w.meet[id]);
- if(un.length)t+=`<h2>Not yet met (${un.length})</h2>`+un.map(id=>`<div class="item" style="cursor:default"><div><div class="n">❔ ${COMP[id].role}</div><div class="s">${COMP[id].from}</div></div></div>`).join('');
+ const un=castIds().filter(id=>!w.comp[id]&&!w.meet[id]);
+ if(un.length)t+=`<h2>Not yet met (${un.length})</h2>`+un.map(id=>`<div class="item" style="cursor:default"><div><div class="n">❔ Someone you have yet to meet</div><div class="s">${COMP[id].from.replace(/^Tavern \(appears/,"Tavern (someone appears").replace(/^Find them in/,"Held captive in")}</div></div></div>`).join('');
  return t;
 };
 VIEWS.relics=function(){
@@ -3034,8 +3199,8 @@ function metCard(id){
  else if(m.chat+m.job<20)status='Needs more trust before they will set you a test';
  else if(h.day<m.cool)status=`They want some space. Try again in ${m.cool-h.day} day${m.cool-h.day===1?'':'s'}.`;
  else status='🎯 Ready to set you a trial';
- let t=`<div class="card"><div class="row2"><b>${D.ic} ${D.n}</b><span class="tag">${D.role}</span></div>
- <div class="sm mut">Trust ${tr}/100 · chats ${m.chat}/45 · work ${m.job}/30${m.test?' · test +25':''}</div>${bar(tr,100,'xp')}<div class="sm">${status}</div>`;
+ let t=`<div class="card"><div class="row2"><b style="display:flex;align-items:center;gap:8px">${portrait(id,40)} ${D.n}</b><span class="tag">${D.role}</span></div>
+ ${m.chat>=12&&COMPX[id]?`<div class="sm mut">You have noticed they value ${COMPX[id].like.map(t=>TRAITS[t]).join(' and ')}.</div>`:''}<div class="sm mut">Trust ${tr}/100 · chats ${m.chat}/45 · work ${m.job}/30${m.test?' · test +25':''}</div>${bar(tr,100,'xp')}<div class="sm">${status}</div>`;
  if(g&&!h.guest.trial)t+=`<div class="sm up">Working with you: ${h.guest.fights}/${h.guest.need} fights</div>`;
  t+=`<div class="grid" style="margin-top:8px">${btn('💬 Talk','convo',id,'c',talked,talked?'once a day':'')}${btn('🤝 Work together','jobStart',id,'c',!!h.guest,h.guest?'busy':'5 fights, see if you gel')}</div>`;
  if(qa){
@@ -3050,9 +3215,9 @@ VIEWS.tavern=function(){
  const h=S.hero,w=S.world,cost=Math.round(15+h.lvl*4);
  let t=`<h1>🍺 The Gilded Mug</h1><p class="mut">Smoke, rumor, and mediocre stew. People worth fighting beside don't sign up for gold. They have to <b>trust</b> you: talk to them (once a day each), work a few fights together, and pass their personal test.</p>${S.rumor?`<div class="card">${S.rumor}</div>`:''}`;
  if(S.hireLines){t+=`<div class="card">${S.hireLines.map(l=>`<p>${l}</p>`).join('')}</div>`;S.hireLines=null;}
- const st=TAVERN_IDS.filter(canApproach);
+ const st=tavernIds().filter(canApproach);
  if(st.length)t+=`<h2>A stranger catches your eye</h2>`+st.map(id=>`<div class="card"><div class="sm mut">Someone at the bar has been watching you. A ${COMP[id].role.toLowerCase()}, by the look of them.</div>${btn('Go over and say hello','approach',id,'pri c')}</div>`).join('');
- const met=COMPIDS.filter(id=>w.meet[id]&&!w.comp[id]);
+ const met=castIds().filter(id=>w.meet[id]&&!w.comp[id]);
  t+=`<h2>Faces you know</h2>`+(met.length?met.map(metCard).join(''):'<p class="mut sm">No one yet. Keep hunting. People notice a capable adventurer, and some wait in dungeons or the wilds.</p>');
  t+=`<h2>Rumors</h2>${btn('Buy a round for rumors','rumor',undefined,'c',w.gold<cost,`${cost}g · may reveal a dungeon`)}`;
  return t+'<div style="height:8px"></div>'+btn('← Back to town','go','town','c');
@@ -3079,6 +3244,17 @@ VIEWS.enc=function(){
  <div class="grid">${btn('⚔️ Fight','fight',undefined,'pri c',h.sta<(en.boss?BOSS_COST:FIGHT_COST),`${en.boss?BOSS_COST:FIGHT_COST}⚡`)}${btn('🏃 Slip away','avoid',undefined,'c',false,en.boss?'free':`${avoidChance(e)}% · fail = it strikes first`)}</div>`;
 };
 
+/* ===== EXPANSION H — views ===== */
+const _journal2=VIEWS.journal;
+VIEWS.journal=function(){
+ let t=_journal2();
+ if(S.jtab==='perks'){
+  const vs=S.world.vets||[];
+  t+=`<h2>Veterans</h2>`+(vs.length?vs.map(v=>`<div class="card sm"><b>${v.ic} ${esc(v.n)}</b> · ${esc(v.role)} · Gen ${v.gen} · bond ${v.bond}/5<br><span class="mut">${v.bond>=3?'Passes counsel to your heirs: '+Object.keys(v.pass).map(k=>PASSK[k][2](v.pass[k]*.5)).join(' '):'Left without a lasting bond.'}</span></div>`).join(''):'<p class="mut sm">When you fall, the companions you bonded with retire and pass a share of their gifts to your heirs. Every generation meets a brand-new cast.</p>');
+ }
+ return t;
+};
+
 function main(){
  S=load();
  if(S&&S.world&&S.hero){S.modal=null;ensureState();} else S=null;
@@ -3099,7 +3275,7 @@ function main(){
  render();
 }
 if(typeof document!=='undefined'&&typeof window!=='undefined'&&!window.__TQ_TEST){main();}
-if(typeof window!=='undefined')window.TQ={monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
+if(typeof window!=='undefined')window.TQ={genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>
 </html>
