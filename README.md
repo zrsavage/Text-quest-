@@ -41,3 +41,9 @@ Companions are **procedurally generated**: each generation gets a fresh cast of 
 - **Estate (earned, never bought outright):** you begin with nothing: no gold, items, skills or land. Complete the Safe Roads quest and reach Copper rank and the town grants a plot. Housing tiers need contract/dungeon/bounty/Abyss milestones plus time and materials. Staff cannot be hired: they turn up on their own after years on the land and a favour done, and grow with service. Facilities (farm, tavern stake, mine, trading company, dojos, academy, barracks) unlock through quests and mature over time. Heirs inherit the estate.
 - **Bounty board:** the guild posts hunts for specific creatures from your Codex, including Notorious elites that start turning up once you accept. Bounty rank grows with marks.
 - **Mobile:** auto-battle, text size, vibration, battle speed, contextual tips (not a tutorial), and installable offline files (`manifest.webmanifest`, `sw.js`, icons) when hosted on GitHub Pages or similar.
+
+## First errand and Essences
+
+- **Nothing but honest work:** the first thing a new hero can own comes from an errand with no fighting. Mira the Baker needs flour sacks hauled (three Training Yard sessions), then pays in a tunic and boots, or a kitchen knife and a loaf. Only the first generation gets this.
+- **Essences:** joining the guild awakens a first essence (more at Bronze and Gold rank). You are offered three random ones. Each grants a skill and a scaling bonus, and certain pairs form a **confluence** with extra bonuses.
+- **Monster cores:** once you have an essence, kills can leave cores (elites and bosses far more often). Cores deepen an essence's attunement, capped by guild rank. Heirs awaken their own essences.

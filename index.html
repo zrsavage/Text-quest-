@@ -3819,7 +3819,132 @@ function main(){
  render();
 }
 if(typeof document!=='undefined'&&typeof window!=='undefined'&&!window.__TQ_TEST){main();try{if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{});}catch(e){}}
-if(typeof window!=='undefined')window.TQ={HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
+/* =====================================================================
+   PASS 4 — a first errand (no fighting) and Essences
+   ===================================================================== */
+// the very first thing anyone owns is something an honest day of work earned
+Q('firstchores',{t:'A Day of Honest Work',npc:'Mira the Baker',w:'town',req:{first:1},
+ offer:T_('"You look like you could use breakfast and a purpose. I have flour sacks that need hauling from the cart to the cellar. Three loads. It is not glamorous, but I pay in what I have."'),
+ steps:[{k:'train',n:3,j:'Haul Mira\'s flour sacks: finish 3 sessions in the Training Yard.',tk:T_('Mira dusts off her hands. "Not bad for a beanpole. Now, what would help you most?"',
+  CH('A tunic and boots from the rag bin','She finds a patched tunic and a pair of old boots that nearly match.',{kit:['armor','boots'],xp:.5}),
+  CH('The old kitchen knife','"It cuts bread. I suppose it cuts other things." She also slips you a loaf.',{kit:['weapon'],pot:'hp1',xp:.5}))}]});
+QLIST.splice(0,QLIST.length,...Object.keys(QS));
+const _stepProgK=stepProg;
+stepProg=function(id){const st=qStep(id);if(st.k==='train')return[Math.min(S.hero.tc,st.n),st.n];return _stepProgK(id);};
+const _applyOutK=applyOut;
+applyOut=function(o,zi,qid){
+ const out=_applyOutK(o,zi,qid);
+ if(o.kit){o.kit.forEach(sl=>{const it=genItem(1,0,sl);it.req=1;S.hero.equip[sl]=it;out.push(`🎒 ${rarName(it)} <span class="mut">(equipped)</span>`);});}
+ return out;
+};
+const _qAvailK=qAvail;
+qAvail=function(q){
+ if(q.req&&q.req.first){const h=S.hero;return S.world.gen===1&&!h.q[q.id]&&!h.qd[q.id];}
+ return _qAvailK(q);
+};
+
+/* ----- essences ----- */
+const ESS=[
+ {id:'flame',n:'Flame',ic:'🔥',sk:'fire',e:{atk:.04},d:'Heat and hunger. Grants Fireball. +4% attack per attunement.'},
+ {id:'stone',n:'Stone',ic:'🪨',sk:'iron',e:{def:.05},d:'Patience made solid. Grants Iron Skin. +5% defense per attunement.'},
+ {id:'wind',n:'Wind',ic:'🌬️',sk:'flurry',e:{dodge:1.5},d:'Never where you were. Grants Flurry. +1.5% dodge per attunement.'},
+ {id:'blood',n:'Blood',ic:'🩸',sk:'bite',e:{lifesteal:1},d:'A debt that pays itself. Grants Vampiric Bite. +1% lifesteal per attunement.'},
+ {id:'life',n:'Life',ic:'🌿',sk:'mend',e:{maxhp:.05},d:'Roots that refuse to die. Grants Mend. +5% max HP per attunement.'},
+ {id:'shadow',n:'Shadow',ic:'🌑',sk:'venom',e:{crit:1.5},d:'What they did not see coming. Grants Venom Stab. +1.5% crit per attunement.'},
+ {id:'fortune',n:'Fortune',ic:'🍀',sk:'power',e:{goldf:4,dropf:2},d:'Luck that follows effort. Grants Power Strike. +4% gold and +2% drops per attunement.'},
+ {id:'war',n:'War',ic:'🚩',sk:'cry',e:{xpf:2.5},d:'Every battle teaches twice. Grants Battle Cry. +2.5% XP per attunement.'}
+];
+const ESSX={};ESS.forEach(x=>ESSX[x.id]=x);
+// two essences that sing together awaken a confluence
+const CONF=[
+ {n:'Wildfire',a:'flame',b:'wind',e:{atk:.08,crit:3},d:'+8% attack, +3% crit'},
+ {n:'Forge',a:'flame',b:'stone',e:{atk:.05,def:.06},d:'+5% attack, +6% defense'},
+ {n:'Bastion',a:'stone',b:'life',e:{maxhp:.10,def:.04},d:'+10% max HP, +4% defense'},
+ {n:'Nightfeeder',a:'blood',b:'shadow',e:{lifesteal:3,crit:3},d:'+3% lifesteal, +3% crit'},
+ {n:'Fortune\'s Wake',a:'fortune',b:'wind',e:{goldf:10,dropf:6},d:'+10% gold, +6% drops'},
+ {n:'Crimson Tide',a:'blood',b:'war',e:{atk:.06,xpf:5},d:'+6% attack, +5% XP'},
+ {n:'Evergreen',a:'life',b:'fortune',e:{maxhp:.06,regen:3},d:'+6% max HP, +3 regen'},
+ {n:'Ashen Veil',a:'shadow',b:'flame',e:{crit:4,atk:.04},d:'+4% crit, +4% attack'},
+ {n:'Warden\'s Oath',a:'war',b:'stone',e:{def:.06,xpf:4},d:'+6% defense, +4% XP'},
+ {n:'Verdant Hunt',a:'life',b:'shadow',e:{regen:3,crit:3},d:'+3 regen, +3% crit'}
+];
+const essOf=()=>{const h=S&&S.hero;if(!h)return[];return h.ess=h.ess||[];};
+const essSlots=()=>{const h=S.hero;return(S.world.guild?1:0)+(h.contracts>=10?1:0)+(h.contracts>=32?1:0);};
+const essCap=()=>2+rankIdx(S.hero.contracts);
+const confluences=()=>{const ids=essOf().map(x=>x.id);return CONF.filter(c=>ids.includes(c.a)&&ids.includes(c.b));};
+function essBonus(){
+ const b={};
+ essOf().forEach(x=>{const d=ESSX[x.id];if(d)for(const k in d.e)b[k]=(b[k]||0)+d.e[k]*x.a;});
+ confluences().forEach(c=>{for(const k in c.e)b[k]=(b[k]||0)+c.e[k];});
+ return b;
+}
+const _PK=P;
+P=function(){
+ const p=_PK(),b=essBonus();
+ if(b.atk)p.atk=Math.round(p.atk*(1+b.atk));
+ if(b.def)p.def=Math.round(p.def*(1+b.def));
+ if(b.maxhp)p.maxhp=Math.round(p.maxhp*(1+b.maxhp));
+ if(b.crit)p.crit=clamp(p.crit+b.crit,0,75);
+ if(b.dodge)p.dodge=clamp(p.dodge+b.dodge,0,45);
+ if(b.lifesteal)p.lifesteal=clamp(p.lifesteal+b.lifesteal,0,25);
+ if(b.goldf)p.goldf+=b.goldf;if(b.dropf)p.dropf+=b.dropf;if(b.xpf)p.xpf+=b.xpf;if(b.regen)p.regen+=Math.round(b.regen);
+ return p;
+};
+// monster cores: stronger monsters leave them, and they deepen what you have awakened
+const _victoryK=victory;
+victory=function(){
+ const c=S.cb,e=c&&c.e,h=S.hero;
+ _victoryK();
+ if(!e||!S.res||!essOf().length)return;
+ const ch={n:.07,e:.35,b:1}[e.tier]*(e.pack?1.3:1),n=e.tier==='b'?ri(2,3):1;
+ if(Math.random()<ch){h.cores=(h.cores||0)+n;S.res.lines.push(`💠 +${n} monster core${n>1?'s':''}`);}
+};
+function essOffer(){
+ const h=S.hero,own=essOf().map(x=>x.id);
+ h.essOffer=ESS.filter(x=>!own.includes(x.id)).sort(()=>Math.random()-.5).slice(0,3).map(x=>x.id);
+}
+Object.assign(ACT,{
+ essOpen(){const h=S.hero;if(essOf().length>=essSlots())return;if(!h.essOffer||!h.essOffer.length)essOffer();},
+ essPick(id){
+  const h=S.hero;if(essOf().length>=essSlots()||!(h.essOffer||[]).includes(id))return;
+  const d=ESSX[id];essOf().push({id,a:1});h.essOffer=null;
+  if(!h.skills[d.sk])h.skills[d.sk]=1;
+  const nc=confluences();
+  note(`${d.ic} <b>The ${d.n} essence settles into you.</b> You can now use ${SK[d.sk].n}.`,'y');
+  nc.filter(c=>c.a===id||c.b===id).forEach(c=>note(`✨ Confluence: <b>${c.n}</b> (${c.d})`,'y'));
+ },
+ essAbsorb(id){
+  const h=S.hero,x=essOf().find(y=>y.id===id);if(!x||x.a>=essCap()||(h.cores||0)<x.a)return;
+  h.cores-=x.a;x.a++;note(`${ESSX[id].ic} Your ${ESSX[id].n} essence deepens (attunement ${x.a}).`,'y');
+ }
+});
+function essHtml(){
+ const h=S.hero,own=essOf(),slots=essSlots();
+ let t=`<h2>💠 Essences</h2><p class="mut sm">Essences awaken in you at the guild and shape who you become. Each grants a skill and a bonus, and certain pairs form a confluence. Monster cores deepen them. Your heirs awaken their own.</p>`;
+ if(!slots){return t+`<div class="card sm mut">Join the ${GUILD} to awaken your first essence.</div>`;}
+ own.forEach(x=>{const d=ESSX[x.id],cap=essCap();
+  t+=`<div class="card"><div class="row2"><b>${d.ic} ${d.n}</b><span class="tag">Attunement ${x.a}/${cap}</span></div><div class="mut sm">${d.d}</div>${x.a<cap?btn(`Absorb cores (${x.a} needed)`,'essAbsorb',x.id,'',(h.cores||0)<x.a,`💠 ${h.cores||0} owned`):'<div class="mut sm">Rank more contracts to attune further.</div>'}</div>`;});
+ const cf=confluences();
+ if(cf.length)t+=cf.map(c=>`<div class="card sm">✨ <b>${c.n}</b> <span class="mut">(${ESSX[c.a].n} + ${ESSX[c.b].n})</span><br>${c.d}</div>`).join('');
+ if(own.length<slots){
+  if(h.essOffer&&h.essOffer.length){
+   t+=`<div class="card"><b>An essence stirs. Choose one to awaken:</b></div>`+h.essOffer.map(id=>{const d=ESSX[id];
+    const hint=CONF.filter(c=>(c.a===id&&own.some(o=>o.id===c.b))||(c.b===id&&own.some(o=>o.id===c.a))).map(c=>c.n);
+    return `<div class="card"><b>${d.ic} ${d.n}</b><div class="mut sm">${d.d}</div>${hint.length?`<div class="sm" style="color:var(--acc)">Forms confluence: ${hint.join(', ')}</div>`:''}${btn('Awaken '+d.n,'essPick',id,'pri')}</div>`;}).join('');
+  }else t+=btn('💠 Awaken an essence','essOpen',undefined,'pri',false,`${slots-own.length} slot${slots-own.length>1?'s':''} open`);
+ }else if(own.length<3)t+=`<div class="card sm mut">Another essence will stir at ${own.length===1?'Bronze rank (10 contracts)':'Gold rank (32 contracts)'}.</div>`;
+ if(h.cores)t+=`<p class="mut sm">💠 Cores held: ${h.cores}</p>`;
+ return t;
+}
+const _townK=VIEWS.town;
+VIEWS.town=function(){let t=_townK();const q=QS.firstchores,h=S.hero;
+ if(S.world.gen===1&&!h.qd.firstchores)t=t.replace('<div class="grid">',`<h2>Odd jobs</h2>${questCard(q)}<div class="grid">`);return t;};
+const _heroEss=VIEWS.hero;
+VIEWS.hero=function(){const t=_heroEss();if((S.htab||'stats')!=='stats')return t;return t.replace('</div><h1>🧍',`</div>${essHtml()}<h1>🧍`);};
+HINTS.push({id:'ess',scr:['town','hero','guild'],when:()=>S.world.guild&&essOf().length<essSlots(),t:'An essence is ready to awaken in you. Open the Hero tab and choose one. Each grants a skill and shapes your build.'});
+HINTS.push({id:'chore',scr:['town'],when:()=>S.world.gen===1&&!S.hero.qd.firstchores,t:'You own nothing yet. Mira the Baker has honest work for anyone willing, in the Town Square. It does not involve fighting.'});
+
+if(typeof window!=='undefined')window.TQ={ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,trialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>
 </html>
