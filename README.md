@@ -151,3 +151,6 @@ Loot lines now read item/material, then its description, then the next item. Art
 
 ## Chat pop-ups
 Talking to townsfolk, market keepers, listening in, buying rumours and mingling in the square now show the result as a centred pop-up (3.5-6 seconds depending on length, tap to dismiss). The text stays on the page as well.
+
+## Compact layout
+Buttons, cards and list rows are now about 20% smaller by default. Menu > Settings > Roomy buttons restores the older size; Large tap targets still goes bigger.
