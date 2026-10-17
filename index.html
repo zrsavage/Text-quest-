@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Hollowmere: Bloodline</title>
 <style>
-:root{--warn:#ff9a3c;--bg:#0f1218;--panel:#1a1f2a;--panel2:#232a38;--line:#2d3649;--tx:#e8ecf3;--mut:#8b95a7;--acc:#f0b94a;--good:#5fd38d;--bad:#ff6b6b;--blue:#4aa3ff;--purple:#c077ff}
+:root{--warn:#ff9a3c;--bg:#0f1218;--panel:#1a1f2a;--panel2:#232a38;--line:#2d3649;--tx:#e8ecf3;--mut:#8b95a7;--acc:#f0b94a;--good:#5fd38d;--bad:#ff6b6b;--blue:#4aa3ff;--purple:#c077ff;--bar:#121620}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--tx);font:1rem/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;touch-action:manipulation}
 body{-webkit-user-select:none;user-select:none}
@@ -19,11 +19,11 @@ input,textarea{-webkit-user-select:text;user-select:text}
 html,body,button,input,textarea{font-family:var(--ff,"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif)}
 h1,h2,h3,.foldh{font-family:var(--fh,var(--ff,inherit))}
 #app{max-width:640px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column}
-#top{position:sticky;top:0;z-index:5;background:#121620;border-bottom:1px solid var(--line);padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top))}
+#top{position:sticky;top:0;z-index:5;background:var(--bar);border-bottom:2px solid color-mix(in srgb,var(--acc) 55%,var(--line));padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top))}
 #top .row{display:flex;justify-content:space-between;gap:8px;font-size:0.8125rem;color:var(--mut)}
 #top b{color:var(--tx)}
 #view{flex:1;padding:12px 14px 96px}
-#nav{position:fixed;bottom:0;left:0;right:0;max-width:640px;margin:0 auto;display:flex;background:#121620;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:6}
+#nav{position:fixed;bottom:0;left:0;right:0;max-width:640px;margin:0 auto;display:flex;background:var(--bar);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:6}
 #nav{gap:6px;padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
 #nav button{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;color:var(--mut);padding:8px 2px 6px;font-size:0.8125rem;position:relative;min-height:66px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
 #nav button .nl{font-weight:600;letter-spacing:.01em}
@@ -32,6 +32,19 @@ h1,h2,h3,.foldh{font-family:var(--fh,var(--ff,inherit))}
 #nav button .ni svg{display:block}
 #nav button.on{color:var(--acc)}
 #nav .dot{position:absolute;top:6px;right:22%;background:var(--bad);color:#fff;border-radius:9px;font-size:0.625rem;padding:0 5px}
+/* palette: each part of the game has its own accent, and the tiles their own colour */
+body{background:radial-gradient(130% 55% at 50% 0,color-mix(in srgb,var(--acc) 11%,var(--bg)),var(--bg) 70%) fixed,var(--bg)}
+body[data-sec=town]{--acc:#f0b94a}body[data-sec=wild]{--acc:#ff7a4a}body[data-sec=guild]{--acc:#4aa3ff}body[data-sec=hero]{--acc:#c077ff}body[data-sec=pack]{--acc:#3fd0c0}body[data-sec=journal]{--acc:#ff7fa8}body[data-sec=menu]{--acc:#9bb0d6}body[data-sec=trade]{--acc:#7fd65f}
+#nav button[data-p=town]{--nc:#f0b94a}#nav button[data-p=journal]{--nc:#ff7fa8}#nav button[data-p=hero]{--nc:#c077ff}#nav button[data-p=pack]{--nc:#3fd0c0}#nav button[data-p=guild]{--nc:#4aa3ff}#nav button[data-p=menu]{--nc:#9bb0d6}
+#nav button .ni{color:var(--nc);opacity:.75}#nav button.on{color:var(--nc);border-color:var(--nc);background:color-mix(in srgb,var(--nc) 14%,var(--panel))}#nav button.on .ni{opacity:1}
+h1{color:color-mix(in srgb,var(--acc) 35%,var(--tx))}
+.card{border-left:3px solid color-mix(in srgb,var(--acc) 45%,var(--line))}
+.tag{border-color:color-mix(in srgb,var(--acc) 35%,var(--line))}
+body[data-theme=forest]{--bg:#0c1511;--panel:#15231c;--panel2:#1d3026;--line:#2b4a3a;--bar:#0e1a14;--mut:#8fae9d}
+body[data-theme=ocean]{--bg:#0a1320;--panel:#122238;--panel2:#1a3150;--line:#27476e;--bar:#0c1a2d;--mut:#8ba7c9}
+body[data-theme=dusk]{--bg:#140f1c;--panel:#221a30;--panel2:#2e2442;--line:#473862;--bar:#191226;--mut:#a597bd}
+body[data-theme=ember]{--bg:#170f0c;--panel:#2a1a14;--panel2:#3a241a;--line:#5a3a2b;--bar:#1d120e;--mut:#bfa08f}
+body[data-theme=parchment]{--bg:#1c1812;--panel:#2b251b;--panel2:#382f22;--line:#54472f;--bar:#211c14;--mut:#b5a78a}
 h1{font-size:1.375rem;margin:4px 0 2px}h2{font-size:1.0625rem;margin:16px 0 6px;color:var(--acc)}h3{font-size:0.9375rem;margin:10px 0 4px}
 p{margin:6px 0}.mut{color:var(--mut)}.sm{font-size:0.8125rem}.c{text-align:center}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0}
@@ -40,7 +53,7 @@ p{margin:6px 0}.mut{color:var(--mut)}.sm{font-size:0.8125rem}.c{text-align:cente
 .btn small{display:block;font-weight:400;color:var(--mut);font-size:0.6875rem;line-height:1.2;margin-top:1px}
 .btn:active{filter:brightness(1.3)}
 .btn[disabled]{opacity:.4}
-.btn.pri{background:#3a2f12;border-color:var(--acc);color:var(--acc)}
+.btn.pri{background:color-mix(in srgb,var(--acc) 16%,var(--bar));border-color:var(--acc);color:var(--acc)}
 .btn.bad{background:#3a1717;border-color:var(--bad);color:var(--bad)}
 .btn.good{background:#143324;border-color:var(--good);color:var(--good)}
 .btn.c{text-align:center}
@@ -8939,6 +8952,28 @@ const bondLvl=id=>Math.min(5,1+Math.floor((((S.world.story||{})[id]||{}).uses||0
   return s+'\n'+L.join('\n');
  };
 }
+
+
+const SEC={town:'town',train:'town',shop:'town',library:'town',tinker:'town',square:'town',tavern:'town',news:'town',people:'town',doings:'town',estate:'town',crypt:'town',hunt:'wild',enc:'wild',combat:'wild',explore:'wild',dungeon:'wild',delve:'wild',puzzle:'wild',result:'wild',outskirts:'wild',trip:'wild',guild:'guild',roll:'guild',crew:'guild',hero:'hero',pack:'pack',journal:'journal',menu:'menu',report:'menu',exchange:'trade',bank:'trade',sell:'trade',map:'trade'};
+const THEMES=[['classic','Classic'],['forest','Forest'],['ocean','Ocean'],['dusk','Dusk'],['ember','Ember'],['parchment','Parchment']];
+function applyTheme(){
+ if(typeof document==='undefined')return;
+ const b=document.body;if(!b)return;
+ if(PRE.theme&&PRE.theme!=='classic')b.dataset.theme=PRE.theme;else delete b.dataset.theme;
+ try{b.dataset.sec=(S&&S.screen&&SEC[S.screen])||'town';}catch(e){}
+}
+ACT.theme=function(k){PRE.theme=k;prefSave();applyTheme();};
+TA.ttheme=function(k){PRE.theme=k;prefSave();applyTheme();};
+const themeBtns=act=>`<h3 style="margin-top:14px">Colour theme</h3><div class="grid" style="grid-template-columns:repeat(2,1fr)">${THEMES.map(f=>`<button class="btn c ${(PRE.theme||'classic')===f[0]?'pri':''}" data-a="${act}" data-p="${f[0]}">${f[1]}</button>`).join('')}</div>`;
+{
+ const _s=settingsHtml;
+ settingsHtml=function(){return _s()+themeBtns('theme');};
+ const _t=TV.settings;
+ TV.settings=function(){const t=_t();return t.replace(btn('Back','tgo','title','c'),themeBtns('ttheme')+'<div style="height:8px"></div>'+btn('Back','tgo','title','c'));};
+ const _r=render;
+ render=function(){applyTheme();return _r.apply(this,arguments);};
+}
+applyTheme();
 
 /* ----- a slow start: bodies heal over days, not overnight, until you are properly seasoned ----- */
 const nightRecovery=()=>{const L=S.hero.lvl;return L>=8?1:Math.min(1,.38+.09*(L-1));};

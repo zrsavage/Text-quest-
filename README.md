@@ -223,3 +223,7 @@ After your first kill and your return to town, a single pop-up explains time of 
 - The bottom bar is now six real tiles with drawn icons (Town, Journal, Hero, Pack, Guild, Menu), larger and with borders, and the icons stay in calm mode.
 
 - The "Time, seasons and weather" explanation now appears the first time you are back in town after going out (even if you fled or killed nothing), instead of waiting for a first kill.
+
+## More colour
+- Each part of the game has its own accent: the Town gold, Hunt and dungeons ember orange, the Guild blue, Hero violet, Pack teal, Journal rose, Menu slate, markets green. The accent tints headings, the top bar, primary buttons, card edges and the background glow. Bottom tiles each have their own colour.
+- Settings has six colour themes (Classic, Forest, Ocean, Dusk, Ember, Parchment) that change the whole backdrop.
