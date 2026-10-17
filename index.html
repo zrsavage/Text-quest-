@@ -9124,7 +9124,7 @@ function cloudSchedule(){
  const _mn=VIEWS.menu;
  VIEWS.menu=function(){
   let t=_mn();
-  const txt={off:'Cloud save is not available here. Your save lives only on this device: use Export save to keep a copy.',ok:'Cloud save is on. It will save after your next action.',saved:'Cloud save is on. Last saved '+(CLOUD.t?new Date(CLOUD.t).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'')+'.',restored:'Your game was restored from your cloud save.',fail:'Cloud save failed ('+CLOUD.err+'). Your game is still saved on this device. Use Export save for a safe copy.'}[CLOUD.st]||'';
+  const txt={off:'Cloud save is not available here. Your save lives only on this device: use Copy save as text (Menu) to keep a copy.',ok:'Cloud save is on. It will save after your next action.',saved:'Cloud save is on. Last saved '+(CLOUD.t?new Date(CLOUD.t).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'')+'.',restored:'Your game was restored from your cloud save.',fail:'Cloud save failed ('+CLOUD.err+'). Your game is still saved on this device. Use Copy save as text for a safe copy.'}[CLOUD.st]||'';
   return t.replace(/(<\/h1>)/,`$1<div class="card sm" style="border-color:${CLOUD.st==='fail'?'var(--bad)':CLOUD.st==='off'?'var(--line)':'var(--good)'}">☁️ ${esc(txt)}</div>`);
  };
 }
@@ -9139,6 +9139,132 @@ async function cloudInit(){
  }catch(e){CLOUD.st=CLOUD.ready?'fail':'off';CLOUD.err=(e&&(e.code||e.message))||'error';}
 }
 if(typeof window!=='undefined'){window.__TQcloud={CLOUD,cloudPull,cloudPush,cloudInit};setTimeout(cloudInit,0);}
+
+/* =====================================================================
+   Simpler screens: a Town with a few big choices and a walk that leads to
+   every place; a tidier Menu, Journal, Pack and Guild
+   ===================================================================== */
+const BTN_RE=/<button class="btn[^"]*" data-a="(go|roughIn)"(?: data-p="(\w*)")?[^>]*>[\s\S]*?<\/button>/g;
+const TOWN_CORE=['train','hunt','guild','shop'];
+const btnOfHtml=(html,a,p)=>{const m=html.match(new RegExp('<button[^>]*data-a="'+a+'"'+(p!=null?'[^>]*data-p="'+p+'"':'')+'[^>]*>[\\s\\S]*?<\\/button>'));return m?m[0]:'';};
+// the places of the town, gathered from the full town screen
+function townPlaces(){
+ const keep={f:S.fold,o:S.oddRes,w:S.walkMsg};
+ S.fold=Object.assign({},S.fold||{},{places:true,svc:true,log:false});
+ let raw='';try{raw=_townFull();}catch(e){}
+ S.fold=keep.f;S.oddRes=keep.o;S.walkMsg=keep.w;
+ const out=[];let m;const re=new RegExp(BTN_RE.source,'g');
+ while((m=re.exec(raw))){if(m[1]==='go'&&(TOWN_CORE.includes(m[2])||m[2]==='streets'))continue;out.push(m[0]);}
+ return out;
+}
+const _townFull=VIEWS.town;
+VIEWS.town=function(){
+ let t=_townFull();
+ if(!S.hero||S.trip||!atHome())return t;
+ const n=(()=>{try{return townPlaces().length;}catch(e){return 0;}})();
+ // take every non-core place out of the main screen
+ t=t.replace(new RegExp(BTN_RE.source,'g'),(m,a,p)=>(a==='go'&&TOWN_CORE.includes(p))?m:'');
+ t=t.replace(/<button class="foldh" data-a="fold" data-p="(places|svc)">[\s\S]*?<\/button>/g,'');
+ t=t.replace(/<button class="btn[^"]*" data-a="walk"[^>]*>[\s\S]*?<\/button>/,'');
+ t=t.replace(/<div class="grid">\s*<\/div>/g,'');
+ t=t.replace(/<h2>Around town<\/h2>\s*(?=<div class="grid">|<div style="margin-top)/,'');
+ const h=S.hero,walk=btn('🚶 Walk around town','go','streets','',false,n?`${n} places: tavern, bank, library and more`:'see what the streets hold');
+ const sl='<div style="margin-top:10px"><button class="btn good" data-a="sleep"';
+ t=t.includes(sl)?t.replace(sl,'<div style="margin-top:8px">'+walk+'</div>'+sl):t+walk;
+ return t;
+};
+VIEWS.streets=function(){
+ const h=S.hero,w=S.world;
+ let t=`<h1>🚶 Around ${esc(TOWNS[where()].n)}</h1><p class="mut">Streets, shops and neighbours. Everything the town offers is a short walk from here.</p>`;
+ const ps=townPlaces();
+ t+=`<div class="grid">${ps.join('')}</div>`;
+ if(oddOK()||h.odd||h.oddOffer)t+='<div style="height:8px"></div>'+btn('👀 Wander the streets','walk',undefined,'c',h.walkDay===h.day||!!S.dg,h.walkDay===h.day?'you have already wandered today':'see what turns up · free');
+ return t+'<div style="height:8px"></div>'+btn('← Back to town','go','town','c');
+};
+{const _w=ACT.walk;ACT.walk=function(){_w.apply(this,arguments);if(S.screen==='streets')S.screen='town';};}
+NAV[0][3].push('streets');
+Object.assign(SEC,{streets:'town'});
+
+// ---------- the Menu, regrouped ----------
+const faceName=()=>(FACES.find(x=>x[0]===(PRE.face||'atk'))||FACES[1])[1];
+const themeName=()=>(THEMES.find(x=>x[0]===(PRE.theme||'classic'))||THEMES[0])[1];
+const sizeN=()=>(PRE.big?1:0)+(PRE.roomy?1:0);
+ACT.btnsize=function(){const n=(sizeN()+1)%3;PRE.big=n>=1;PRE.roomy=n>=2;prefSave();};
+{
+ const _mnu=VIEWS.menu;
+ VIEWS.menu=function(){
+  const raw=_mnu();
+  const h2=n=>{const m=raw.match(new RegExp('<h2>[^<]*'+n+'[^<]*</h2>([\\s\\S]*?)(?=<h2>|$)'));return m?m[1]:'';};
+  const h3=n=>{const m=raw.match(new RegExp('<h3[^>]*>'+n+'</h3>([\\s\\S]*?)(?=<h3|<h2|$)'));return m?m[1]:'';};
+  const B=(a,p)=>btnOfHtml(raw,a,p);
+  const cloud=(raw.match(/<div class="card sm"[^>]*>☁️[\s\S]*?<\/div>/)||[''])[0];
+  const sp=(x)=>x+'<div style="height:8px"></div>';
+  let t='<h1>⚙️ Menu</h1>'+cloud;
+  t+='<h2>Save &amp; backup</h2><p class="mut sm">Your game saves by itself after every action.</p>';
+  t+=`<div class="grid">${B('export','').replace('Export save','Copy save as text')}${B('doimport','').replace('Import save','Restore from text')}</div><div style="height:6px"></div>`;
+  t+=B('dlsave').replace('⬇️ Download save file','⬇️ Download save file')+'<div style="height:6px"></div>'+B('totitle').replace('Return to title screen','Back to the title screen');
+  t+='<h2>How you play</h2>';
+  t+=`<h3>Challenge</h3><p class="mut sm">Scales enemy strength and rewards.</p><div class="grid">${[0,1,2,3].map(i=>B('diff',i)).join('')}</div>`;
+  t+=`<div style="height:8px"></div>${B('auto')}<div style="height:6px"></div><h3>Auto-battle speed</h3>${h3('Auto-battle speed').replace(/<p[\s\S]*$/,'')}`;
+  t+=`<div style="height:6px"></div><div class="grid">${B('hap')}${B('hintsOff')}</div><div style="height:6px"></div>${B('sndtog')}`;
+  const look=`<h3>Text size</h3>${h3('Text size')}`+
+   `<div style="height:6px"></div><div class="grid">${B('playful')}${B('a11y','hc')}${B('a11y','cb')}<button class="btn" data-a="btnsize">Button size: ${['Normal','Large','Largest'][sizeN()]}</button></div>`+
+   foldShut('mfont',`<h3 style="margin:10px 0 0">Font: ${esc(faceName())}</h3>`,`<div style="height:6px"></div>${h3('Font style')}`)+
+   foldShut('mtheme',`<h3 style="margin:10px 0 0">Colour theme: ${esc(themeName())}</h3>`,`<div style="height:6px"></div>${h3('Colour theme')}`)+
+   foldShut('mlegend','<h3 style="margin:10px 0 0">What the colours mean</h3>',h3('What the colours mean'));
+  t+=foldShut('mlook','<h2 style="margin:16px 0 0">Look &amp; comfort</h2>',look);
+  t+='<h2>Your family</h2>'+h2('Bloodline');
+  t+=`<h2>Help &amp; testing</h2>${B('go','report').replace('View playtest report','Playtest report')}`;
+  t+=foldShut('mdanger','<h2 style="margin:16px 0 0;color:var(--bad)">Danger zone</h2>',`<p class="mut sm">These cannot be undone.</p>${B('retire').replace('Retire hero &amp; pass the torch','End this hero\'s life (the heir takes over)').replace('Retire hero & pass the torch','End this hero\'s life (the heir takes over)')}<div style="height:8px"></div>${B('reset').replace('Erase everything','Delete all progress')}`);
+  return t;
+ };
+}
+
+// ---------- the Journal in four parts ----------
+const JGRP={quests:['quests'],world:['places','best'],me:['perks','legacy'],guide:['guide']};
+const JGN={quests:'📜 Quests',world:'🗺️ World',me:'🏘️ Family',guide:'🔧 Help'};
+const jgrpOf=t=>Object.keys(JGRP).find(g=>JGRP[g].includes(t))||'quests';
+ACT.jgrp=function(g){S.jgrp=g;S.jtab=JGRP[g][0];};
+{
+ const _jv=VIEWS.journal;
+ VIEWS.journal=function(){
+  const g=S.jgrp&&JGRP[S.jgrp]?S.jgrp:jgrpOf(S.jtab||'quests'),save=S.jtab;
+  const tabs=`<div class="grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:8px">${Object.keys(JGRP).map(k=>btn(JGN[k],'jgrp',k,g===k?'pri c':'c')).join('')}</div>`;
+  const parts=JGRP[g].map(tb=>{S.jtab=tb;let x=_jv();return x.replace(/^<h1>[^<]*<\/h1>/,'').replace(/<div class="grid" style="grid-template-columns:repeat\(\d,1fr\);margin-bottom:8px">[\s\S]*?<\/div>/,'');});
+  S.jtab=JGRP[g].includes(save)?save:JGRP[g][0];
+  const heads={places:'Places',best:'Codex',perks:'Town perks',legacy:'Family'};
+  const body=JGRP[g].length>1?JGRP[g].map((tb,i)=>`<h2>${heads[tb]}</h2>${parts[i]}`).join(''):parts[0];
+  return '<h1>📖 Journal</h1>'+tabs+body;
+ };
+}
+
+// ---------- the Pack, in the order you use it ----------
+{
+ const _pk=VIEWS.pack;
+ VIEWS.pack=function(){
+  const t=_pk();
+  const iE=t.search(/<h2>[^<]*Equipped<\/h2>/),iP=t.search(/<h2>[^<]*Potions<\/h2>/),
+   iM=Math.min(...[t.search(/<button class="foldh" data-a="mfold" data-p="packmats"/),t.search(/<h2>[^<]*Materials[^<]*<\/h2>/)].filter(x=>x>=0).concat([1e9])),
+   iI=t.search(/<h2>[^<]*Inventory<\/h2>/);
+  if([iE,iP,iI].some(x=>x<0)||iM>=1e9||!(iE<iP&&iP<iM&&iM<iI))return t;
+  const pre=t.slice(0,iE),eq=t.slice(iE,iP),po=t.slice(iP,iM),ma=t.slice(iM,iI),inv=t.slice(iI);
+  return pre+eq+inv+po+ma;
+ };
+}
+
+// ---------- the Guild: contracts and bounties on their own tabs ----------
+ACT.gtab=function(k){S.gtab=k;};
+{
+ const _gd=VIEWS.guild;
+ VIEWS.guild=function(){
+  const t=_gd(),h=S.hero;
+  const iC=t.search(/<h2>Active contracts/),iB=t.search(/<h2>[^<]*Bounty Board<\/h2>/);
+  if(iC<0||iB<0||iB<iC)return t;
+  const g=S.gtab==='bounty'?'bounty':'contracts';
+  const tabs=`<div class="grid" style="margin:8px 0">${btn('📜 Contracts','gtab','contracts',g==='contracts'?'pri c':'c')}${btn('🎯 Bounties','gtab','bounty',g==='bounty'?'pri c':'c')}</div>`;
+  return t.slice(0,iC)+tabs+(g==='contracts'?t.slice(iC,iB):t.slice(iB));
+ };
+}
 
 /* ----- a slow start: bodies heal over days, not overnight, until you are properly seasoned ----- */
 const nightRecovery=()=>{const L=S.hero.lvl;return L>=8?1:Math.min(1,.38+.09*(L-1));};

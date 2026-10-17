@@ -245,3 +245,9 @@ After your first kill and your return to town, a single pop-up explains time of 
 ## Cloud save
 - When the page runs as a published Artifact, a private copy of the save is also kept with your account (the artifact database, under your own private area). It is written a few seconds after you act, and when the app is hidden or closed. If this device has no save, or the cloud copy is newer, the title screen restores it. A reset also clears the cloud copy. Outside the Artifact (a plain web page) nothing changes: the game still saves in the browser.
 - The Menu shows whether cloud save is on and when it last saved. Export save remains available as a manual backup.
+
+## Simpler screens
+- **Town** shows Train, Hunt & Explore, the Guild, the Market, a **Walk around town** button and Sleep. Walking opens the streets, which list every other place the town offers (tavern, square, library, counting house, trading post, notice board, people, hiring hall, tinker, estate), plus "Wander the streets" for odd jobs.
+- **Menu** is regrouped: Save & backup, How you play, Look & comfort (folded; font, colour theme and legend show only the current choice until opened), Your family, Help & testing, and a folded Danger zone. Export/Import became "Copy save as text / Restore from text"; the two button-size toggles became one "Button size".
+- **Journal** has four tabs: Quests, World (Places + Codex), Family (Perks + Family), Help.
+- **Pack** lists Equipped, then Inventory, then Potions and Materials. **Guild** has Contracts and Bounties tabs.
