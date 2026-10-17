@@ -2782,7 +2782,7 @@ SYN.push(
 
 /* ----- contextual hints (a gentle nudge, never a lecture) ----- */
 const HINTS=[
- {id:'train',scr:['town'],when:()=>!huntUnlocked(),get t(){return 'You are '+heroAge()+' and not ready to fight. Train in the Training Yard until your arms stop shaking, and look around town for something to do. When you are strong enough, the gates will open.';}},
+ {id:'train',scr:['town'],when:()=>!huntUnlocked(),get t(){return 'You are '+heroAge()+' and not ready to fight. Train in the Training Yard until your arms stop shaking. After a few sessions, look around town for something to do. When you are strong enough, the gates will open.';}},
  {id:'sleep',scr:['town','train','hunt'],when:()=>S.hero.sta<=1,t:'Out of stamina? Sleeping restores stamina and starts a new day. While you are still green, it only mends part of your wounds, so keep training while you heal.'},
  {id:'points',scr:['town','hunt','result','guild'],when:()=>S.hero.pts>0,t:'You have unspent stat points. Spend them in the Hero tab.'},
  {id:'danger',scr:['enc'],when:()=>true,t:'The danger rating compares this monster to your current power. Red means trouble. You can slip away, and some monsters are far stronger than usual for your level.'},
@@ -7852,7 +7852,7 @@ function legacyLines(){
   if(h&&!huntUnlocked()){
    if(w.gen===1&&!h.qd.firstchores&&h.chores>=3)return 'Mira is waiting. Report to her from the Training Yard.';
    const need=Math.max(0,(w.gen>1?HEIR_TC:UNLOCK_TC)-h.tc);
-   return h.tc===0?`You are ${ageNow()} and not ready to fight. Start with a workout in the Training Yard.`:`Keep training: ${need} more session${need===1?'':'s'}. Walk around town if you want a change.`;
+   return h.tc===0?`You are ${ageNow()} and not ready to fight. Start with a workout in the Training Yard.`:`Keep training: ${need} more session${need===1?'':'s'}.${h.tc>=3?' Walk around town if you want a change.':''}`;
   }
   return _ns();
  };
@@ -7885,6 +7885,12 @@ const featOpen=id=>{
 const marketOpen=()=>S.world.gold>0||S.hero.tc>=8||S.world.gen>1;
 // announcements: id, when, title, text, where to go, button label
 const UNLOCKS=[
+ {id:'first_train',h:'First steps',when:()=>S.hero.tc>=1,t:'Your first workout',x:'Each session raises your stats a little and costs 2 stamina. When you run low, sleep: a night\'s rest restores you and moves the day on.'},
+ {id:'walk',when:()=>S.hero.tc>=3||S.world.gen>1,t:'Walk around town',x:'You have your breath back. Walking the streets sometimes turns up odd jobs for people who need a pair of hands. It costs nothing, once a day.'},
+ {id:'first_sleep',h:'First steps',when:()=>S.hero.day>=2,t:'A night\'s rest',x:'Your stamina is back. Hurt bodies mend slowly, so rest as well as train. The Market restocks every morning.'},
+ {id:'first_odd',h:'First steps',when:()=>Object.keys(S.hero.oddDone||{}).length>0,t:'Your first odd job',x:'Small jobs pay in coin, gear and training. Some are worth more than others, but all of it is practice.'},
+ {id:'first_kill',h:'First steps',when:()=>S.world.kills>=1,t:'Your first kill',x:'Fights pay gold, experience and sometimes loot. The weather and the season now matter: they change what is out there and what it pays.'},
+ {id:'first_level',h:'First steps',when:()=>S.hero.lvl>=2,t:'Level 2',x:'Each level gives you 3 stat points to spend. Open the Hero tab and decide where they go.',go:'hero',b:'Open the Hero tab'},
  {id:'market',when:()=>marketOpen(),t:'The Market is open',x:'Gear and potions are sold here, and you can sell what you find. It restocks every morning.',go:'shop',b:'Visit the Market'},
  {id:'gates',when:()=>huntUnlocked(),t:'The gates are open',x:'You are strong enough to leave the walls. Go to Hunt & Explore to fight creatures for gold, experience and loot. Each fight costs stamina, so rest when you tire.',go:'hunt',b:'Go to Hunt & Explore'},
  {id:'square',when:()=>huntUnlocked()&&featOpen('square'),t:'The Town Square',x:'People gather here who need help. Talk to them: quests start with a conversation.',go:'square',b:'Go to the Town Square'},
@@ -7916,11 +7922,12 @@ function showAnn(){
  const scr=S.screen;if(['combat','death','dg','explore','enc','trip','puzzle','delve','convo','talk','result'].includes(scr)||S.modal)return;
  const u=UNLOCKS.find(x=>x.id===q[0]);q.shift();if(!u)return;
  const el=document.createElement('div');el.id='annpop';
- el.innerHTML=`<div class="annbox"><div class="mut sm">Now available</div><h3>${esc(u.t)}</h3><p>${esc(u.x)}</p><div class="grid">${btn(esc(u.b),'annGo',u.id,'pri c')}${btn('Later','annOk',u.id,'c')}</div></div>`;
+ el.innerHTML=`<div class="annbox"><div class="mut sm">${u.h||'Now available'}</div><h3>${esc(u.t)}</h3><p>${esc(u.x)}</p>${u.go?`<div class="grid">${btn(esc(u.b),'annGo',u.id,'pri c')}${btn('Later','annOk',u.id,'c')}</div>`:btn('Got it','annOk',u.id,'pri c')}</div>`;
  document.body.appendChild(el);
  el.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;el.remove();if(a==='annGo'){const x=UNLOCKS.find(y=>y.id===b.dataset.p);if(x){ACT.go(x.go);render();}}else{setTimeout(()=>{try{showAnn();}catch(e){}},50);}e.stopPropagation();},true);
 }
 ACT.annGo=function(){};ACT.annOk=function(){};
+{const _w=ACT.walk;ACT.walk=function(){if(S.hero.tc<3&&S.world.gen===1){note('You are still catching your breath. Train a little first.','e');return;}return _w.apply(this,arguments);};}
 {
  const _r=render;
  render=function(){
@@ -7934,6 +7941,9 @@ ACT.annGo=function(){};ACT.annOk=function(){};
   const rm=p=>{t=t.replace(new RegExp('<button class="btn[^"]*" data-a="go" data-p="'+p+'"[^>]*>[\\s\\S]*?<\\/button>'),'');};
   Object.keys(FEAT_AT).forEach(id=>{if(!featOpen(id)){rm(id==='tinker'?'tinker':id==='news'?'news':id==='people'?'people':id);}});
   if(!marketOpen())rm('shop');
+  if(S.hero.tc<3&&S.world.gen===1)t=t.replace(/<h2>Around town<\/h2>\s*<button class="btn[^"]*" data-a="walk"[^>]*>[\s\S]*?<\/button>/,'');
+  if(S.world.kills<1)t=t.replace(/<div class="card sm">[^<\n]{0,8}<b>(?:Dawn|Morning|Midday|Noon|Day|Afternoon|Evening|Dusk|Night)<\/b>[\s\S]*?<\/div>/,'');
+  if(!huntUnlocked())t=t.replace(/Restore HP (?:&amp;|&) stamina · next day · refreshes shop\/board/,'Rest, and start a new day');
   return t;
  };
 }

@@ -181,3 +181,7 @@ Menu > Settings (and title screen settings) has a Font style picker (Easy to rea
 
 ## Title screen
 A moonlit Hollowmere skyline: twinkling stars, flickering windows, swaying lanterns, drifting mist and rising embers, with the name in a glowing blackletter face. A saved game shows one glowing lantern per generation of your family. Animations are off when the device asks for reduced motion.
+
+## An even slower start
+- Walk around town opens after 3 training sessions. The weather card appears after your first kill. Sleep shows a one-line description until the gates open.
+- Small "First steps" pop-ups explain things as you reach them: your first workout, the first night's rest, the first odd job, the first kill, and Level 2 (with a button to the Hero tab to spend your points).
