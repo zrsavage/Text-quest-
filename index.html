@@ -8147,6 +8147,324 @@ Object.assign(ACT,{
  };
 }
 
+/* =====================================================================
+   PASS AG — three hundred more skills, built from a small set of effects
+   ===================================================================== */
+const SKX={};
+const SKS={};Object.keys(SK).forEach(k=>{SKS[k]='classic';});
+function parseFx(str){
+ const f={};
+ str.split(/\s+/).filter(Boolean).forEach(tk=>{
+  let m;
+  if(m=/^d(\d*\.?\d+)(?:x(\d+))?$/.exec(tk)){f.d=+m[1];f.n=m[2]?+m[2]:1;}
+  else if(tk==='M')f.M=1;
+  else if(m=/^P(\d*\.?\d+)$/.exec(tk))f.P=+m[1];
+  else if(m=/^U(\d*\.?\d+)$/.exec(tk))f.U=+m[1];
+  else if(m=/^L(\d*\.?\d+)$/.exec(tk))f.L=+m[1];
+  else if(m=/^D(\d*\.?\d+)$/.exec(tk))f.D=+m[1];
+  else if(m=/^poi(\d*\.?\d+)$/.exec(tk))f.poi=+m[1];
+  else if(m=/^brn(\d*\.?\d+)$/.exec(tk))f.brn=+m[1];
+  else if(m=/^bld(\d*\.?\d+)$/.exec(tk))f.bld=+m[1];
+  else if(m=/^chl(\d+)$/.exec(tk))f.chl=+m[1];
+  else if(m=/^stn(\d*\.?\d+)$/.exec(tk))f.stn=+m[1];
+  else if(m=/^wk(\d+)$/.exec(tk))f.wk=+m[1];
+  else if(m=/^snd(\d*\.?\d+)$/.exec(tk))f.snd=+m[1];
+  else if(m=/^hl(\d*\.?\d+)$/.exec(tk))f.hl=+m[1];
+  else if(m=/^dr(\d*\.?\d+)$/.exec(tk))f.dr=+m[1];
+  else if(m=/^fc(\d+)$/.exec(tk))f.fc=+m[1];
+  else if(m=/^ba(\d*\.?\d+)x(\d+)$/.exec(tk))f.ba=[+m[1],+m[2]];
+  else if(m=/^bd(\d*\.?\d+)x(\d+)$/.exec(tk))f.bd=[+m[1],+m[2]];
+  else if(m=/^br(\d*\.?\d+)$/.exec(tk))f.br=+m[1];
+  else if(tk==='cl')f.cl=1;
+  else if(m=/^sf(\d*\.?\d+)$/.exec(tk))f.sf=+m[1];
+ });
+ return f;
+}
+function fxCost(f,t){
+ let pts=0;
+ if(f.d){pts=f.d*f.n*(f.M?1.12:1)*(1+(f.P||0)*.35)*(1+(f.U?(f.U-1)*.2:0))*(1+(f.L?f.L*.25:0))*(1+(f.D?f.D*.5:0));}
+ pts+=(f.poi||0)*2.2+(f.brn||0)*2.2+(f.bld||0)*2.2+(f.chl||0)*.25+(f.stn||0)*1.6+(f.wk||0)*.3+(f.snd||0)*5+(f.hl||0)*9+(f.dr||0)*.5+(f.fc||0)*.5+(f.ba?f.ba[0]*f.ba[1]*1.6:0)+(f.bd?f.bd[0]*f.bd[1]*1.4:0)+(f.br||0)*8+(f.cl?.5:0);
+ if(f.sf)pts*=Math.max(.5,1-f.sf*2.5);
+ return clamp(Math.round(pts*1.6),[2,3,4,5,7,10][t],16);
+}
+function fxDesc(f,l){
+ const s=1+.1*(l-1),a=[],pc=x=>Math.round(x*100);
+ if(f.d){const per=pc(f.d*s);const extra=[];
+  if(f.U)extra.push(`${f.U}× against the undead`);if(f.L)extra.push(`up to +${pc(f.L)}% as the foe weakens`);if(f.D)extra.push(`+${pc(f.D)}% per poison, burn or bleed on it`);
+  a.push((f.n>1?`${f.n} ${f.M?'magic ':''}hits at ${per}% each`:`${per}% ${f.M?'magic ':''}damage`)+(extra.length?` (${extra.join(', ')})`:''));}
+ if(f.P)a.push(`ignores ${pc(f.P)}% of defense`);
+ if(f.poi)a.push('poisons the foe');if(f.brn)a.push('burns the foe');if(f.bld)a.push('makes the foe bleed');
+ if(f.chl)a.push(`chills for ${f.chl} turns`);if(f.stn)a.push(`${Math.min(90,Math.round(f.stn*100+3*l))}% chance to stun`);
+ if(f.wk)a.push(`weakens the foe for ${f.wk} turns`);if(f.snd)a.push(`cuts its defense by ${Math.min(35,Math.round(f.snd*s*100))}%`);
+ if(f.hl)a.push(`heals ${pc(f.hl*(1+.08*(l-1)))}% HP`);if(f.dr)a.push(`you heal ${pc(f.dr)}% of the damage`);
+ if(f.fc)a.push(`gather ${f.fc} Focus`);
+ if(f.ba)a.push(`+${pc(f.ba[0]*(1+.06*(l-1)))}% attack for ${f.ba[1]} turns`);if(f.bd)a.push(`+${pc(f.bd[0]*(1+.06*(l-1)))}% defense for ${f.bd[1]} turns`);
+ if(f.br)a.push(`a ward absorbs ${pc(f.br*s)}% of your max HP`);if(f.cl)a.push('cleanses poison and curses');
+ if(f.sf)a.push(`costs you ${pc(f.sf)}% of your max HP`);
+ const t=a.join(', ');return t.charAt(0).toUpperCase()+t.slice(1)+'.';
+}
+function defSkill(name,tier,dsl,school,fxObj){
+ const f=fxObj||parseFx(dsl),id='x_'+name.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+ if(SK[id])return;
+ SK[id]={n:name,t:tier,c:fxCost(f,tier),d:l=>fxDesc(f,l)};SKX[id]={fx:f};SKS[id]=school;
+ SKT[id]=f.M?['magic']:['phys'];
+}
+const WEAPON_SK=`Slash|0|d1.2
+Thrust|0|d1.2 P.2
+Pommel Strike|0|d.9 stn.3
+Low Sweep|0|d.8 chl2
+Double Tap|0|d.6x2
+Quick Draw|0|d1 fc1
+Steady Aim|0|d1.1 ba.15x2
+Sidestep Strike|0|d1 bd.2x1
+Reckless Swing|1|d2 sf.05
+Cleave|1|d1.5
+Lunge|1|d1.5 P.3
+Hook Slash|1|d1.1 bld.35
+Skull Crack|1|d1 stn.4
+Hobble|1|d.8 chl3
+Riposte Stance|1|d.8 bd.45x2
+Hammer Blow|1|d1.8
+Dirty Trick|1|d.7 wk2 stn.2
+Sword Dance|1|d.5x3
+Pin Down|1|d1 chl2 stn.2
+Steel Rain|2|d.55x4
+Crushing Blow|2|d2.2 snd.1
+Whirlwind|2|d.8x3
+Piercing Thrust|2|d1.7 P.6
+Gutting Slash|2|d1.4 bld.5
+Shield Slam|2|d1.4 stn.45
+Overhead Smash|2|d2.4 sf.04
+Crippling Strike|2|d1.2 chl3 wk2
+Disarm|2|d1 wk3 stn.25
+Brutal Chop|2|d2 bld.3
+Counterstrike|2|d1.3 bd.3x1
+Spearwall|2|d1.2 P.4 bd.25x2
+Banner Charge|2|d1.5 ba.25x2
+Killing Blow|3|d1.3 L1.8
+Reaper's Cut|3|d1.5 L2.2 sf.05
+Shatter Guard|3|d1.8 snd.18
+Triple Cut|3|d.8x3 bld.3
+Bone Breaker|3|d2.5 stn.4
+Rampage|3|d.7x4 sf.05
+Duelist's Flourish|3|d1x2 ba.3x2
+Phantom Slash|3|d1.5 P.8
+Hammerfall|3|d2.8 stn.3
+Skewer|3|d1.6 P.5 bld.4
+Vanguard Rush|3|d1.4 bd.35x2 stn.2
+Crushing Descent|4|d3.2 snd.2 stn.3
+Hundred Cuts|4|d.4x8
+Titan's Fist|4|d3.6 stn.5
+Wrath of Steel|4|d2.2 ba.4x3
+Sundering Cleave|4|d2.4 snd.25
+Reaper's Sweep|4|d1.6 L2.5
+Bladestorm|4|d.7x6 bld.3
+Siege Breaker|4|d3 P.5 snd.15
+Worldsplitter|5|d6 P.7
+Last Stand|5|d3 ba.6x3
+Blade of Ages|5|d4.5 snd.3 bld.6
+Thousand Cuts|5|d.45x12
+End of Argument|5|d5 L3
+Sky Splitter|5|d4 P.5 stn.4`;
+const SUPPORT_SK=`Steady Breath|0|fc2 hl.04
+Rally|0|ba.25x3
+Bandage|0|hl.12
+Second Skin|0|bd.3x2
+Deep Breath|0|hl.06 fc1
+Focus Mind|1|fc3
+Guardian Stance|1|bd.5x3
+Patch Up|1|hl.2 cl
+Purify|1|cl hl.06
+Inspire|1|ba.35x3
+Hold the Line|1|bd.4x2 br.06
+Tend Wounds|1|hl.16
+Calm Mind|1|fc2 cl
+Stone Ward|2|br.15
+Healing Light|2|hl.3
+Meditation|2|fc4 hl.08
+Bulwark|2|bd.7x2 br.08
+War Cry|2|ba.45x3
+Mending Rain|2|hl.25 cl
+Oak Skin|2|bd.6x3
+Whispered Prayer|2|hl.22 fc1
+Spirit Shield|3|br.25
+Greater Mend|3|hl.4
+Fortify|3|bd.8x3
+Clarity|3|fc5 cl
+Battle Trance|3|ba.6x3 fc1
+Aegis of Dawn|3|br.2 bd.4x2
+Soothing Song|3|hl.28 fc2
+Shield Wall|3|bd.9x2 br.18
+Chant of Valor|3|ba.5x3 hl.1
+Lifebloom|3|hl.35
+Warding Circle|4|br.35 cl
+Blessing of Vitality|4|hl.5 fc2
+Steel Resolve|4|bd1x3 br.15
+Berserk Howl|4|ba.9x3 sf.08
+Moonwell|4|hl.6 cl
+Mind Palace|4|fc6 cl
+Titan's Resolve|4|bd1.2x3
+Heroic Surge|4|ba.7x3 hl.2
+Sanctuary|5|br.45 hl.25
+Rebirth Flame|5|hl.8 cl
+Ascendant Calm|5|fc8 hl.3
+Diamond Skin|5|bd1.4x3 br.3
+Eternal Guard|5|bd1.6x4 br.35
+Grace Under Fire|5|hl.55 cl fc4`;
+const TRICK_SK=`Spit|0|d.8 M
+Ankle Bite|0|d.7 bld.25
+Pocket Sand|0|d.4 wk2 stn.2
+Mud Throw|0|d.6 chl2
+Lucky Shot|1|d1.2 stn.2
+Smoke Bomb|1|wk3 bd.3x2
+Caltrops|1|d.5 bld.35 chl2
+Poisoned Dart|1|d.7 poi.4
+Thorn Whip|1|d1.1 bld.3
+Entangle|1|d.6 chl3 stn.25
+Bark Armor|1|bd.45x3
+Shadow Step|2|d1.4 P.5 bd.3x1
+Backstab|2|d2 P.3
+Garrote|2|d1 bld.6 stn.2
+Smoke and Mirrors|2|wk3 bd.5x3
+Trip Wire|2|d1 chl3 stn.35
+Poison Cloud|2|d.6 poi.55
+Venomous Bite|2|d1.1 poi.5
+Ghost Hand|2|d1.3 M P.5
+Call of the Wild|2|ba.4x3 hl.1
+Spore Cloud|2|d.7 poi.5 wk2
+Wild Growth|2|hl.2 br.1
+Assassinate|3|d2.2 L2 P.3
+Death Mark|3|d1 D.9
+Hex of Frailty|3|wk4 poi.4 M
+Curse of Weakness|3|wk4 snd.15
+Nightmare|3|d1.2 M wk3 stn.3
+Blood Pact|3|d2.2 sf.08 dr.5
+Crimson Feast|3|d1.6 dr.6 bld.3
+Siphon Life|3|d1.2 M dr.5
+Stampede|3|d.9x3 stn.3
+Briar Lash|3|d1.5 bld.5 chl2
+Sap Strike|3|d1.4 dr.3 chl2
+Rootbind|3|d1 chl4 stn.4
+Spirit Lash|3|d1.8 M dr.25
+Ethereal Step|3|bd.7x2 d1 P.4
+Wail of the Lost|3|d1.2 M wk3 stn.3
+Ghostfire|3|d1.4 M brn.5
+Deathblow|4|d2 L3 sf.04
+Plague Touch|4|d1.3 poi.7 wk2
+Grave Chill|4|d2.1 M chl3 dr.3
+Shadow Veil|4|bd.8x3 wk3
+Soul Harvest|4|d2.6 M dr.5
+Blood Moon|4|d2.4 sf.1 dr.8 bld.5
+Ancient Roar|4|d2.5 stn.45 wk3
+Gaia's Embrace|4|hl.45 br.2
+Verdant Storm|4|d.8x5 poi.4
+Ancestral Strike|4|d3 M ba.4x2
+Soulfire|4|d2.2 M brn.7 dr.2
+Abyssal Grasp|5|d4.5 M P.5 dr.4
+Oblivion|5|d5.5 M P.8
+Death's Embrace|5|d3.5 L3.5 dr.5
+World Tree's Wrath|5|d5 bld.6 stn.4
+Spirit's Fury|5|d4 M ba.6x2
+Ancestral Blessing|5|hl.4 ba.5x3 bd.7x3`;
+function loadList(txt,school){txt.split('\n').forEach(l=>{const p=l.split('|');if(p.length===3)defSkill(p[0],+p[1],p[2],school);});}
+loadList(WEAPON_SK,'weapon');loadList(SUPPORT_SK,'support');loadList(TRICK_SK,'trick');
+// elemental magic: every element in every shape
+{
+ const SHAPES=[['Dart',0,'d1 M'],['Bolt',1,'d1.45 M'],['Lance',1,'d1.3 M P.4'],['Shard',1,'d.8x2 M'],['Burst',2,'d1.9 M'],['Wave',2,'d.9x2 M'],['Ray',2,'d1.7 M P.3'],['Spear',3,'d2.2 M P.5'],['Barrage',3,'d.65x4 M'],['Nova',4,'d3 M'],['Tempest',4,'d.85x4 M'],['Cataclysm',5,'d4.8 M P.6']];
+ const ELEM={
+  Ember:f=>{f.brn=.35+.05*f.t;},Frost:f=>{f.chl=2+Math.min(2,Math.floor(f.t/2)+1);},Storm:f=>{f.stn=.22+.04*f.t;},Venom:f=>{f.poi=.35+.06*f.t;},
+  Shadow:f=>{f.dr=.2+.04*f.t;},Sun:f=>{f.U=1.7;f.hl=.03+.015*f.t;},Stone:f=>{f.snd=.08+.02*f.t;},Gale:f=>{f.n+=1;f.d*=.8;},
+  Blood:f=>{f.bld=.35+.05*f.t;f.sf=.03;},Arcane:f=>{f.fc=1+Math.floor(f.t/3);},Thorn:f=>{f.bld=.25+.04*f.t;f.br=.04+.02*f.t;},Void:f=>{f.P=Math.min(1,(f.P||0)+.3);}
+ };
+ Object.keys(ELEM).forEach(el=>SHAPES.forEach(sh=>{const f=parseFx(sh[2]);f.t=sh[1];ELEM[el](f);delete f.t;defSkill(`${el} ${sh[0]}`,sh[1],'',el==='Sun'||el==='Arcane'?'elem':'elem',f);}));
+}
+Object.keys(SKS).forEach(id=>{
+ const s=SKS[id];
+ if(s==='weapon')PATHS.blade.aff.push(id);
+ else if(s==='elem')PATHS.arcane.aff.push(id);
+ else if(s==='support')PATHS.support.aff.push(id);
+ else if(s==='trick'){const f=SKX[id].fx;(f.M||f.poi||f.dr?PATHS.arcane:PATHS.blade).aff.push(id);}
+});
+{
+ const _cs=castSkill;
+ castSkill=function(id,free){
+  if(!SKX[id])return _cs(id,free);
+  const c=S.cb,h=S.hero,p=P(),e=c.e,l=h.skills[id],f=SKX[id].fx,s=1+.1*(l-1),lab=SK[id].n;
+  if(!free){if(c.focus<skillCost(id)){say('Not enough Focus.','e');return false;}c.focus-=skillCost(id);}
+  c.curSk=id;
+  const dots=()=>(e.poison>0?1:0)+(e.burn>0?1:0)+(e.bleed>0?1:0);
+  if(f.sf){const d=Math.max(1,Math.round(p.maxhp*f.sf));h.hp=Math.max(1,h.hp-d);say(`${esc(lab)} costs you ${d} HP.`,'e');}
+  let dealt=0;
+  if(f.d){
+   for(let i=0;i<f.n&&e.hp>0;i++){
+    let m=f.d*s;
+    if(f.U&&monKind(e.base||e.name).undead)m*=f.U;
+    if(f.L)m*=1+(1-e.hp/e.max)*f.L;
+    if(f.D)m*=1+f.D*dots();
+    dealt+=strike(m,{magic:f.M?1:0,pierce:f.P||0,label:`${lab} hits`,tags:SKT[id]})||0;
+   }
+  }else say(`You use ${esc(lab)}.`);
+  const base=f.M?p.int*1.1+p.atk*.15:p.atk*.8;
+  if(e.hp>0){
+   if(f.poi){applyPoison(e,Math.max(1,Math.round(base*f.poi*s)));say(`${esc(e.name)} is poisoned.`,'g');}
+   if(f.brn){applyBurn(e,Math.max(1,Math.round(base*f.brn*s)),3);say(`${esc(e.name)} burns.`,'g');}
+   if(f.bld){applyBleed(e,Math.max(1,Math.round(base*f.bld*s)));say(`${esc(e.name)} bleeds.`,'g');}
+   if(f.chl){applyChill(e,f.chl);say(`${esc(e.name)} is slowed.`,'g');}
+   if(f.stn&&tryStun(e,Math.min(.9,f.stn+.03*l)))say(`${esc(e.name)} is stunned!`,'g');
+   if(f.wk){e.wk=Math.max(e.wk||0,f.wk);say(`${esc(e.name)} falters.`,'g');}
+   if(f.snd){const cut=Math.min(.35,f.snd*s);e.def=Math.max(0,Math.round(e.def*(1-cut)));say(`${esc(e.name)}'s defense breaks (${e.def}).`,'g');}
+  }
+  if(f.hl){const n=healHero(Math.round(p.maxhp*f.hl*(1+.08*(l-1))));if(n)say(`${esc(lab)} restores ${n} HP.`,'g');}
+  if(f.dr&&dealt>0){const n=healHero(Math.round(dealt*f.dr));if(n)say(`You draw in ${n} HP.`,'g');}
+  if(f.fc){c.focus=Math.min(p.maxfocus,c.focus+f.fc);say(`You gather ${f.fc} Focus.`,'g');}
+  if(f.ba){c.hb.atk=Math.max(c.hb.atk,f.ba[0]*(1+.06*(l-1)));c.hb.atkT=Math.max(c.hb.atkT,f.ba[1]);say(`Attack up for ${f.ba[1]} turns.`,'g');}
+  if(f.bd){c.hb.def=Math.max(c.hb.def,f.bd[0]*(1+.06*(l-1)));c.hb.defT=Math.max(c.hb.defT,f.bd[1]);say(`Defense up for ${f.bd[1]} turns.`,'g');}
+  if(f.br){const a=Math.round(p.maxhp*f.br*s);c.pb.barrier=(c.pb.barrier||0)+a;say(`A ward rises (${c.pb.barrier}).`,'g');}
+  if(f.cl){if(c.hb.poison)c.hb.poison=0;c.hb.weak=0;c.hb.stun=0;say('Your ailments clear.','g');}
+  c.curSk=null;
+  if(!free){const m=skillUse(id);if(m)say(m,'y');}
+  return true;
+ };
+}
+
+// ---------- tomes favour what suits where you are ----------
+skillPool=function(zi){
+ const h=S.hero,all=Object.keys(SK).filter(k=>SK[k].t<=Math.max(zi,0)+1&&(h.skills[k]||0)<SKMAX&&!skCapped(h.skills[k]||0));
+ const near=all.filter(k=>SK[k].t>=Math.max(0,zi-1));return near.length>=3?near:all;
+};
+learnTome=function(zi){
+ const h=S.hero;if(!hasFocus())return null;
+ if(!h.skillChoice&&Math.random()<.3+.04*rankIdx(h.contracts)&&offerSkillChoice(zi,'a tome'))return '📖 <b>The tome holds several lessons.</b> Choose which one to learn.';
+ const pool=skillPool(zi);if(!pool.length)return null;
+ const k=pick(pool);h.skills[k]=(h.skills[k]||0)+1;
+ return `📖 <b>${SK[k].n}</b> ${h.skills[k]===1?'learned.':'upgraded to Lv '+h.skills[k]+'!'}`;
+};
+
+// ---------- a library you can browse ----------
+const SCHOOLN={all:'All',classic:'Classic',weapon:'Weapon',elem:'Elemental',support:'Support',trick:'Cunning'};
+Object.assign(ACT,{
+ libf(k){S.lib=S.lib||{};S.lib.school=k;S.lib.page=0;},
+ libt(k){S.lib=S.lib||{};S.lib.tier=k;S.lib.page=0;},
+ libp(k){S.lib=S.lib||{};S.lib.page=+k;}
+});
+{
+ const _l=VIEWS.library;
+ VIEWS.library=function(){
+  const w=S.world,h=S.hero,r=rankIdx(h.contracts),L=S.lib=S.lib||{},sch=L.school||'all',tier=L.tier==null?'all':L.tier,pg=L.page||0;
+  let ks=Object.keys(SK).filter(k=>SK[k].t<=r+1&&(sch==='all'||SKS[k]===sch||(sch==='known'&&h.skills[k]))&&(tier==='all'||SK[k].t===+tier));
+  ks.sort((a,b)=>SK[a].t-SK[b].t||SK[a].n.localeCompare(SK[b].n));
+  const PER=10,pages=Math.max(1,Math.ceil(ks.length/PER)),p=Math.min(pg,pages-1);
+  let t=`<h1>Old Library</h1><p class="mut sm">Gold ${fmt(w.gold)}. Tomes teach new skills and sharpen them within a rank. Skills grow by use, and every second level needs a breakthrough (Hero tab). They are forgotten when you die. Higher tomes appear as your rank grows.</p>`;
+  t+=`<div class="sm mut">School</div><div class="chips2">${['all','known','classic','weapon','elem','support','trick'].map(x=>`<button class="chipb ${sch===x?'on':''}" data-a="libf" data-p="${x}">${x==='known'?'Known':SCHOOLN[x]}</button>`).join('')}</div>`;
+  t+=`<div class="sm mut" style="margin-top:6px">Tier</div><div class="chips2"><button class="chipb ${tier==='all'?'on':''}" data-a="libt" data-p="all">All</button>${[0,1,2,3,4,5].filter(x=>x<=r+1).map(x=>`<button class="chipb ${String(tier)===String(x)?'on':''}" data-a="libt" data-p="${x}">${x+1}</button>`).join('')}</div>`;
+  t+=`<p class="sm mut" style="margin:8px 0 4px">${ks.length} skill${ks.length===1?'':'s'}${pages>1?` · page ${p+1} of ${pages}`:''}</p>`;
+  ks.slice(p*PER,(p+1)*PER).forEach(k=>{const l=h.skills[k]||0,pr=tomePrice(k,l);
+   t+=btn(`${SK[k].n} <span class="tag">${l?'Lv '+l:'unknown'}</span> <span class="tag">Tier ${SK[k].t+1}</span>`,'buyTome',k,'',l>=SKMAX||skCapped(l)||w.gold<pr,l>=SKMAX?'Mastered':skCapped(l)?'Rank limit. Needs a breakthrough (Hero tab)':`${pr}g → Lv ${l+1} · Focus ${SK[k].c} · ${SK[k].d(l+1)}`);});
+  if(pages>1)t+=`<div class="grid" style="margin-top:8px">${btn('← Previous','libp',p-1,'c',p<=0)}${btn('Next →','libp',p+1,'c',p>=pages-1)}</div>`;
+  return t+'<div style="height:8px"></div>'+btn('← Back to town','go','town','c');
+ };
+}
+
 /* ----- a slow start: bodies heal over days, not overnight, until you are properly seasoned ----- */
 const nightRecovery=()=>{const L=S.hero.lvl;return L>=8?1:Math.min(1,.38+.09*(L-1));};
 const _sleepDayRec=sleepDay;
@@ -8187,7 +8505,7 @@ VIEWS.train=function(){
  return s.replace(/(<\/p>)/,'$1'+card);
 };
 if(typeof document!=='undefined'&&typeof window!=='undefined'&&!window.__TQ_TEST){try{render();}catch(e){}}
-if(typeof window!=='undefined')window.TQ={learnTome,SK,castSkill,offerSkillChoice,skillPool,matPrice,UNLOCKS,checkUnlocks,showAnn,VIEWS,BOND,QS,qEvent,stepDone,qTalkChoose,STORIES,legacyLines,registerStories,compCard,applyOut,checkDeath,rankIdx,sleepDay,CREW,crewOf,crewLvl,rkTrialReady,trialReady,rankRaw,genRivals,popReward,forageZone,apprChance,DG,HAB,MONPIC,addXP,wroll,refreshShop,lvCap,rankName,rarGov,keeper,keeperTier,KPJ,makeHeir,lsUse,lsLvl,lsRec,slogHtml,ROUGH,cpic,hasFocus,hprice,nextStep,foldHtml,upDiff,reportText,tele,loadBackup,skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,rkTrialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
+if(typeof window!=='undefined')window.TQ={SKX,SKS,fxDesc,fxCost,learnTome,SK,castSkill,offerSkillChoice,skillPool,matPrice,UNLOCKS,checkUnlocks,showAnn,VIEWS,BOND,QS,qEvent,stepDone,qTalkChoose,STORIES,legacyLines,registerStories,compCard,applyOut,checkDeath,rankIdx,sleepDay,CREW,crewOf,crewLvl,rkTrialReady,trialReady,rankRaw,genRivals,popReward,forageZone,apprChance,DG,HAB,MONPIC,addXP,wroll,refreshShop,lvCap,rankName,rarGov,keeper,keeperTier,KPJ,makeHeir,lsUse,lsLvl,lsRec,slogHtml,ROUGH,cpic,hasFocus,hprice,nextStep,foldHtml,upDiff,reportText,tele,loadBackup,skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,rkTrialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>
 </html>

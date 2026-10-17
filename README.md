@@ -196,3 +196,9 @@ After your first kill and your return to town, a single pop-up explains time of 
 ## More skills, and choices
 - 24 new skills join the original 11 (35 in all), spread over six tiers: Quick Jab, Brace, Rock Throw, Hamstring, Rend, Field Dressing, Feint, Frostbolt, Chain Lightning, Sunder Armor, Second Wind, Smite, Thorn Ward, Soul Drain, Rapid Volley, Rupture, Dread Roar, Blizzard, Thunderclap, Phoenix Breath, Blade Dance, Annihilate, Time Fold and Void Rend. They count toward the Blade, Arcane and Warden paths where they fit.
 - A tome now sometimes (30% at the start, more with rank) holds several lessons: you choose one of three. Winning a rank trial always offers a choice, and killing a boss sometimes does. A pending choice waits under "Decide later" and returns the next day.
+
+## 336 skills
+- The skill list grew from 35 to 336. Three hundred are generated from a small effect vocabulary (damage, multi-hit, pierce, bonus vs undead / low HP / damage-over-time, poison, burn, bleed, chill, stun, weaken, sunder, heal, drain, Focus, attack/defense buffs, wards, cleanse, self-cost). Each skill's Focus cost and its description come from its effects, so cost tracks power.
+- Schools: Weapon (57), Support (45), Cunning (55), Elemental (144: twelve elements Ember, Frost, Storm, Venom, Shadow, Sun, Stone, Gale, Blood, Arcane, Thorn and Void, each in twelve forms from Dart to Cataclysm) and the 35 Classic skills. They count toward the Blade, Arcane and Warden paths.
+- The Old Library can be filtered by school, by tier or to what you know, and is paged. Tomes now favour skills near the tier of where you are, so a deep drop is seldom a beginner skill.
+- To add skills: put a "Name|tier|effects" line in one of the lists (WEAPON_SK, SUPPORT_SK, TRICK_SK). Effects are tokens such as d1.5x2 (damage x hits), M (magic), P.4 (pierce), poi.4 / brn.4 / bld.4, chl3, stn.3, wk3, snd.1, hl.2, dr.3, fc2, ba.3x2, bd.4x2, br.15, cl, sf.05.
