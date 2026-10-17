@@ -7903,11 +7903,13 @@ function legacyLines(){
    ===================================================================== */
 // how far into the family's story each part of town opens (by total kills / sessions)
 const FEAT_AT={
- square:{k:5},people:{k:8},tavern:{k:12},news:{k:15},tinker:{k:15}
+ square:{k:4},people:{k:9},tavern:{k:14},news:{k:19},tinker:{k:24}
 };
+const featKills=id=>{const w=S.world;return !FEAT_AT[id]||w.kills>=FEAT_AT[id].k;};
+// a place opens when its announcement has been shown, so nothing appears before it is explained
 const featOpen=id=>{
  const w=S.world;if(!FEAT_AT[id])return true;
- return w.kills>=FEAT_AT[id].k||w.gen>1&&w.kills>=FEAT_AT[id].k;
+ return featKills(id)&&(!w.ann||w.ann[id]===1&&!(S.annQ||[]).includes(id));
 };
 const marketOpen=()=>S.world.gold>0||S.hero.tc>=8||S.world.gen>1;
 // announcements: id, when, title, text, where to go, button label
@@ -7921,12 +7923,12 @@ const UNLOCKS=[
  {id:'seasons',h:'First steps',when:()=>!!S.world.wentOut&&S.screen==='town',t:'Time, seasons and weather',x:'',html:'<p class="sm">Back in town, a few things about the world are worth knowing. They change what you meet and what it pays, and they show at the top of the Town screen.</p><p class="sm"><b>Time of day</b> follows your stamina. Rested, it is morning; as you tire it turns to day, dusk and night. Morning and day: beasts roam, the dead lie low. Dusk: the undead begin to appear. Night: the undead stir, and XP and loot are 10% better.</p><p class="sm"><b>Seasons</b> last 30 days each. Spring: plants and slimes flourish, XP +5%. Summer: fire creatures thrive, gold +10%. Autumn: the restless dead walk, loot +10%. Winter: frost creatures thrive, and you have 1 less stamina.</p><p class="sm"><b>Weather</b> shifts with the season. Rain: fire −15%, poison +15%, easier to slip away. Storm: enemies hit 8% harder, loot is 10% better. Fog: you cannot judge a monster\'s danger, but slipping away is much easier. Snow (winter): ice +15%, and no HP regeneration. Heatwave (summer): fire +15%, ice −15%. Clear weather changes nothing.</p>'},
  {id:'market',when:()=>marketOpen(),t:'The Market is open',x:'Gear and potions are sold here, and you can sell what you find. It restocks every morning.',go:'shop',b:'Visit the Market'},
  {id:'gates',when:()=>huntUnlocked(),t:'The gates are open',x:'You are strong enough to leave the walls. Go to Hunt & Explore to fight creatures for gold, experience and loot. Each fight costs stamina, so rest when you tire.',go:'hunt',b:'Go to Hunt & Explore'},
- {id:'square',when:()=>huntUnlocked()&&featOpen('square'),t:'The Town Square',x:'People gather here who need help. Talk to them: quests start with a conversation.',go:'square',b:'Go to the Town Square'},
+ {id:'square',when:()=>huntUnlocked()&&featKills('square'),t:'The Town Square',x:'People gather here who need help. Talk to them: quests start with a conversation.',go:'square',b:'Go to the Town Square'},
  {id:'notice',when:()=>huntUnlocked(),t:'The Notice Board',x:'Odd jobs and small happenings around town, for coin and training. The board changes every day.',go:'doings',b:'Read the Notice Board'},
- {id:'people',when:()=>huntUnlocked()&&featOpen('people'),t:'People',x:'You know a few faces now. Chat once a day and give gifts. Friends share tips, discounts and sometimes work.',go:'people',b:'See who is about'},
- {id:'tavern',when:()=>huntUnlocked()&&featOpen('tavern'),t:'The Gilded Mug',x:'The tavern is open to you: meals, rumours, and people who may one day fight beside you if they come to trust you.',go:'tavern',b:'Go to the tavern'},
- {id:'news',when:()=>huntUnlocked()&&featOpen('news'),t:'The Town Crier',x:'A man in a very large hat shouts the news: events, prices, trouble on the roads.',go:'news',b:'Hear the news'},
- {id:'tinker',when:()=>huntUnlocked()&&featOpen('tinker'),t:'The Tinker\'s Wagon',x:'Bring scrap from salvaged gear and gamble it for something new.',go:'tinker',b:'Visit the wagon'},
+ {id:'people',when:()=>huntUnlocked()&&featKills('people'),t:'People',x:'You know a few faces now. Chat once a day and give gifts. Friends share tips, discounts and sometimes work.',go:'people',b:'See who is about'},
+ {id:'tavern',when:()=>huntUnlocked()&&featKills('tavern'),t:'The Gilded Mug',x:'The tavern is open to you: meals, rumours, and people who may one day fight beside you if they come to trust you.',go:'tavern',b:'Go to the tavern'},
+ {id:'news',when:()=>huntUnlocked()&&featKills('news'),t:'The Town Crier',x:'A man in a very large hat shouts the news: events, prices, trouble on the roads.',go:'news',b:'Hear the news'},
+ {id:'tinker',when:()=>huntUnlocked()&&featKills('tinker'),t:'The Tinker\'s Wagon',x:'Bring scrap from salvaged gear and gamble it for something new.',go:'tinker',b:'Visit the wagon'},
  {id:'guild',when:()=>!!S.world.guild,t:'The Lanternwatch Guild',x:'The guild has noticed you. Take contracts and bounties for gold and permanent bonuses. Your rank decides how high your level can grow, and there is a roll of other adventurers to spar with.',go:'guild',b:'Go to the guild'},
  {id:'focus',when:()=>hasFocus(),t:'Focus',x:'You can use skills now. The Old Library sells skill tomes, and skills grow with use.',go:'library',b:'Visit the Old Library'},
  {id:'bank',when:()=>huntUnlocked()&&placeOpen('bank',HT)&&atHome(),t:'The Counting House',x:'Keep gold safe (it passes to your heir), borrow against your name, or back a venture.',go:'bank',b:'Visit the Counting House'},
@@ -7948,7 +7950,12 @@ function showAnn(){
  if(document.getElementById('annpop'))return;
  const q=S.annQ||[];if(!q.length)return;
  const scr=S.screen;if(['combat','death','dg','explore','enc','trip','puzzle','delve','convo','talk','result'].includes(scr)||S.modal)return;
- const u=UNLOCKS.find(x=>x.id===q[0]);q.shift();if(!u)return;
+ const w=S.world,h=S.hero,FREE=['first_train','first_sleep','first_kill','first_level','seasons'];
+ // spaced out: apart from the first steps, one announcement per three kills or two days
+ const ok=id=>FREE.includes(id)||w.annK==null||(w.kills-w.annK>=3)||(h.day-(w.annD||0)>=2);
+ const qi=q.findIndex(ok);if(qi<0)return;
+ const u=UNLOCKS.find(x=>x.id===q[qi]);q.splice(qi,1);if(!u)return;
+ if(!FREE.includes(u.id)){w.annK=w.kills;w.annD=h.day;}
  const el=document.createElement('div');el.id='annpop';
  el.innerHTML=`<div class="annbox"><div class="mut sm">${u.h||'Now available'}</div><h3>${esc(u.t)}</h3>${u.html?u.html:`<p>${esc(u.x)}</p>`}${u.go?`<div class="grid">${btn(esc(u.b),'annGo',u.id,'pri c')}${btn('Later','annOk',u.id,'c')}</div>`:btn('Got it','annOk',u.id,'pri c')}</div>`;
  document.body.appendChild(el);

@@ -229,3 +229,5 @@ After your first kill and your return to town, a single pop-up explains time of 
 - Settings has six colour themes (Classic, Forest, Ocean, Dusk, Ember, Parchment) that change the whole backdrop.
 
 - Reward and chat pop-ups no longer repeat what the screen already says: if every line of a pop-up is already visible on the current screen (conversations, quest talks, rumours), the pop-up is dropped.
+
+- Announcements are now spaced out: after the first steps, at most one "now available" pop-up appears per three kills or two days, and the rest wait their turn. A place (Square, People, Tavern, Crier, Tinker) only appears in town once its announcement has been shown, and they now open at 4, 9, 14, 19 and 24 kills.
