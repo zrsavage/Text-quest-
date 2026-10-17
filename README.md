@@ -235,3 +235,9 @@ After your first kill and your return to town, a single pop-up explains time of 
 - Talking to townspeople, the market keeper, the tavern (listening in, rumours) and the square now shows what was said **only as a pop-up** (it stays longer, and tapping closes it). The text no longer also sits at the top of the screen, so there is no scrolling back up after every chat. Companion conversations and quest talks keep their text in place.
 
 - The Materials lists (Pack and the sell screen) start folded under a "Materials (n)" header with a Show/Hide button, so they no longer fill the screen.
+
+## Clarity pass
+- **Hero tab** folds its long parts (Aspects, Combat, Forget a skill) under Show/Hide headers. Aspects stays open while you have a free aspect slot.
+- **Locked contracts** say how far away they are: "Requires Silver rank (8/20 contracts)", or "pass the rank trial" once the contracts are in.
+- **Settings** has a "What the colours mean" legend.
+- **Hired people have names and a quirk**, picked at random on hiring: a porter with a strong back (+3 cargo) or a quick learner; a scout who knows one region and maps it every day, or one with a good ear for news; a clerk sharp with numbers or one who knows every buyer; a guard who is an old soldier or a light sleeper. The Hiring Hall shows each person's name and quirk.
