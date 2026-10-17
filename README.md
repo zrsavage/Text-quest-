@@ -260,3 +260,4 @@ After your first kill and your return to town, a single pop-up explains time of 
 - The trading post tags now read cheap / fair / pricey, with a line explaining them (cheap: under 80% of the usual price; pricey: over 125%).
 
 - The Town screen now shows three big tiles: **Train** and **Hunt & Explore** (large, with their own colours and a display font) and **Explore the Town**, which opens every other place, now including the Guild and the Market. Sleep stays as a slim button underneath.
+- The places in "Explore the Town" are larger two-column tiles, each with its own colour, icon and a line saying what it is for, plus live detail where there is some (for example your guild rank).

@@ -54,6 +54,13 @@ body[data-theme=parchment]{--bg:#1c1812;--panel:#2b251b;--panel2:#382f22;--line:
 .bigtile.big .bt{font-family:"Pirata One","MedievalSharp",var(--fh,serif);font-size:2rem;font-weight:400;letter-spacing:.04em;line-height:1.05;text-shadow:0 1px 0 rgba(0,0,0,.4)}
 .bigtile.big .bi svg{width:46px;height:46px}
 .bigtile:active{filter:brightness(1.25)}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ptile{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-height:132px;padding:12px;border-radius:16px;border:1px solid color-mix(in srgb,var(--tc) 50%,var(--line));background:linear-gradient(160deg,color-mix(in srgb,var(--tc) 16%,var(--panel)),var(--panel) 70%);color:var(--tx);text-align:left;cursor:pointer;font:inherit}
+.ptile .pi{color:var(--tc);display:flex;margin-bottom:2px}
+.ptile .pt{font-weight:700;font-size:1.02rem;line-height:1.15;color:var(--tc)}
+.ptile .pd{font-size:.78rem;color:var(--tx);opacity:.82;line-height:1.3}
+.ptile .ps{font-size:.72rem;color:var(--mut);margin-top:auto}
+.ptile:active{filter:brightness(1.25)}
 h1{font-size:1.375rem;margin:4px 0 2px}h2{font-size:1.0625rem;margin:16px 0 6px;color:var(--acc)}h3{font-size:0.9375rem;margin:10px 0 4px}
 p{margin:6px 0}.mut{color:var(--mut)}.sm{font-size:0.8125rem}.c{text-align:center}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0}
@@ -9159,6 +9166,29 @@ const TILE_SVG={
  hunt:'<svg viewBox="0 0 32 32" width="38" height="38" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 26 22 10M18 8l6 0 0 6M7 22l3 3M4 29l3-3"/><path d="M26 26 10 10M14 8H8v6"/></svg>',
  town:'<svg viewBox="0 0 32 32" width="38" height="38" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 27V15l6-5 6 5v12M15 27v-8l7-5 7 5v8M2 27h28"/><path d="M8 27v-5h3v5"/></svg>'
 };
+const PLACE_META={
+ guild:{c:'#4aa3ff',d:'Contracts, bounties and ranks',i:'<svg viewBox="0 0 32 32" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h18v20l-9 6-9-6z"/><path d="M12 10h8M12 15h8"/></svg>'},
+ shop:{c:'#f0b94a',d:'Buy gear and potions, sell your finds',i:'<svg viewBox="0 0 32 32" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h24l-2-7H6zM6 12v15h20V12"/><path d="M13 27v-8h6v8"/></svg>'},
+ library:{c:'#c077ff',d:'Tomes that teach and sharpen skills',i:'<svg viewBox="0 0 32 32" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h8a3 3 0 0 1 3 3v19a3 3 0 0 0-3-3H5zM27 5h-8a3 3 0 0 0-3 3v19a3 3 0 0 1 3-3h8z"/></svg>'},
+ tavern:{c:'#ff9a3c',d:'Meals, rumours and companions',i:'<svg viewBox="0 0 32 32" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8h14v12a6 6 0 0 1-6 6h-2a6 6 0 0 1-6-6zM21 11h3a3 3 0 0 1 0 6h-3M10 4v2M14 4v2M18 4v2"/></svg>'},
+ square:{c:'#ff7fa8',d:'Townsfolk with troubles to solve',i:'<svg viewBox="0 0 32 32" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="16" cy="16" r="11"/><path d="M16 5v22M5 16h22"/></svg>'},
+ people:{c:'#ff7fa8',d:'Chat, give gifts, make friends',i:'<svg viewBox="0 0 32 32" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="4"/><circle cx="22" cy="12" r="3"/><path d="M3 26v-2a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v2M21 19h2a5 5 0 0 1 5 5v2"/></svg>'},
+ doings:{c:'#e8c26a',d:'Odd jobs and small happenings',i:'<svg viewBox="0 0 32 32" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h20v24H6z"/><path d="M11 10h10M11 15h10M11 20h6"/><circle cx="16" cy="4" r="1.5"/></svg>'},
+ news:{c:'#9bb0d6',d:'What the town is talking about',i:'<svg viewBox="0 0 32 32" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h20v18H6a2 2 0 0 1-2-2zM24 11h4v12a2 2 0 0 1-2 2"/><path d="M8 11h12M8 15h12M8 19h8"/></svg>'},
+ exchange:{c:'#7fd65f',d:'Buy low, sell high between towns',i:'<svg viewBox="0 0 32 32" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4v24M6 10h20M6 10l-3 9a4 4 0 0 0 6 0zM26 10l-3 9a4 4 0 0 0 6 0zM10 28h12"/></svg>'},
+ bank:{c:'#7fd65f',d:'Savings, loans and ventures',i:'<svg viewBox="0 0 32 32" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12 16 4l13 8zM6 14v10M12 14v10M20 14v10M26 14v10M3 27h26"/></svg>'},
+ crew:{c:'#4aa3ff',d:'Hire porters, scouts, clerks and guards',i:'<svg viewBox="0 0 32 32" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="16" cy="9" r="5"/><path d="M5 28v-3a8 8 0 0 1 8-8h6a8 8 0 0 1 8 8v3M16 17v6"/></svg>'},
+ tinker:{c:'#3fd0c0',d:'Gamble scrap on something new',i:'<svg viewBox="0 0 32 32" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="24" r="4"/><circle cx="24" cy="24" r="4"/><path d="M3 22V12h18l5 6v4M14 24h6M8 12V7h8"/></svg>'},
+ estate:{c:'#f0b94a',d:'Your family land and household',i:'<svg viewBox="0 0 32 32" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16 16 4l13 12M7 14v14h18V14M13 28v-8h6v8"/></svg>'},
+ roughIn:{c:'#ff6b6b',d:'Not for the careful',i:'<svg viewBox="0 0 32 32" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3 29 27H3z"/><path d="M16 12v7M16 23v1"/></svg>'}
+};
+const placeTile=m=>{
+ const a=m.match(/data-a="(\w+)"/)[1],p=(m.match(/data-p="(\w*)"/)||[])[1]||'',key=a==='roughIn'?'roughIn':p,M=PLACE_META[key];
+ const lab=(m.match(/>([^<]*)(?:<small>|<\/button>)/)||[,''])[1].replace(/^[^A-Za-z]+/,'').trim()||key;
+ const sub=(m.match(/<small>([^<]*)<\/small>/)||[,''])[1];
+ if(!M)return m;
+ return `<button class="ptile" data-a="${a}"${a==='go'?` data-p="${p}"`:''} style="--tc:${M.c}"><span class="pi">${M.i}</span><span class="pt">${lab}</span><span class="pd">${M.d}</span>${sub&&sub!==M.d&&/[0-9:]/.test(sub)?`<span class="ps">${sub}</span>`:''}</button>`;
+};
 const BTN_RE=/<button class="btn[^"]*" data-a="(go|roughIn)"(?: data-p="(\w*)")?[^>]*>[\s\S]*?<\/button>/g;
 const TOWN_CORE=['train','hunt'];
 const STREET_ORDER=['guild','shop','library','tavern','square','people','doings','news','exchange','bank','crew','tinker','estate'];
@@ -9199,7 +9229,7 @@ VIEWS.streets=function(){
  const h=S.hero,w=S.world;
  let t=`<h1>🚶 Around ${esc(TOWNS[where()].n)}</h1><p class="mut">Streets, shops and neighbours. Everything the town offers is a short walk from here.</p>`;
  const ps=townPlaces().sort((a,b)=>{const k=s=>{const m=s.match(/data-p="(\w*)"/);const i=m?STREET_ORDER.indexOf(m[1]):-1;return i<0?99:i;};return k(a)-k(b);});
- t+=`<div class="grid">${ps.join('')}</div>`;
+ t+=`<div class="pgrid">${ps.map(placeTile).join('')}</div>`;
  if(oddOK()||h.odd||h.oddOffer)t+='<div style="height:8px"></div>'+btn('👀 Wander the streets','walk',undefined,'c',h.walkDay===h.day||!!S.dg,h.walkDay===h.day?'you have already wandered today':'see what turns up · free');
  return t+'<div style="height:8px"></div>'+btn('← Back to town','go','town','c');
 };
