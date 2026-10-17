@@ -256,3 +256,5 @@ After your first kill and your return to town, a single pop-up explains time of 
 - Tips, rumours and scouts no longer name the region after your current rank. A new region (and its animals) is first marked on your map when you pass the rank trial for it. The trial's opponent is now "the Examiners' champion" instead of a named monster of the next region.
 - The "someone at the tavern has noticed you" tip only appears once the tavern is open, and tells you to walk around town.
 - A quest that names a region you have not learned about stays off the Town Square until you have. The morning rumour about "the Whisperwood" is gone too.
+
+- The trading post tags now read cheap / fair / pricey, with a line explaining them (cheap: under 80% of the usual price; pricey: over 125%).

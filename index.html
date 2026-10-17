@@ -5068,9 +5068,10 @@ VIEWS.exchange=function(){
  if(tab==='market'){
   const ev=t.ev.filter(e=>e.town===id);
   if(ev.length)s+=ev.map(e=>`<div class="card sm">📰 ${e.txt}</div>`).join('');
+  s+='<p class="mut sm">Tags compare today\'s price here with the usual price. <b style="color:var(--good)">Cheap</b>: under 80% of usual, a good place to buy. <b>Fair</b>: close to usual. <b style="color:#ff9a3c">Pricey</b>: over 125% of usual, a good place to sell.</p>';
   s+=P.deal.map(g=>{
    const G=GOODS[g],mid=midPrice(id,g),ratio=mid/G.b,bp=buyPrice(id,g),sp=sellPrice(id,g),c=t.cargo[g],avg=c?Math.round(c.cost/c.n):0;
-   const tag=ratio<.8?'<span class="tag" style="color:var(--good)">cheap</span>':ratio>1.25?'<span class="tag" style="color:#ff9a3c">dear</span>':'<span class="tag">fair</span>';
+   const tag=ratio<.8?'<span class="tag" style="color:var(--good)">cheap</span>':ratio>1.25?'<span class="tag" style="color:#ff9a3c">pricey</span>':'<span class="tag">fair</span>';
    const room=Math.floor((cargoCap()-cargoUsed())/G.w);
    return `<div class="card sm"><div class="row2"><b>${G.ic} ${G.n}</b>${tag}</div><div class="mut">${G.q}</div><div style="margin:4px 0">Buy <b>${bp}g</b> · Sell <b>${sp}g</b>${c?` · own ${c.n} (paid ~${avg}g)`:''}</div>
    <div class="grid" style="grid-template-columns:repeat(3,1fr)">${btn('Buy 1','tbuy',g+':1','c',room<1||S.world.gold<bp)}${btn('Buy 5','tbuy',g+':5','c',room<1||S.world.gold<bp)}${btn('Buy max','tbuy',g+':max','c',room<1||S.world.gold<bp)}</div>
@@ -7935,7 +7936,7 @@ const UNLOCKS=[
  {id:'guild',when:()=>!!S.world.guild,t:'The Lanternwatch Guild',x:'The guild has noticed you. Take contracts and bounties for gold and permanent bonuses. Your rank decides how high your level can grow, and there is a roll of other adventurers to spar with.',go:'guild',b:'Go to the guild'},
  {id:'focus',when:()=>hasFocus(),t:'Focus',x:'You can use skills now. The Old Library sells skill tomes, and skills grow with use.',go:'library',b:'Visit the Old Library'},
  {id:'bank',when:()=>huntUnlocked()&&placeOpen('bank',HT)&&atHome(),t:'The Counting House',x:'Keep gold safe (it passes to your heir), borrow against your name, or back a venture.',go:'bank',b:'Visit the Counting House'},
- {id:'post',when:()=>huntUnlocked()&&placeOpen('post',HT)&&atHome(),t:'The Trading Post',x:'Buy goods where they are cheap and sell them where they are dear. Every town prices differently.',go:'exchange',b:'Visit the Trading Post'},
+ {id:'post',when:()=>huntUnlocked()&&placeOpen('post',HT)&&atHome(),t:'The Trading Post',x:'Buy goods where they are cheap and sell them where they sell for more. Every town prices differently.',go:'exchange',b:'Visit the Trading Post'},
  {id:'travel',when:()=>TOWN_IDS.some(x=>x!==where()&&knowT(x)),t:'Roads to other towns',x:'You know of other towns now. Travel costs days and has dangers, but every town has its own prices, people and secrets.',go:'map',b:'Open the map'},
  {id:'crew',when:()=>!!S.world.guild&&S.hero.contracts>=1,t:'The Hiring Hall',x:'You can pay people to work for you: a porter, a scout, a clerk, a bodyguard. They get better the longer they stay.',go:'crew',b:'Visit the Hiring Hall'},
  {id:'trial',when:()=>rkTrialReady(),t:'A rank trial',x:'Your contracts qualify you for the next rank. Take the trial at the guild. If you lose you walk away at 1 HP and can try again tomorrow.',go:'guild',b:'Go to the guild'}
