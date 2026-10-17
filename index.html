@@ -24,8 +24,12 @@ h1,h2,h3,.foldh{font-family:var(--fh,var(--ff,inherit))}
 #top b{color:var(--tx)}
 #view{flex:1;padding:12px 14px 96px}
 #nav{position:fixed;bottom:0;left:0;right:0;max-width:640px;margin:0 auto;display:flex;background:#121620;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:6}
-#nav button{flex:1;background:none;border:0;color:var(--mut);padding:10px 2px 8px;font-size:0.6875rem;position:relative;min-height:54px}
+#nav{gap:6px;padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+#nav button{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;color:var(--mut);padding:8px 2px 6px;font-size:0.8125rem;position:relative;min-height:66px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+#nav button .nl{font-weight:600;letter-spacing:.01em}
+#nav button.on{background:rgba(255,255,255,.07);border-color:var(--acc)}
 #nav button span{display:block;font-size:1.25rem;line-height:1.1}
+#nav button .ni svg{display:block}
 #nav button.on{color:var(--acc)}
 #nav .dot{position:absolute;top:6px;right:22%;background:var(--bad);color:#fff;border-radius:9px;font-size:0.625rem;padding:0 5px}
 h1{font-size:1.375rem;margin:4px 0 2px}h2{font-size:1.0625rem;margin:16px 0 6px;color:var(--acc)}h3{font-size:0.9375rem;margin:10px 0 4px}
@@ -98,7 +102,7 @@ textarea{height:110px;font-size:0.75rem}
 .chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}.chips button{padding:8px 2px;font-size:.8125rem;text-align:center}
 @media (prefers-reduced-motion:reduce){.fadein{animation:none}}
 .pc{display:inline-block;min-width:40px;padding:8px 5px;border-radius:7px;background:#f4efe3;color:#15151c;font-weight:700;text-align:center;margin:2px;font-size:1rem;box-shadow:0 1px 0 #0006}.pc.r{color:#c0332b}.pc.back{background:#3a4a8a;color:#9bb0ff}.pcb{background:none;border:2px solid transparent;border-radius:10px;padding:2px;margin:2px;color:inherit;font-family:inherit}.pcb.hold{border-color:var(--acc)}.roul{display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:50%;font-size:1.6rem;font-weight:800;color:#fff;border:3px solid #0006}.roul.red{background:#b3261e}.roul.black{background:#1c1c24}.roul.green{background:#1f7a3a}
-body.calm #nav button span{display:none}
+body.calm #nav button span:not(.ni){display:none}
 body.calm .btn small,body.calm .tag{letter-spacing:.01em}
 body.hc{--bg:#000;--panel:#10131a;--panel2:#181c26;--line:#5a6a88;--tx:#fff;--mut:#c4cddd}
 body.cb{--good:#4aa3ff;--bad:#ff4fd8;--warn:#f0c94a;--acc:#ffd24a}
@@ -171,6 +175,8 @@ const SLOT_ICON={weapon:'⚔️',helm:'🪖',armor:'🛡️',boots:'👢',ring:'
 const RAR=[{n:'Common',c:'#b8c0cc'},{n:'Uncommon',c:'#5fd38d'},{n:'Rare',c:'#4aa3ff'},{n:'Epic',c:'#c077ff'},{n:'Legendary',c:'#ffb02e'}];
 const TIER_MIN=[1,9,20,34,48,64];
 const TIER_ADJ=['Crude','Iron','Steel','Runed','Frostforged','Voidtouched'];
+const TIER_POOL=[['Crude','Worn','Battered','Rough','Patched','Rusty','Plain','Chipped','Mended','Frayed','Scuffed','Humble'],['Iron','Hardened','Sturdy','Riveted','Tempered','Solid'],['Steel','Honed','Fine','Burnished','Well-made'],['Runed','Etched','Rune-marked'],['Frostforged','Rimed','Winterbound'],['Voidtouched','Hollow-forged','Starless']];
+const tierWord=t=>{const a=TIER_POOL[t]||[TIER_ADJ[t]];return a[Math.floor(Math.random()*a.length)];};
 const tierOf=l=>{let t=0;TIER_MIN.forEach((m,i)=>{if(l>=m)t=i;});return t;};
 const RANKS=[{n:'Unranked',c:0},{n:'Copper',c:4},{n:'Bronze',c:10},{n:'Silver',c:20},{n:'Gold',c:32},{n:'Mythril',c:48},{n:'Adamant',c:70}];
 const STATS=['str','vit','agi','int'];
@@ -356,7 +362,7 @@ function genItem(il,rar,slot){
  const m=[1,1,1.12,1.3][rar];
  used.forEach(k=>{const a=AF[k];let v=a.f(il)*rnd(.8,1.2)*m;v=a.pct?Math.round(v*10)/10:Math.max(1,Math.round(v));st[k]=Math.round(((st[k]||0)+v)*10)/10;});
  const pre=n>=1?pick(AF[used[0]].pre):'',suf=n>=2?pick(AF[used[1]].suf):'';
- const name=[pre,TIER_ADJ[t],bn,suf].filter(Boolean).join(' ')+(n>=3?' ✦':'');
+ const name=[pre,tierWord(t,slot),bn,suf].filter(Boolean).join(' ')+(n>=3?' ✦':'');
  return{id:uid(),slot,base:bn,name,il,tier:t,rar,req:Math.max(1,il-2),st,val:Math.round((8+il*3.5)*VAL_MULT[rar])};
 }
 function genLegend(d){
@@ -3572,6 +3578,7 @@ function skillUse(id){
  if(l<SKMAX&&h.sx[id]>=skNeed(l)){h.sx[id]-=skNeed(l);h.skills[id]=l+1;return `📈 <b>${SK[id].n}</b> improves through use: Lv ${l+1}!`;}
  return null;
 }
+const NAVSVG={town:'<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20V11l5-4 5 4v9M13 20v-6l4-3 4 3v6M2 20h20"/><path d="M7 20v-4h2v4"/></svg>',journal:'<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8h6"/></svg>',hero:'<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 21v-2a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v2M9 14l3 4 3-4"/></svg>',pack:'<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6V5a4 4 0 0 1 8 0v1"/><path d="M6 6h12l2 4v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V10z"/><path d="M9 14h6v3H9z"/></svg>',guild:'<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h14v16l-7-3-7 3z"/><path d="M9 8h6M9 11.5h6"/></svg>',menu:'<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg>'};
 const NAV=[
  ['town','🏘️','Town',['town','train','hunt','enc','result','shop','library','tinker','square','tavern','crypt','explore','dungeon','puzzle','talk','delve','convo','estate']],
  ['journal','📖','Journal',['journal']],['hero','🧍','Hero',['hero']],['pack','🎒','Pack',['pack']],['guild','📜','Guild',['guild']],['menu','⚙️','Menu',['menu']]
@@ -3596,7 +3603,7 @@ function render(){
  const showNav=!['combat','death','enc','bgpick'].includes(sc);
  nav.style.display=showNav?'flex':'none';
  const qm=questMark();
- nav.innerHTML=NAV.filter(n=>n[0]!=='guild'||S.world.guild).map(n=>`<button class="${n[3].includes(sc)?'on':''}" data-a="go" data-p="${n[0]}"><span>${n[1]}</span>${n[2]}${n[0]==='hero'&&h.pts?`<i class="dot">${h.pts}</i>`:''}${n[0]==='journal'&&qm?`<i class="dot">${qm}</i>`:''}</button>`).join('');
+ nav.innerHTML=NAV.filter(n=>n[0]!=='guild'||S.world.guild).map(n=>`<button class="${n[3].includes(sc)?'on':''}" data-a="go" data-p="${n[0]}"><span class="ni">${NAVSVG[n[0]]||n[1]}</span><b class="nl">${n[2]}</b>${n[0]==='hero'&&h.pts?`<i class="dot">${h.pts}</i>`:''}${n[0]==='journal'&&qm?`<i class="dot">${qm}</i>`:''}</button>`).join('');
  $('#modal').innerHTML=modalHtml();
  const lg=$('#log');if(lg)lg.scrollTop=lg.scrollHeight;
  if(S.lastScreen!==sc){window.scrollTo(0,0);S.lastScreen=sc;}

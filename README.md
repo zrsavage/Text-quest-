@@ -217,3 +217,7 @@ After your first kill and your return to town, a single pop-up explains time of 
 - **Hired help brings news**: a scout may learn that a client is desperate (a contract pays more), a clerk may find a buyer for something you carry (+30% or more on it for the day), and a bodyguard may recover a stolen purse.
 - **Companion stories reach farther**: finishing a story gives that companion a bond move, once per fight, themed to their arc (Stand Fast, Unsigned, Margin Note, Trail Sense, Kindled, Song for the Road). It grows stronger the more it is used (levels 1 to 5). Later conversations remember what you said, and give a little extra trust.
 - **Playtest report** now also lists fight length, skills held with levels and use counts, sets, lessons held back for lack of room, contracts lost to rivals and rumours seen, and companion story progress.
+
+## Gear names and the bottom bar
+- Early gear no longer all reads "Crude ...": each tier has a pool of descriptive words (Worn, Battered, Patched, Rusty, Chipped, Mended, Humble... then Hardened, Sturdy, Riveted and so on). Scrap still uses the plain tier name.
+- The bottom bar is now six real tiles with drawn icons (Town, Journal, Hero, Pack, Guild, Menu), larger and with borders, and the icons stay in calm mode.
