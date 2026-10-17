@@ -189,3 +189,6 @@ A moonlit Hollowmere skyline: twinkling stars, flickering windows, swaying lante
 ## First kill and selling materials
 - The first-kill pop-up now says it plainly: you killed a living thing, take what it left to the Market and find someone to pay for it. The first kill always leaves at least one material.
 - Sell goods now has a Materials section: sell 1 or all of anything your kills left behind, at small fixed prices (better for rare parts, deeper zones and friendly keepers).
+
+## Time, seasons and weather, explained once
+After your first kill and your return to town, a single pop-up explains time of day (it follows your stamina), the four seasons and every kind of weather, with their exact effects. The first-kill message no longer mentions it.
