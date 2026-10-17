@@ -7418,15 +7418,15 @@ function popReward(title,lines,ms){
 {
  const _dd=ACT.doDo;
  ACT.doDo=function(id){S.doRes=null;_dd.call(this,id);if(S.doRes)popReward(`${S.doRes.ic} ${S.doRes.n}`,S.doRes.lines);};
- const chatMs=ls=>clamp(2500+(ls||[]).join(' ').replace(/<[^>]+>/g,'').length*25,3500,6000);
+ const chatMs=ls=>clamp(4000+(ls||[]).join(" ").replace(/<[^>]+>/g,"").length*40,5500,10000);
  const _nt=ACT.npcTalk;
- ACT.npcTalk=function(id){S.npcRes=null;_nt.call(this,id);if(S.npcRes)popReward(esc(S.npcRes.who.n),S.npcRes.lines,chatMs(S.npcRes.lines));};
+ ACT.npcTalk=function(id){S.npcRes=null;_nt.call(this,id);if(S.npcRes){popReward(esc(S.npcRes.who.n),S.npcRes.lines,chatMs(S.npcRes.lines));S.npcRes=null;}};
  const _kt=ACT.kpTalk;
- ACT.kpTalk=function(){S.kpMsg=null;_kt.call(this);if(S.kpMsg){const k=keeper();popReward(esc(k?k.n:''),[S.kpMsg],chatMs([S.kpMsg]));}};
+ ACT.kpTalk=function(){S.kpMsg=null;_kt.call(this);if(S.kpMsg){const k=keeper();popReward(esc(k?k.n:''),[S.kpMsg],chatMs([S.kpMsg]));if(!S.kpOffer)S.kpMsg=null;}};
  const _ls=ACT.listen,_ru=ACT.rumor,_mi=ACT.mingle;
- ACT.listen=function(){const h=S.hero,done=h.lstDay===h.day;_ls.call(this);if(!done&&S.rumor)popReward('Overheard',[S.rumor],chatMs([S.rumor]));};
- ACT.rumor=function(){S.rumor=null;_ru.call(this);if(S.rumor)popReward('Rumours',[S.rumor],chatMs([S.rumor]));};
- ACT.mingle=function(){S.mingle=null;_mi.call(this);if(S.mingle)popReward('Around the square',S.mingle,chatMs(S.mingle));};
+ ACT.listen=function(){const h=S.hero,done=h.lstDay===h.day;_ls.call(this);if(!done&&S.rumor){popReward('Overheard',[S.rumor],chatMs([S.rumor]));S.rumor=null;}};
+ ACT.rumor=function(){S.rumor=null;_ru.call(this);if(S.rumor){popReward('Rumours',[S.rumor],chatMs([S.rumor]));S.rumor=null;}};
+ ACT.mingle=function(){S.mingle=null;_mi.call(this);if(S.mingle){popReward('Around the square',S.mingle,chatMs(S.mingle));S.mingle=null;}};
  const _of2=oddFinish;
  oddFinish=function(){_of2();if(S.oddRes)popReward(`${S.oddRes.ic} ${S.oddRes.n}: done`,S.oddRes.lines);};
 }
