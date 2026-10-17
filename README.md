@@ -174,3 +174,7 @@ Menu > Settings (and title screen settings) has a Font style picker (Easy to rea
 ## A calmer first hour
 - Until the gates open, the Town screen shows only: tip, "Next", training progress, Walk around town, Train, Market and Sleep. Mira's odd-job card, the weather card, the locked Hunt button and the event log (collapsed) are hidden. Mira's flour-sack job is still in the Training Yard.
 - The first hero is 16. The prologue has a new page and the first tip and "Next" line say you are not ready to fight: train, then look around town.
+
+## Slower introductions and "now available" pop-ups
+- Parts of town open gradually, by the family's total kills: Town Square at 5, People at 8, the Tavern at 12, the Town Crier and Tinker's Wagon at 15. The Market appears after 8 training sessions (or when you first hold gold). The Notice Board and Hunt & Explore appear when the gates open.
+- Each new place, and guild, Focus, Counting House, Trading Post, travel, Hiring Hall and rank-trial unlocks, announces itself once with a pop-up ("Now available") and a button that takes you there. Several arriving at once queue up. Saves from older builds are not flooded: whatever you already have is marked as announced.
