@@ -8465,6 +8465,187 @@ Object.assign(ACT,{
  };
 }
 
+/* =====================================================================
+   PASS AH — a mind holds ten skills: up to six attacks and five supports,
+   and the ones you keep work on each other
+   ===================================================================== */
+const SK_TOTAL=10,SK_ATKMAX=6,SK_SUPMAX=5;
+const ATK_CL=['power','flurry','bash','venom','fire','bite','exec','meteor','jab','rock','ham','rend','feint','frost','chain','sunder','smite','drain','volley','rupt','blizz','thunder','dance','annih','void'];
+const ELTAG={Ember:'fire',Frost:'ice',Storm:'storm',Venom:'poison',Shadow:'shadow',Sun:'holy',Stone:'earth',Gale:'wind',Blood:'blood',Arcane:'arcane',Thorn:'nature',Void:'void'};
+const ATT={};
+const skKind=id=>SKX[id]?(SKX[id].fx.d?'atk':'sup'):ATT[id]?'sup':ATK_CL.includes(id)?'atk':'sup';
+// the twelve attunements: spells that wrap your attacks in an element
+{
+ const T={Ember:1,Frost:1,Storm:1,Venom:1,Shadow:2,Sun:2,Stone:2,Gale:2,Blood:3,Arcane:3,Thorn:3,Void:3};
+ const R={Ember:'burn the foe',Frost:'chill the foe',Storm:'sometimes stun the foe',Venom:'poison the foe',Shadow:'heal you a little',Sun:'mend you a little',Stone:'chip at its armor',Gale:'sometimes strike twice',Blood:'make it bleed and heal you',Arcane:'return a little Focus',Thorn:'raise a thorny ward',Void:'ignore a quarter of defense'};
+ Object.keys(T).forEach(el=>{
+  const id='att_'+el.toLowerCase();
+  SK[id]={n:`${el} Attunement`,t:T[el],c:2+T[el],d:l=>`For ${3+Math.floor(l/2)} turns your attacks ${R[el]}, and ${ELTAG[el]} skills hit 25% harder.`};
+  SKS[id]='support';SKT[id]=[ELTAG[el]];ATT[id]={el,tag:ELTAG[el]};
+  PATHS.support.aff.push(id);
+ });
+ // elemental skills carry their element, so they can resonate
+ Object.keys(SK).forEach(id=>{if(SKS[id]==='elem'){const el=SK[id].n.split(' ')[0];if(ELTAG[el])SKT[id]=['magic',ELTAG[el]];}});
+ SKT.frost=['magic','ice'];SKT.fire=['fire','magic'];SKT.meteor=['fire','magic'];SKT.bite=['phys','shadow'];SKT.drain=['magic','shadow'];SKT.smite=['phys','holy'];SKT.phoenix=['fire','magic'];SKT.chain=['magic','storm'];SKT.thunder=['magic','storm'];SKT.venom=['phys','poison'];
+}
+const essSk=k=>{try{return essOf().some(x=>ESSX[x.id]&&ESSX[x.id].sk===k);}catch(e){return false;}};
+const slotSkills=()=>Object.keys(S.hero.skills||{}).filter(k=>SK[k]&&!essSk(k));
+function slotUse(){const ks=slotSkills(),na=ks.filter(k=>skKind(k)==='atk').length;return{n:ks.length,atk:na,sup:ks.length-na};}
+// null if there is room, otherwise what is full
+function slotCheck(id){
+ const h=S.hero;if(!SK[id]||h.skills[id]||essSk(id))return null;
+ const u=slotUse(),k=skKind(id),sameFull=k==='atk'?u.atk>=SK_ATKMAX:u.sup>=SK_SUPMAX;
+ if(u.n>=SK_TOTAL||sameFull)return{kind:k,same:sameFull};
+ return null;
+}
+// ----- what you meet: tomes lean toward things you can use -----
+learnTome=function(zi){
+ const h=S.hero;if(!hasFocus())return null;
+ if(!h.skillChoice&&!h.skillPend&&Math.random()<.3+.04*rankIdx(h.contracts)&&offerSkillChoice(zi,'a tome'))return '📖 <b>The tome holds several lessons.</b> Choose which one to learn.';
+ const pool=skillPool(zi);if(!pool.length)return null;
+ const known=pool.filter(k=>h.skills[k]),open=pool.filter(k=>!h.skills[k]&&!slotCheck(k)),blocked=pool.filter(k=>!h.skills[k]&&slotCheck(k));
+ let opts=open.concat(known);
+ if(!open.length){
+  const ups=Object.keys(h.skills).filter(k=>SK[k]&&(h.skills[k]||0)<SKMAX&&!skCapped(h.skills[k]));
+  if(ups.length&&(!blocked.length||Math.random()<.75))opts=ups;else if(blocked.length)opts=blocked;
+ }else if(blocked.length&&Math.random()<.15)opts=opts.concat([pick(blocked)]);
+ if(!opts.length)return null;
+ const k=pick(opts);
+ if(!h.skills[k]&&slotCheck(k)){if(h.skillPend)return null;h.skillPend={id:k,src:'a tome'};return `📖 <b>${SK[k].n}</b>: a lesson you have no room for. Decide what to forget, or let it go.`;}
+ h.skills[k]=(h.skills[k]||0)+1;
+ return `📖 <b>${SK[k].n}</b> ${h.skills[k]===1?'learned.':'upgraded to Lv '+h.skills[k]+'!'}`;
+};
+{
+ const _bt=ACT.buyTome,_sp=ACT.skpick;
+ ACT.buyTome=function(id){
+  const h=S.hero,w=S.world,l=h.skills[id]||0;
+  if(!l&&slotCheck(id)){const pr=tomePrice(id,0);if(w.gold<pr){note('Not enough gold.','e');return;}S.modal={t:'skreplace',id,pay:pr,src:'the Library'};return;}
+  return _bt.call(this,id);
+ };
+ ACT.skpick=function(id){
+  const h=S.hero,c=h.skillChoice;if(!c||!c.opts.includes(id))return;
+  if(!h.skills[id]&&slotCheck(id)){h.skillChoice=null;h.skillPend={id,src:c.src};S.modal=null;return;}
+  return _sp.call(this,id);
+ };
+}
+Object.assign(ACT,{
+ skreplace(old){
+  const m=S.modal,h=S.hero,w=S.world;if(!m||m.t!=='skreplace'||!h.skills[old])return;
+  const id=m.id,chk=slotCheck(id);if(chk&&chk.same&&skKind(old)!==skKind(id))return;
+  if(m.pay){if(w.gold<m.pay){note('Not enough gold.','e');return;}w.gold-=m.pay;}
+  const nm=SK[old].n;delete h.skills[old];if(h.sx)delete h.sx[old];if(h.su)delete h.su[old];
+  h.skills[id]=1;if(h.skillPend&&h.skillPend.id===id)h.skillPend=null;S.modal=null;
+  note(`You let ${nm} go and learn ${SK[id].n}.`,'g');
+ },
+ skleave(){S.modal=null;const h=S.hero;if(h.skillPend){h.skillPend=null;note('You let the lesson go.');}},
+ skmaybe(){S.modal=null;S.skLater=S.hero&&S.hero.day;},
+ skforget(id){const h=S.hero;if(!h.skills[id])return;S.modal={t:'confirm',a:'skforgetYes',q:`Forget ${esc(SK[id].n)} (Lv ${h.skills[id]})? Its levels are lost. It can be learned again.`};S.sfId=id;},
+ skforgetYes(){const h=S.hero,id=S.sfId;S.modal=null;if(!id||!h.skills[id])return;delete h.skills[id];if(h.sx)delete h.sx[id];if(h.su)delete h.su[id];S.sfId=null;note(`You let ${SK[id].n} go.`);}
+});
+{
+ const _mh=modalHtml;
+ modalHtml=function(){
+  const m=S.modal;
+  if(m&&m.t==='skreplace'){
+   const h=S.hero,id=m.id;if(!SK[id]){S.modal=null;return '';}
+   const chk=slotCheck(id),kind=skKind(id);
+   if(!chk){S.modal=null;return '';}
+   const cand=slotSkills().filter(k=>!chk.same||skKind(k)===kind);
+   const u=slotUse();
+   let t=`<h3 style="margin:0 0 6px">No room for ${esc(SK[id].n)}</h3><div class="card sm"><div class="mut sm">${kind==='atk'?'Attack':'Support'} · Focus ${SK[id].c}</div><div>${SK[id].d(1)}</div></div><p class="sm mut">You can hold ${SK_TOTAL} skills: at most ${SK_ATKMAX} attacks and ${SK_SUPMAX} supports. You hold ${u.n} (${u.atk} attacks, ${u.sup} supports). ${chk.same?`You have all the ${kind==='atk'?'attack':'support'} slots you can use, so`:'To learn it,'} choose one to forget.${m.pay?` Learning costs ${m.pay}g.`:''}</p>`;
+   t+=cand.map(k=>`<div class="card sm"><div class="row2"><b>${esc(SK[k].n)}</b><span class="tag">${skKind(k)==='atk'?'attack':'support'} · Lv ${h.skills[k]}</span></div>${btn('Forget this one','skreplace',k,'c')}</div>`).join('');
+   t+=m.pay!=null?btn('Cancel','close','','c'):`<div class="grid">${btn('Decide later','skmaybe',undefined,'c')}${btn('Let it go','skleave',undefined,'bad c')}</div>`;
+   return `<div class="mod"><div id="sheet">${t}</div></div>`;
+  }
+  return _mh();
+ };
+ const _r=render;
+ render=function(){
+  try{const h=S.hero;if(h&&h.skillPend&&!S.modal&&!h.skillChoice&&h.day!==S.skLater&&!['combat','death','dg','explore','enc','trip','puzzle','delve','result','convo','talk'].includes(S.screen)){const id=h.skillPend.id;if(!slotCheck(id)){h.skills[id]=1;note(`📖 ${SK[id].n} learned.`,'g');h.skillPend=null;}else S.modal={t:'skreplace',id,pay:null,src:h.skillPend.src};}}catch(e){}
+  return _r.apply(this,arguments);
+ };
+}
+// ----- attunements, and the way your skills work together -----
+{
+ const _cs=castSkill;
+ castSkill=function(id,free){
+  if(!ATT[id])return _cs(id,free);
+  const c=S.cb,h=S.hero,l=h.skills[id];
+  if(!free){if(c.focus<skillCost(id)){say('Not enough Focus.','e');return false;}c.focus-=skillCost(id);}
+  const a=ATT[id];c.att={el:a.el,tag:a.tag,t:3+Math.floor(l/2)+1,l};
+  say(`🔮 ${esc(SK[id].n)}: your attacks carry ${a.el} for ${3+Math.floor(l/2)} turns.`,'g');
+  if(!free){const m=skillUse(id);if(m)say(m,'y');}
+  return true;
+ };
+ const _ap=afterPlayer;
+ afterPlayer=function(){
+  const had=S.cb&&S.cb.att;_ap.apply(this,arguments);
+  if(had&&S.cb&&S.cb.att&&--S.cb.att.t<=0){S.cb.att=null;try{say('The attunement fades.');}catch(e){}}
+ };
+}
+function elemMastery(tags,self){
+ const h=S.hero;let best=0;
+ (tags||[]).forEach(t=>{if(['phys','magic','guard'].includes(t))return;
+  const n=Object.keys(h.skills||{}).filter(k=>k!==self&&SKT[k]&&SKT[k].includes(t)).length;best=Math.max(best,Math.min(.28,.07*n));});
+ return 1+best;
+}
+{
+ const _st=strike;
+ strike=function(mult,o){
+  o=o||{};const c=S.cb;if(!c)return _st(mult,o);
+  const tags=o.tags||[],at=c.att&&c.att.t>0?c.att:null;let k=elemMastery(tags,c.curSk);
+  if(at){if(tags.includes(at.tag))k*=1.25;if(at.el==='Void')o.pierce=Math.max(o.pierce||0,.25);}
+  if((c.hb.def>0||c.pb.barrier>0)&&tags.includes('phys'))k*=1.1;
+  const d=_st(mult*k,o),e=c.e,p=P();
+  if(at&&d>0&&!o.noatt){
+   switch(at.el){
+    case 'Ember':if(e.hp>0)applyBurn(e,Math.max(1,Math.round(p.int*.25+p.atk*.08)),2);break;
+    case 'Frost':if(e.hp>0)applyChill(e,2);break;
+    case 'Storm':if(e.hp>0&&e.tier!=='b')tryStun(e,.12);break;
+    case 'Venom':if(e.hp>0)applyPoison(e,Math.max(1,Math.round(p.atk*.12)));break;
+    case 'Shadow':healHero(Math.round(d*.15));break;
+    case 'Sun':healHero(Math.round(p.maxhp*.03));break;
+    case 'Stone':e.def=Math.max(0,Math.round(e.def*.97));break;
+    case 'Gale':if(e.hp>0&&Math.random()<.3){const o2=Object.assign({},o,{noatt:true,label:'🌬️ An echo strikes'});_st(mult*.4,o2);}break;
+    case 'Blood':if(e.hp>0)applyBleed(e,Math.max(1,Math.round(p.atk*.15)));healHero(Math.round(d*.08));break;
+    case 'Arcane':c.focus=Math.min(p.maxfocus,c.focus+1);break;
+    case 'Thorn':c.pb.barrier=(c.pb.barrier||0)+Math.round(p.maxhp*.03);break;
+   }
+  }
+  return d;
+ };
+}
+function synLines(){
+ const h=S.hero,groups={};
+ Object.keys(h.skills||{}).forEach(k=>{(SKT[k]||[]).forEach(t=>{if(['phys','magic','guard'].includes(t))return;(groups[t]=groups[t]||[]).push(k);});});
+ const out=[];
+ Object.keys(groups).forEach(t=>{const g=groups[t];if(g.length>=2)out.push(`<b>${t[0].toUpperCase()+t.slice(1)}</b> (${g.map(k=>esc(SK[k].n)).join(', ')}): each of them hits ${Math.min(28,7*(g.length-1))}% harder${g.some(k=>ATT[k])?'. The attunement adds +25% more while it lasts.':'.'}`);});
+ const hasDef=Object.keys(h.skills||{}).some(k=>['brace','iron','thorn','dress'].includes(k)||(SKX[k]&&(SKX[k].fx.bd||SKX[k].fx.br)));
+ if(hasDef&&Object.keys(h.skills).some(k=>skKind(k)==='atk'&&(SKT[k]||[]).includes('phys')))out.push('<b>Guarded strikes</b>: physical attacks hit 10% harder while a defense buff or ward is up.');
+ return out;
+}
+{
+ const _sh=skillsHtml;
+ skillsHtml=function(){
+  let t=_sh();const h=S.hero,u=slotUse(),ess=Object.keys(h.skills||{}).filter(k=>SK[k]&&essSk(k));
+  const syn=synLines();
+  const head=`<div class="card sm"><div class="row2"><b>Skills held</b><span class="tag">${u.n}/${SK_TOTAL}</span></div><div class="mut sm">Attacks ${u.atk}/${SK_ATKMAX} · Supports ${u.sup}/${SK_SUPMAX}${ess.length?` · plus ${ess.length} granted by your aspect${ess.length>1?'s':''}`:''}. Skills that share an element make each other stronger.</div>${syn.length?'<div class="sm" style="margin-top:6px">'+syn.map(x=>'<div>'+x+'</div>').join('')+'</div>':''}</div>`;
+  const forget=slotSkills().length?`<h3 style="margin-top:12px">Forget a skill</h3><p class="mut sm">Free a slot. Its levels are lost.</p><div class="chips2">${slotSkills().map(k=>`<button class="chipb" data-a="skforget" data-p="${k}">${esc(SK[k].n)}</button>`).join('')}</div>`:'';
+  return t.replace(/(<h2>Skills<\/h2>)/,'$1'+head)+forget;
+ };
+}
+// the attunement shows in the fight
+{
+ const _vc=VIEWS.combat;
+ VIEWS.combat=function(){
+  let t=_vc();const c=S.cb;
+  if(c&&c.att&&c.att.t>0)t=t.replace(/(🔷 Focus \d+\/\d+)(<\/div>)/,`$1 · <span class="up">Attuned: ${c.att.el} (${c.att.t-1})</span>$2`);
+  return t;
+ };
+}
+// tell the player about it when they first learn to focus
+{const f=UNLOCKS.find(u=>u.id==='focus');if(f)f.x='You can use skills now. A mind can hold ten of them: up to six attacks and five supports. Skills that share an element make each other stronger, and attunements wrap your attacks in an element. The Old Library sells tomes.';}
+
 /* ----- a slow start: bodies heal over days, not overnight, until you are properly seasoned ----- */
 const nightRecovery=()=>{const L=S.hero.lvl;return L>=8?1:Math.min(1,.38+.09*(L-1));};
 const _sleepDayRec=sleepDay;
@@ -8505,7 +8686,7 @@ VIEWS.train=function(){
  return s.replace(/(<\/p>)/,'$1'+card);
 };
 if(typeof document!=='undefined'&&typeof window!=='undefined'&&!window.__TQ_TEST){try{render();}catch(e){}}
-if(typeof window!=='undefined')window.TQ={SKX,SKS,fxDesc,fxCost,learnTome,SK,castSkill,offerSkillChoice,skillPool,matPrice,UNLOCKS,checkUnlocks,showAnn,VIEWS,BOND,QS,qEvent,stepDone,qTalkChoose,STORIES,legacyLines,registerStories,compCard,applyOut,checkDeath,rankIdx,sleepDay,CREW,crewOf,crewLvl,rkTrialReady,trialReady,rankRaw,genRivals,popReward,forageZone,apprChance,DG,HAB,MONPIC,addXP,wroll,refreshShop,lvCap,rankName,rarGov,keeper,keeperTier,KPJ,makeHeir,lsUse,lsLvl,lsRec,slogHtml,ROUGH,cpic,hasFocus,hprice,nextStep,foldHtml,upDiff,reportText,tele,loadBackup,skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,rkTrialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
+if(typeof window!=='undefined')window.TQ={slotCheck,slotUse,skKind,synLines,ATT,elemMastery,SKX,SKS,fxDesc,fxCost,learnTome,SK,castSkill,offerSkillChoice,skillPool,matPrice,UNLOCKS,checkUnlocks,showAnn,VIEWS,BOND,QS,qEvent,stepDone,qTalkChoose,STORIES,legacyLines,registerStories,compCard,applyOut,checkDeath,rankIdx,sleepDay,CREW,crewOf,crewLvl,rkTrialReady,trialReady,rankRaw,genRivals,popReward,forageZone,apprChance,DG,HAB,MONPIC,addXP,wroll,refreshShop,lvCap,rankName,rarGov,keeper,keeperTier,KPJ,makeHeir,lsUse,lsLvl,lsRec,slogHtml,ROUGH,cpic,hasFocus,hprice,nextStep,foldHtml,upDiff,reportText,tele,loadBackup,skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,rkTrialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>
 </html>
