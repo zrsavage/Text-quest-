@@ -221,3 +221,5 @@ After your first kill and your return to town, a single pop-up explains time of 
 ## Gear names and the bottom bar
 - Early gear no longer all reads "Crude ...": each tier has a pool of descriptive words (Worn, Battered, Patched, Rusty, Chipped, Mended, Humble... then Hardened, Sturdy, Riveted and so on). Scrap still uses the plain tier name.
 - The bottom bar is now six real tiles with drawn icons (Town, Journal, Hero, Pack, Guild, Menu), larger and with borders, and the icons stay in calm mode.
+
+- The "Time, seasons and weather" explanation now appears the first time you are back in town after going out (even if you fled or killed nothing), instead of waiting for a first kill.
