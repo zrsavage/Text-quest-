@@ -233,3 +233,5 @@ After your first kill and your return to town, a single pop-up explains time of 
 - Announcements are now spaced out: after the first steps, at most one "now available" pop-up appears per three kills or two days, and the rest wait their turn. A place (Square, People, Tavern, Crier, Tinker) only appears in town once its announcement has been shown, and they now open at 4, 9, 14, 19 and 24 kills.
 
 - Talking to townspeople, the market keeper, the tavern (listening in, rumours) and the square now shows what was said **only as a pop-up** (it stays longer, and tapping closes it). The text no longer also sits at the top of the screen, so there is no scrolling back up after every chat. Companion conversations and quest talks keep their text in place.
+
+- The Materials lists (Pack and the sell screen) start folded under a "Materials (n)" header with a Show/Hide button, so they no longer fill the screen.

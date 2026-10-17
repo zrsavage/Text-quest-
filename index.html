@@ -3227,7 +3227,7 @@ const VIEWS={
   const pk=Object.keys(POTS).filter(k=>w.pots[k]>0);
   t+=`<h2>Potions</h2>`+(pk.length?pk.map(k=>btn(`${POTS[k].n} ×${w.pots[k]}`,'usePot',k,'good',h.hp>=P().maxhp,'Tap to drink')).join(''):'<p class="mut sm">None. Buy some at the Market.</p>');
   const mk=Object.keys(w.mats);
-  t+=`<h2>Materials</h2>`+(mk.length?`<div class="card sm">${mk.sort((a,b)=>((MT[a]-MT[b])||a.localeCompare(b))).map(m=>`<div style="margin:3px 0"><b>${esc(m)}</b> ×${w.mats[m]}${MATQ[m]?`<div class="mut"><i>${MATQ[m]}</i></div>`:''}${MATSRC[m]?`<div class="mut" style="font-size:.75rem;opacity:.7">${MATSRC[m]}</div>`:''}</div>`).join('')}</div>`:'<p class="mut sm">None yet.</p>');
+  t+=(mk.length?foldShut('packmats',`<h2 style="margin:0">Materials (${mk.length})</h2>`,`<div class="card sm">${mk.sort((a,b)=>((MT[a]-MT[b])||a.localeCompare(b))).map(m=>`<div style="margin:3px 0"><b>${esc(m)}</b> ×${w.mats[m]}${MATQ[m]?`<div class="mut"><i>${MATQ[m]}</i></div>`:''}${MATSRC[m]?`<div class="mut" style="font-size:.75rem;opacity:.7">${MATSRC[m]}</div>`:''}</div>`).join('')}</div>`):'<h2>Materials</h2><p class="mut sm">None yet.</p>');
   t+=`<h2>Inventory</h2><div class="grid">${btn('Sell Commons','sellAll',0,'c')}${btn('Sell ≤ Uncommon','sellAll',1,'c')}</div>`;
   const inv=w.inv.slice().sort((a,b)=>b.rar-a.rar||b.il-a.il);
   t+=inv.length?inv.map(it=>itemRow(it,h.lvl<it.req?`<span class="dn">Req Lv ${it.req}</span>`:`${sellVal(it)}g`)).join(''):'<p class="mut sm">Empty.</p>';
@@ -6732,6 +6732,9 @@ function foldHtml(id,title,inner){
  return `<button class="foldh" data-a="fold" data-p="${id}"><span>${title}</span><span>${o?'Hide':'Show'}</span></button>${o?inner:''}`;
 }
 ACT.fold=function(id){S.fold=S.fold||{};S.fold[id]=!foldOpen(id);};
+// folds that start closed
+const foldShut=(id,title,inner)=>{const o=(S.fold||{})[id]===true;return `<button class="foldh" data-a="mfold" data-p="${id}"><span>${title}</span><span>${o?'Hide':'Show'}</span></button>${o?inner:''}`;};
+ACT.mfold=function(id){S.fold=S.fold||{};S.fold[id]=!(S.fold[id]===true);};
 // ---------- a quiet "next" line ----------
 function nextStep(){
  const h=S.hero,w=S.world,p=P();
@@ -8044,7 +8047,7 @@ Object.assign(ACT,{
  VIEWS.sell=function(){
   let t=_s();const w=S.world,ms=Object.keys(w.mats).filter(k=>w.mats[k]>0&&typeof w.mats[k]==='number');
   if(!ms.length)return t;
-  const sec='<h2>Materials</h2><p class="mut sm">What your kills left behind. Prices are small and fixed. Keep a few if a quest or the Tinker might want them.</p>'+ms.map(m=>`<div class="card sm"><div class="row2"><b>${esc(m)}</b><span class="mut">${w.mats[m]} · ${matPrice(m)}g each</span></div><div class="grid" style="margin-top:6px">${btn('Sell 1','msell','1|'+m,'c')}${btn('Sell all','msell','all|'+m,'c',false,fmt(w.mats[m]*matPrice(m))+'g')}</div></div>`).join('');
+  const sec=foldShut('sellmats',`<h2 style="margin:0">Materials (${ms.length})</h2>`,'<p class="mut sm">What your kills left behind. Prices are small and fixed. Keep a few if a quest or the Tinker might want them.</p>'+ms.map(m=>`<div class="card sm"><div class="row2"><b>${esc(m)}</b><span class="mut">${w.mats[m]} · ${matPrice(m)}g each</span></div><div class="grid" style="margin-top:6px">${btn('Sell 1','msell','1|'+m,'c')}${btn('Sell all','msell','all|'+m,'c',false,fmt(w.mats[m]*matPrice(m))+'g')}</div></div>`).join(''));
   return t.replace(/(<\/p>)/,'$1'+sec);
  };
 }
