@@ -7970,12 +7970,8 @@ function titleScene(gen){
  const _t=TV.title;
  TV.title=function(){
   const sv=window.__save,hs=sv&&sv.hero?sv.hero:null;
-  return titleScene(hs?sv.world.gen:0)+`<p class="mut c tagline">A story told one family at a time.</p>
-  <div class="${fd('fadein d2')}">${btn('Begin a New Story','tgo','new','pri c')}<div style="height:8px"></div>
-  ${btn('Continue','tcont',undefined,'c',!hs,hs?`${esc(hs.name)} ${esc(hs.fam)} · Lv ${hs.lvl} · Day ${hs.day} · Generation ${sv.world.gen}`:'no saved story yet')}<div style="height:8px"></div>
-  ${btn('Load','tgo','load','c',false,'from a saved text or file')}<div style="height:8px"></div>
-  ${btn('Settings','tgo','settings','c')}</div>
-  <p class="mut sm c" style="margin-top:20px">Auto-saves on this device. Permadeath is real.</p>`;
+  const old=_t().replace(/^<div class="[^"]*c" style="padding-top:12vh">[\s\S]*?<\/p><\/div>/,'');
+  return titleScene(hs?sv.world.gen:0)+'<p class="mut c tagline">A story told one family at a time.</p>'+old;
  };
 }
 
