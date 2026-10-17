@@ -241,3 +241,7 @@ After your first kill and your return to town, a single pop-up explains time of 
 - **Locked contracts** say how far away they are: "Requires Silver rank (8/20 contracts)", or "pass the rank trial" once the contracts are in.
 - **Settings** has a "What the colours mean" legend.
 - **Hired people have names and a quirk**, picked at random on hiring: a porter with a strong back (+3 cargo) or a quick learner; a scout who knows one region and maps it every day, or one with a good ear for news; a clerk sharp with numbers or one who knows every buyer; a guard who is an old soldier or a light sleeper. The Hiring Hall shows each person's name and quirk.
+
+## Cloud save
+- When the page runs as a published Artifact, a private copy of the save is also kept with your account (the artifact database, under your own private area). It is written a few seconds after you act, and when the app is hidden or closed. If this device has no save, or the cloud copy is newer, the title screen restores it. A reset also clears the cloud copy. Outside the Artifact (a plain web page) nothing changes: the game still saves in the browser.
+- The Menu shows whether cloud save is on and when it last saved. Export save remains available as a manual backup.

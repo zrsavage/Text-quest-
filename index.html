@@ -9072,6 +9072,74 @@ const crewQText=c=>{const q=CREWQ[c.t].find(x=>x[0]===c.qk);return q?`${q[1].rep
  };
 }
 
+/* =====================================================================
+   Cloud save: a private copy of your game kept with your account, so
+   closing the app or clearing the browser does not lose it
+   ===================================================================== */
+const CLOUD={ready:false,db:null,id:null,st:'off',t:0,sent:'',busy:false,timer:null,err:''};
+const CLOUD_CHUNK=80000,LT_KEY='tq_bloodline_t';
+const cloudDoc=(i)=>CLOUD.db.doc('data/users/'+CLOUD.id+'/'+(i==null?'cloud':'cloud_'+i));
+async function cloudPull(){
+ const m=await cloudDoc().get();
+ if(!m.exists){CLOUD.st='ok';if(S||window.__save)cloudSchedule();return;}
+ const meta=m.data(),lt=+(localStorage.getItem(LT_KEY)||0);
+ CLOUD.t=meta.t||0;
+ if(!meta.n||meta.t<=lt+1500){CLOUD.st='saved';return;}
+ // the cloud copy is newer than anything on this device: use it if the game is not running
+ if(S)return;
+ let s='';for(let i=0;i<meta.n;i++){const c=await cloudDoc(i).get();if(!c.exists)throw new Error('missing part');s+=c.data().d;}
+ const o=JSON.parse(s);if(!(o&&o.world&&o.hero))throw new Error('bad copy');
+ window.__save=o;CLOUD.sent=s;CLOUD.st='restored';
+ try{localStorage.setItem(SAVE_KEY,s);localStorage.setItem(LT_KEY,String(meta.t));}catch(e){}
+ try{render();}catch(e){}
+}
+async function cloudPush(){
+ if(!CLOUD.ready||CLOUD.busy||!S||!S.world||!S.hero)return;
+ CLOUD.timer=null;
+ let s;try{s=JSON.stringify(S);}catch(e){return;}
+ if(s===CLOUD.sent){return;}
+ CLOUD.busy=true;
+ try{
+  const n=Math.ceil(s.length/CLOUD_CHUNK),t=Date.now();
+  for(let i=0;i<n;i++)await cloudDoc(i).set({d:s.slice(i*CLOUD_CHUNK,(i+1)*CLOUD_CHUNK)});
+  await cloudDoc().set({t,n,len:s.length});
+  try{localStorage.setItem(LT_KEY,String(t));}catch(e){}
+  CLOUD.sent=s;CLOUD.t=t;CLOUD.st='saved';CLOUD.err='';
+ }catch(e){CLOUD.st='fail';CLOUD.err=(e&&e.code)||'error';}
+ CLOUD.busy=false;
+}
+function cloudSchedule(){
+ if(!CLOUD.ready||CLOUD.timer)return;
+ CLOUD.timer=setTimeout(cloudPush,6000);
+}
+{
+ const _sv=save;
+ save=function(){_sv.apply(this,arguments);try{localStorage.setItem(LT_KEY,String(Date.now()));}catch(e){}cloudSchedule();};
+ const _ry=ACT.resetYes;
+ ACT.resetYes=function(){_ry.apply(this,arguments);try{if(CLOUD.ready){CLOUD.sent='';cloudDoc().delete();}}catch(e){}};
+ if(typeof document!=='undefined'){
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){if(CLOUD.timer){clearTimeout(CLOUD.timer);CLOUD.timer=null;}cloudPush();}});
+  window.addEventListener('pagehide',()=>{cloudPush();});
+ }
+ const _mn=VIEWS.menu;
+ VIEWS.menu=function(){
+  let t=_mn();
+  const txt={off:'Cloud save is not available here. Your save lives only on this device: use Export save to keep a copy.',ok:'Cloud save is on. It will save after your next action.',saved:'Cloud save is on. Last saved '+(CLOUD.t?new Date(CLOUD.t).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'')+'.',restored:'Your game was restored from your cloud save.',fail:'Cloud save failed ('+CLOUD.err+'). Your game is still saved on this device. Use Export save for a safe copy.'}[CLOUD.st]||'';
+  return t.replace(/(<\/h1>)/,`$1<div class="card sm" style="border-color:${CLOUD.st==='fail'?'var(--bad)':CLOUD.st==='off'?'var(--line)':'var(--good)'}">☁️ ${esc(txt)}</div>`);
+ };
+}
+async function cloudInit(){
+ try{
+  if(typeof window==='undefined'||!window.claude||!window.claude.use)return;
+  const db=await window.claude.use('db'),user=await window.claude.use('user');
+  if(!db||!user)return;
+  const id=await user.id();if(!id)return;
+  CLOUD.db=db;CLOUD.id=id;CLOUD.ready=true;CLOUD.st='ok';
+  await cloudPull();
+ }catch(e){CLOUD.st=CLOUD.ready?'fail':'off';CLOUD.err=(e&&(e.code||e.message))||'error';}
+}
+if(typeof window!=='undefined'){window.__TQcloud={CLOUD,cloudPull,cloudPush,cloudInit};setTimeout(cloudInit,0);}
+
 /* ----- a slow start: bodies heal over days, not overnight, until you are properly seasoned ----- */
 const nightRecovery=()=>{const L=S.hero.lvl;return L>=8?1:Math.min(1,.38+.09*(L-1));};
 const _sleepDayRec=sleepDay;
