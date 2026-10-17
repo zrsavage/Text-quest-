@@ -1802,7 +1802,7 @@ Object.assign(ACT,{
   const h=S.hero,w=S.world,cost=rumorCost();
   if(w.gold<cost){note('Not enough gold for rumors.','e');return;}
   w.gold-=cost;const r=rankIdx(h.contracts);
-  const hid=DUNGEONS.filter(d=>!d.dyn&&!d.hidden&&!w.map.found[d.id]&&d.zi<=Math.min(5,r+1));
+  const hid=DUNGEONS.filter(d=>!d.dyn&&!d.hidden&&!w.map.found[d.id]&&d.zi<=Math.min(5,r));
   if(hid.length){const d=pick(hid);w.map.found[d.id]=1;S.rumor=`A drunk whispers about <b>${d.n}</b>. "${esc(d.desc)}" You mark it on your map. (−${cost}g)`;}
   else S.rumor=pick(['The regulars swear the Hollow Library is real, but no one has found it.','Someone says the guild hall has a secret vault. Most say it\'s a story.','"Your family has done this before," the barkeep says, without looking up.','An old soldier tells of a ring that burns once, and only for the worthy.'])+` (−${cost}g)`;
  },
@@ -2810,7 +2810,7 @@ const HINTS=[
  {id:'pack',scr:['enc','combat'],when:()=>{const e=S.enc?S.enc.e:(S.cb&&S.cb.e);return !!(e&&e.pack);},t:'A pack deals more damage at full strength and gets weaker as you thin it out.'},
  {id:'guild',scr:['town'],when:()=>S.world.guild,t:'The guild has noticed you. Contracts give permanent bonuses and open new regions, and the bounty board posts targeted hunts.'},
  {id:'fam',scr:['hunt'],when:()=>S.hero.kills>=5,t:'Every kill teaches you the region. Keep at it, and a familiar place has a way of showing you more.'},
- {id:'meet',scr:['town'],when:()=>tavernIds().some(canApproach),t:'Someone at the Tavern has noticed you. Companions are earned through conversation, work and trust, never gold.'},
+ {id:'meet',scr:['town'],when:()=>featOpen('tavern')&&tavernIds().some(canApproach),t:'Someone at the tavern has noticed you. Walk around town to find it. Companions are earned through conversation, work and trust, never gold.'},
  {id:'path',scr:['town','hero','result'],when:()=>S.hero.lvl>=10&&!S.hero.path,t:'You are experienced enough to choose a path. Open the Hero tab.'},
  {id:'estate',scr:['town'],when:()=>S.world.estate&&S.world.estate.deed,t:'The town has granted your family land. Your Estate grows with time and with the people you help, and your whole bloodline keeps it.'},
  {id:'bounty',scr:['guild'],when:()=>S.world.guild,t:'The Bounty Board posts hunts for specific monsters from your Codex. Notorious ones are tougher but pay far better.'},
@@ -3038,7 +3038,7 @@ function estateDaily(){
   const r=rankIdx(h.contracts);let zi=-1,best=-1;
   for(let i=0;i<=Math.min(5,r);i++){const e=w.map.explore[i];if(e<100&&e>best){best=e;zi=i;}}
   if(zi>=0)addFamiliarity(zi,sc*1.5).forEach(l=>msgs.push(l));
-  if(Math.random()<sc*.1){const un=DUNGEONS.filter(d=>!d.dyn&&!d.hidden&&!w.map.found[d.id]&&d.zi<=Math.min(5,r+1));if(un.length){const d=pick(un);w.map.found[d.id]=1;msgs.push(`🧭 Your scout heard of ${d.ic} ${d.n}.`);}}
+  if(Math.random()<sc*.1){const un=DUNGEONS.filter(d=>!d.dyn&&!d.hidden&&!w.map.found[d.id]&&d.zi<=Math.min(5,r));if(un.length){const d=pick(un);w.map.found[d.id]=1;msgs.push(`🧭 Your scout heard of ${d.ic} ${d.n}.`);}}
  }
  const tu=E.staff.tutor||0;
  if(tu){const ks=Object.keys(h.skills);if(ks.length){ks.sort((a,b)=>((h.su&&h.su[a])||0)-((h.su&&h.su[b])||0));const m=addSkillXp(ks[0],tu*4);if(m)msgs.push('🎓 '+m);}}
@@ -4253,9 +4253,9 @@ const ZFLAV=[
 const BFLAV=['"Big. Probably rude."','"Nobody has asked it to leave and lived."','"It has a name, and it does not like it said aloud."','"Eats adventurers. Probably chews."','"Everyone who saw it gives a different answer. Everyone who saw it is also lying."'];
 function tipPool(){
  const w=S.world,h=S.hero,r=rankIdx(h.contracts),L=[];
- for(let i=1;i<=Math.min(5,r+1);i++)if(!knowZ(i))L.push(['z',i]);
- for(let i=0;i<=5;i++)if(knowZ(i)&&i<=r+1&&!(knowB(i)&&knowBN(i)))L.push(['b',i]);
- DUNGEONS.filter(d=>!d.dyn&&!d.hidden&&!w.map.found[d.id]&&knowZ(d.zi)&&d.zi<=Math.min(5,r+1)).forEach(d=>L.push(['d',d.id]));
+ for(let i=1;i<=Math.min(5,r);i++)if(!knowZ(i))L.push(['z',i]);
+ for(let i=0;i<=5;i++)if(knowZ(i)&&i<=r&&!(knowB(i)&&knowBN(i)))L.push(['b',i]);
+ DUNGEONS.filter(d=>!d.dyn&&!d.hidden&&!w.map.found[d.id]&&knowZ(d.zi)&&d.zi<=Math.min(5,r)).forEach(d=>L.push(['d',d.id]));
  return L;
 }
 function giveTip(){
@@ -7507,7 +7507,7 @@ Object.assign(ACT,{
   if(h.sta<2){note('You need 2 stamina for a trial.','e');return;}
   if(h.trialDay===h.day){note('The examiners will see you again tomorrow.','e');return;}
   h.sta-=2;const nr=h.rkPass+1,zi=Math.min(nr,ZONES.length-1);
-  const e=makeEnemy(zi,false,true);e.hp=e.max=Math.round(e.hp*1.15);e.name='Trial: '+e.base;
+  const e=makeEnemy(zi,false,true);e.hp=e.max=Math.round(e.hp*1.15);e.name='Trial: the Examiners\' champion';
   startCombat(e,false,{type:'loc',free:true,ret:'guild',rep:'Back to the guild',spar:true,trial:true});
  }
 });
@@ -7525,7 +7525,7 @@ function sparLose(){
  victory=function(){
   const c=S.cb,ctx=c&&c.ctx;_v();
   const r=S.res,h=S.hero;if(!r||!ctx)return;
-  if(ctx.trial){h.rkPass++;r.lines.push(`🏅 <b>Promoted to ${RANKS[h.rkPass].n} rank!</b> Your level can now grow to ${lvCap()}.`);note(`Promoted to ${RANKS[h.rkPass].n} rank.`,'y');}
+  if(ctx.trial){h.rkPass++;r.lines.push(`🏅 <b>Promoted to ${RANKS[h.rkPass].n} rank!</b> Your level can now grow to ${lvCap()}.`);note(`Promoted to ${RANKS[h.rkPass].n} rank.`,'y');try{const zi=Math.min(h.rkPass,ZONES.length-1);if(!knowZ(zi)){K().z[zi]=1;r.lines.push(`🗺️ The examiners mark a new region on your map: <b>${ZONES[zi].ic} ${ZONES[zi].n}</b>. ${ZFLAV[zi]||''}`);}}catch(e){}}
   if(ctx.rival){const rv=((S.world.rivals)||[]).find(x=>x.id===ctx.rival);if(rv){rv.rel=(rv.rel||0)+1;rv.spar=(rv.spar||0)+1;r.lines.push(`${esc(rv.n)} nods. "Good."`);
    if(Math.random()<.4){const g=.4*catchMult()/(1+h.st[rv.stat]/30);h.st[rv.stat]+=g;r.lines.push(`💪 ${esc(rv.n)} corrects your stance. ${STAT_NAME[rv.stat]} +${g.toFixed(2)}`);}}}
  };

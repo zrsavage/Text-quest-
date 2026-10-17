@@ -251,3 +251,7 @@ After your first kill and your return to town, a single pop-up explains time of 
 - **Menu** is regrouped: Save & backup, How you play, Look & comfort (folded; font, colour theme and legend show only the current choice until opened), Your family, Help & testing, and a folded Danger zone. Export/Import became "Copy save as text / Restore from text"; the two button-size toggles became one "Button size".
 - **Journal** has four tabs: Quests, World (Places + Codex), Family (Perks + Family), Help.
 - **Pack** lists Equipped, then Inventory, then Potions and Materials. **Guild** has Contracts and Bounties tabs.
+
+## Mystery kept
+- Tips, rumours and scouts no longer name the region after your current rank. A new region (and its animals) is first marked on your map when you pass the rank trial for it. The trial's opponent is now "the Examiners' champion" instead of a named monster of the next region.
+- The "someone at the tavern has noticed you" tip only appears once the tavern is open, and tells you to walk around town.
