@@ -7837,6 +7837,7 @@ function legacyLines(){
  const _t=VIEWS.town;
  VIEWS.town=function(){
   let t=_t();const h=S.hero,w=S.world;
+  try{if(hintHtml('town'))t=t.replace(/<div class="nextline">[\s\S]*?<\/div>/,'');}catch(e){}
   if(huntUnlocked())return t;
   const age=ageNow(),need=(w.gen>1?HEIR_TC:UNLOCK_TC);
   t=t.replace(/<div class="card sm">[^<\n]{0,8}<b>(?:Dawn|Morning|Midday|Noon|Day|Afternoon|Evening|Dusk|Night)<\/b>[\s\S]*?<\/div>/,'');
