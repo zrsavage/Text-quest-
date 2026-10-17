@@ -185,3 +185,7 @@ A moonlit Hollowmere skyline: twinkling stars, flickering windows, swaying lante
 ## An even slower start
 - Walk around town opens after 3 training sessions. The weather card appears after your first kill. Sleep shows a one-line description until the gates open.
 - Small "First steps" pop-ups explain things as you reach them: your first workout, the first night's rest, the first odd job, the first kill, and Level 2 (with a button to the Hero tab to spend your points).
+
+## First kill and selling materials
+- The first-kill pop-up now says it plainly: you killed a living thing, take what it left to the Market and find someone to pay for it. The first kill always leaves at least one material.
+- Sell goods now has a Materials section: sell 1 or all of anything your kills left behind, at small fixed prices (better for rare parts, deeper zones and friendly keepers).

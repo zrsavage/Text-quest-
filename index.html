@@ -7889,7 +7889,7 @@ const UNLOCKS=[
  {id:'walk',when:()=>S.hero.tc>=3||S.world.gen>1,t:'Walk around town',x:'You have your breath back. Walking the streets sometimes turns up odd jobs for people who need a pair of hands. It costs nothing, once a day.'},
  {id:'first_sleep',h:'First steps',when:()=>S.hero.day>=2,t:'A night\'s rest',x:'Your stamina is back. Hurt bodies mend slowly, so rest as well as train. The Market restocks every morning.'},
  {id:'first_odd',h:'First steps',when:()=>Object.keys(S.hero.oddDone||{}).length>0,t:'Your first odd job',x:'Small jobs pay in coin, gear and training. Some are worth more than others, but all of it is practice.'},
- {id:'first_kill',h:'First steps',when:()=>S.world.kills>=1,t:'Your first kill',x:'Fights pay gold, experience and sometimes loot. The weather and the season now matter: they change what is out there and what it pays.'},
+ {id:'first_kill',h:'First steps',when:()=>S.world.kills>=1,t:'Your first kill',x:'Well. You killed a living thing. Whatever it was made of is yours now: take it to the Market in town and find someone who will pay for it. After this, the weather and the seasons start to matter too.',go:'shop',b:'Go to the Market'},
  {id:'first_level',h:'First steps',when:()=>S.hero.lvl>=2,t:'Level 2',x:'Each level gives you 3 stat points to spend. Open the Hero tab and decide where they go.',go:'hero',b:'Open the Hero tab'},
  {id:'market',when:()=>marketOpen(),t:'The Market is open',x:'Gear and potions are sold here, and you can sell what you find. It restocks every morning.',go:'shop',b:'Visit the Market'},
  {id:'gates',when:()=>huntUnlocked(),t:'The gates are open',x:'You are strong enough to leave the walls. Go to Hunt & Explore to fight creatures for gold, experience and loot. Each fight costs stamina, so rest when you tire.',go:'hunt',b:'Go to Hunt & Explore'},
@@ -7927,6 +7927,14 @@ function showAnn(){
  el.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;el.remove();if(a==='annGo'){const x=UNLOCKS.find(y=>y.id===b.dataset.p);if(x){ACT.go(x.go);render();}}else{setTimeout(()=>{try{showAnn();}catch(e){}},50);}e.stopPropagation();},true);
 }
 ACT.annGo=function(){};ACT.annOk=function(){};
+{
+ const _v=victory;
+ victory=function(){
+  const c=S.cb,e=c&&c.e,w=S.world,tot=()=>Object.keys(w.mats).reduce((a,k)=>a+(w.mats[k]||0),0),b=tot(),k0=w.kills;
+  _v();
+  try{if(k0===0&&w.kills===1&&e&&tot()===b&&S.res&&S.res.lines){const m=dropMat(e);w.mats[m]=(w.mats[m]||0)+1;S.res.lines.push(`🧶 +1 ${m}`);}}catch(x){}
+ };
+}
 {const _w=ACT.walk;ACT.walk=function(){if(S.hero.tc<3&&S.world.gen===1){note('You are still catching your breath. Train a little first.','e');return;}return _w.apply(this,arguments);};}
 {
  const _r=render;
@@ -7985,6 +7993,26 @@ function titleScene(gen){
  };
 }
 
+/* ---------- selling what monsters leave behind ---------- */
+const matPrice=m=>{const zi=(typeof MT!=='undefined'&&MT[m]!=null)?MT[m]:0,k=(typeof MATK!=='undefined'&&MATK[m])||'common';return Math.max(1,Math.round((2+zi*3)*(k==='part'?2.5:k==='common'?1:3.5)*sellMult()));};
+Object.assign(ACT,{
+ msell(p){
+  const [q0,...rest]=String(p).split('|'),name=rest.join('|'),w=S.world,have=w.mats[name]||0;
+  if(!have)return;const q=q0==='all'?have:Math.min(+q0,have),g=q*matPrice(name);
+  w.mats[name]=have-q;if(w.mats[name]<=0)delete w.mats[name];w.gold+=g;
+  S.hagMsg=`Sold ${q} ${esc(name)} for ${g}g.`;
+ }
+});
+{
+ const _s=VIEWS.sell;
+ VIEWS.sell=function(){
+  let t=_s();const w=S.world,ms=Object.keys(w.mats).filter(k=>w.mats[k]>0&&typeof w.mats[k]==='number');
+  if(!ms.length)return t;
+  const sec='<h2>Materials</h2><p class="mut sm">What your kills left behind. Prices are small and fixed. Keep a few if a quest or the Tinker might want them.</p>'+ms.map(m=>`<div class="card sm"><div class="row2"><b>${esc(m)}</b><span class="mut">${w.mats[m]} · ${matPrice(m)}g each</span></div><div class="grid" style="margin-top:6px">${btn('Sell 1','msell','1|'+m,'c')}${btn('Sell all','msell','all|'+m,'c',false,fmt(w.mats[m]*matPrice(m))+'g')}</div></div>`).join('');
+  return t.replace(/(<\/p>)/,'$1'+sec);
+ };
+}
+
 /* ----- a slow start: bodies heal over days, not overnight, until you are properly seasoned ----- */
 const nightRecovery=()=>{const L=S.hero.lvl;return L>=8?1:Math.min(1,.38+.09*(L-1));};
 const _sleepDayRec=sleepDay;
@@ -8025,7 +8053,7 @@ VIEWS.train=function(){
  return s.replace(/(<\/p>)/,'$1'+card);
 };
 if(typeof document!=='undefined'&&typeof window!=='undefined'&&!window.__TQ_TEST){try{render();}catch(e){}}
-if(typeof window!=='undefined')window.TQ={UNLOCKS,checkUnlocks,showAnn,VIEWS,BOND,QS,qEvent,stepDone,qTalkChoose,STORIES,legacyLines,registerStories,compCard,applyOut,checkDeath,rankIdx,sleepDay,CREW,crewOf,crewLvl,rkTrialReady,trialReady,rankRaw,genRivals,popReward,forageZone,apprChance,DG,HAB,MONPIC,addXP,wroll,refreshShop,lvCap,rankName,rarGov,keeper,keeperTier,KPJ,makeHeir,lsUse,lsLvl,lsRec,slogHtml,ROUGH,cpic,hasFocus,hprice,nextStep,foldHtml,upDiff,reportText,tele,loadBackup,skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,rkTrialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
+if(typeof window!=='undefined')window.TQ={matPrice,UNLOCKS,checkUnlocks,showAnn,VIEWS,BOND,QS,qEvent,stepDone,qTalkChoose,STORIES,legacyLines,registerStories,compCard,applyOut,checkDeath,rankIdx,sleepDay,CREW,crewOf,crewLvl,rkTrialReady,trialReady,rankRaw,genRivals,popReward,forageZone,apprChance,DG,HAB,MONPIC,addXP,wroll,refreshShop,lvCap,rankName,rarGov,keeper,keeperTier,KPJ,makeHeir,lsUse,lsLvl,lsRec,slogHtml,ROUGH,cpic,hasFocus,hprice,nextStep,foldHtml,upDiff,reportText,tele,loadBackup,skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,rkTrialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>
 </html>
