@@ -3479,7 +3479,7 @@ VIEWS.dungeon=function(){
  t+=g+'</div>';
  if(dg.msg&&dg.msg.length)t+=`<div class="card">${dg.msg.map(l=>`<p>${l}</p>`).join('')}</div>`;
  // room panel
- const flav=pick2(D.flav,r.fv),rt=ROOMTXT[r.t==='vault'?'treasure':r.t],txt=rt[r.rt%rt.length];
+ const flav=pick2(D.flav,r.fv),rt=ROOMTXT[r.t==='vault'?'treasure':r.t]||ROOMTXT.empty,txt=rt[r.rt%rt.length];
  t+=`<div class="card"><div class="mut sm">${esc(flav)}</div><p>${esc(txt)}</p>`;
  const retreat=dg.hist.length?btn('↩️ Retreat','dgRetreat',undefined,'c'):'';
  if(['fight','elite','key','boss'].includes(r.t)&&!r.d&&r.e){
