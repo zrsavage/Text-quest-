@@ -170,3 +170,7 @@ Menu > Settings (and title screen settings) has a Font style picker (Easy to rea
 - The death screen lists everything that passes on (best gear, friends at the markets, inherited skill traces, hired hands, rank standing, begun stories). The heir starts with a short letter from their predecessor, including whatever killed them.
 - Fixed: companion cards in the party list and tavern still used the old portrait art; they now use the new portraits.
 - Test scripts: `t54`-`t57` cover stories, screen scans (no undefined/NaN), and loading a save from an older build.
+
+## A calmer first hour
+- Until the gates open, the Town screen shows only: tip, "Next", training progress, Walk around town, Train, Market and Sleep. Mira's odd-job card, the weather card, the locked Hunt button and the event log (collapsed) are hidden. Mira's flour-sack job is still in the Training Yard.
+- The first hero is 16. The prologue has a new page and the first tip and "Next" line say you are not ready to fight: train, then look around town.

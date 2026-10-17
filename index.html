@@ -514,7 +514,7 @@ const ACT={
   const n=(window.__nm||'').trim()||'Wanderer',f=(window.__fm||'').trim()||'Ashford';
   S={v:1,world:newWorld(),hero:null,screen:'town',log:[],cb:null,enc:null,res:null,death:null,modal:null,set:{autosell:false},tab:'town',tcount:0};
   Object.assign(S.set,{font:PRE.font,haptics:PRE.haptics,hints:PRE.hints});window.__save=null;window.__ui={step:'title',pg:0};window.__nm=window.__fm='';
-  S.hero=newHero(n.slice(0,16),f.slice(0,16),1,window.__bg||'wanderer');ensureState();S.world.cast=genCast(1);registerCast(S.world.cast);
+  S.hero=newHero(n.slice(0,16),f.slice(0,16),1,window.__bg||'wanderer');S.hero.age0=16;ensureState();S.world.cast=genCast(1);registerCast(S.world.cast);
   
   S.hero.hp=P().maxhp;S.hero.sta=P().maxsta;
   refreshShop();
@@ -2759,7 +2759,7 @@ SYN.push(
 
 /* ----- contextual hints (a gentle nudge, never a lecture) ----- */
 const HINTS=[
- {id:'train',scr:['town'],when:()=>!huntUnlocked(),t:'Training raises your stats a little each session. You are very weak. It takes a great many sessions before the gates are worth opening.'},
+ {id:'train',scr:['town'],when:()=>!huntUnlocked(),get t(){return 'You are '+heroAge()+' and not ready to fight. Train in the Training Yard until your arms stop shaking, and look around town for something to do. When you are strong enough, the gates will open.';}},
  {id:'sleep',scr:['town','train','hunt'],when:()=>S.hero.sta<=1,t:'Out of stamina? Sleeping restores stamina and starts a new day. While you are still green, it only mends part of your wounds, so keep training while you heal.'},
  {id:'points',scr:['town','hunt','result','guild'],when:()=>S.hero.pts>0,t:'You have unspent stat points. Spend them in the Hero tab.'},
  {id:'danger',scr:['enc'],when:()=>true,t:'The danger rating compares this monster to your current power. Red means trouble. You can slip away, and some monsters are far stronger than usual for your level.'},
@@ -3763,6 +3763,7 @@ const prefSave=()=>{try{localStorage.setItem(PRE_KEY,JSON.stringify(PRE));}catch
 const PROLOGUE=[
  'Hollowmere sits at the edge of something old. Lanterns line its walls, and no one remembers who lit the first one.',
  'You are not a hero. You are barely a person with a plan. You cannot lift a full bucket without sitting down afterward.',
+ 'You are sixteen. The gates of Hollowmere stand open to anyone, and you are not ready to walk through them. Start small: train, look around town, and see who needs a hand.',
  'But families remember. What one of you learns, the next will carry down the road. Heroes die. The bloodline does not.'
 ];
 const fd=c=>(window.__ui&&window.__ui.fresh===false)?'':c;
@@ -4174,11 +4175,10 @@ function essHtml(){
 
 const _townK=VIEWS.town;
 VIEWS.town=function(){let t=_townK();const q=QS.firstchores,h=S.hero;
- if(S.world.gen===1&&!h.qd.firstchores)t=t.replace('<div class="grid">',`<h2>Odd jobs</h2>${questCard(q)}<div class="grid">`);return t;};
+ return t;};
 const _heroEss=VIEWS.hero;
 VIEWS.hero=function(){const t=_heroEss();if((S.htab||'stats')!=='stats')return t;return t.replace('</div><h1>🧍',`</div>${essHtml()}<h1>🧍`);};
 HINTS.push({id:'ess',scr:['town','hero','guild'],when:()=>S.world.guild&&essOf().length<essSlots(),t:'An aspect is ready to kindle in you. Open the Hero tab and choose one. Each grants a skill and shapes your build.'});
-HINTS.push({id:'chore',scr:['town'],when:()=>S.world.gen===1&&!S.hero.qd.firstchores,t:'You own nothing yet. Mira the Baker has honest work for anyone willing: look for it at the top of the Training Yard. It does not involve fighting.'});
 
 /* =====================================================================
    PASS 5 — a world that keeps its secrets (you only know what you were told),
@@ -7818,6 +7818,33 @@ function legacyLines(){
   return t;
  };
  ACT.letterOk=function(){S.heirLetter=null;};
+}
+
+/* ---------- a calmer, clearer first hour ---------- */
+{
+ const ageNow=()=>{try{return heroAge();}catch(e){return 16;}};
+ const _ns=nextStep;
+ nextStep=function(){
+  const h=S.hero,w=S.world;
+  if(h&&!huntUnlocked()){
+   if(w.gen===1&&!h.qd.firstchores&&h.chores>=3)return 'Mira is waiting. Report to her from the Training Yard.';
+   const need=Math.max(0,(w.gen>1?HEIR_TC:UNLOCK_TC)-h.tc);
+   return h.tc===0?`You are ${ageNow()} and not ready to fight. Start with a workout in the Training Yard.`:`Keep training: ${need} more session${need===1?'':'s'}. Walk around town if you want a change.`;
+  }
+  return _ns();
+ };
+ const _st2=ACT.start;ACT.start=function(){_st2.apply(this,arguments);S.fold=S.fold||{};S.fold.log=false;};
+ const _t=VIEWS.town;
+ VIEWS.town=function(){
+  let t=_t();const h=S.hero,w=S.world;
+  if(huntUnlocked())return t;
+  const age=ageNow(),need=(w.gen>1?HEIR_TC:UNLOCK_TC);
+  t=t.replace(/<div class="card sm">[^<\n]{0,8}<b>(?:Dawn|Morning|Midday|Noon|Day|Afternoon|Evening|Dusk|Night)<\/b>[\s\S]*?<\/div>/,'');
+  t=t.replace(/<h2>Odd jobs<\/h2>(?:(?!<h2>)[\s\S])*?data-p="firstchores"(?:(?!<h2>)[\s\S])*?(?=<h2>)/,'');
+  t=t.replace(/<button class="btn [^"]*" data-a="go" data-p="hunt" disabled[^>]*>[\s\S]*?<\/button>/,'');
+  t=t.replace(/<p class="mut">You are too frail[\s\S]*?<\/p>/,`<p class="mut sm">Training sessions: <b>${h.tc}/${need}</b>. The gates open when you are ready.</p>`);
+  return t;
+ };
 }
 
 /* ----- a slow start: bodies heal over days, not overnight, until you are properly seasoned ----- */
