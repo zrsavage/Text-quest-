@@ -504,7 +504,7 @@ function sleepDay(){
   refreshBoard();
  }
  refreshShop();rollWeather();estateDaily();refreshBounties();
- const tips=['A traveller whispers of a ring that burns only once.','The baker says the Whisperwood is getting louder.','Children chant the names of dead heroes.','Someone swears the old mill glows at night.','Your muscles ache. A good sign.'];
+ const tips=['A traveller whispers of a ring that burns only once.','The baker says the wind has been strange lately.','Children chant the names of dead heroes.','Someone swears the old mill glows at night.','Your muscles ache. A good sign.'];
  note(`🌙 Day ${h.day}. You wake rested. ${pick(tips)}`);
 }
 function huntUnlocked(){return S.hero.tc>=(S.world.gen>1?HEIR_TC:UNLOCK_TC);}
@@ -9266,6 +9266,15 @@ ACT.gtab=function(k){S.gtab=k;};
  };
 }
 
+
+// ---------- a quest never names a region you have not learned about ----------
+{
+ const _qa7=qAvail;
+ qAvail=function(q){
+  try{if(q&&q.offer){const s=JSON.stringify(q.offer);for(let i=1;i<ZONES.length;i++){if(s.includes(ZONES[i].n)&&!knowZ(i))return false;}}}catch(e){}
+  return _qa7(q);
+ };
+}
 /* ----- a slow start: bodies heal over days, not overnight, until you are properly seasoned ----- */
 const nightRecovery=()=>{const L=S.hero.lvl;return L>=8?1:Math.min(1,.38+.09*(L-1));};
 const _sleepDayRec=sleepDay;
