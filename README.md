@@ -192,3 +192,7 @@ A moonlit Hollowmere skyline: twinkling stars, flickering windows, swaying lante
 
 ## Time, seasons and weather, explained once
 After your first kill and your return to town, a single pop-up explains time of day (it follows your stamina), the four seasons and every kind of weather, with their exact effects. The first-kill message no longer mentions it.
+
+## More skills, and choices
+- 24 new skills join the original 11 (35 in all), spread over six tiers: Quick Jab, Brace, Rock Throw, Hamstring, Rend, Field Dressing, Feint, Frostbolt, Chain Lightning, Sunder Armor, Second Wind, Smite, Thorn Ward, Soul Drain, Rapid Volley, Rupture, Dread Roar, Blizzard, Thunderclap, Phoenix Breath, Blade Dance, Annihilate, Time Fold and Void Rend. They count toward the Blade, Arcane and Warden paths where they fit.
+- A tome now sometimes (30% at the start, more with rank) holds several lessons: you choose one of three. Winning a rank trial always offers a choice, and killing a boss sometimes does. A pending choice waits under "Decide later" and returns the next day.
