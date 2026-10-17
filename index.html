@@ -45,6 +45,15 @@ body[data-theme=ocean]{--bg:#0a1320;--panel:#122238;--panel2:#1a3150;--line:#274
 body[data-theme=dusk]{--bg:#140f1c;--panel:#221a30;--panel2:#2e2442;--line:#473862;--bar:#191226;--mut:#a597bd}
 body[data-theme=ember]{--bg:#170f0c;--panel:#2a1a14;--panel2:#3a241a;--line:#5a3a2b;--bar:#1d120e;--mut:#bfa08f}
 body[data-theme=parchment]{--bg:#1c1812;--panel:#2b251b;--panel2:#382f22;--line:#54472f;--bar:#211c14;--mut:#b5a78a}
+.bigtile{display:flex;align-items:center;gap:14px;width:100%;min-height:78px;padding:12px 16px;margin:8px 0 0;border-radius:16px;border:1px solid color-mix(in srgb,var(--tc) 55%,var(--line));background:linear-gradient(135deg,color-mix(in srgb,var(--tc) 14%,var(--panel)),var(--panel));color:var(--tx);text-align:left;cursor:pointer;font:inherit}
+.bigtile .bi{color:var(--tc);display:flex;flex:none}
+.bigtile .btxt{display:flex;flex-direction:column;gap:2px}
+.bigtile .bt{font-weight:700;font-size:1.1rem;color:var(--tc)}
+.bigtile small{color:var(--mut);font-size:.78rem}
+.bigtile.big{min-height:104px;border-width:2px;background:linear-gradient(135deg,color-mix(in srgb,var(--tc) 30%,var(--panel)),color-mix(in srgb,var(--tc) 8%,var(--panel)));box-shadow:0 0 22px -8px var(--tc)}
+.bigtile.big .bt{font-family:"Pirata One","MedievalSharp",var(--fh,serif);font-size:2rem;font-weight:400;letter-spacing:.04em;line-height:1.05;text-shadow:0 1px 0 rgba(0,0,0,.4)}
+.bigtile.big .bi svg{width:46px;height:46px}
+.bigtile:active{filter:brightness(1.25)}
 h1{font-size:1.375rem;margin:4px 0 2px}h2{font-size:1.0625rem;margin:16px 0 6px;color:var(--acc)}h3{font-size:0.9375rem;margin:10px 0 4px}
 p{margin:6px 0}.mut{color:var(--mut)}.sm{font-size:0.8125rem}.c{text-align:center}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0}
@@ -9145,8 +9154,14 @@ if(typeof window!=='undefined'){window.__TQcloud={CLOUD,cloudPull,cloudPush,clou
    Simpler screens: a Town with a few big choices and a walk that leads to
    every place; a tidier Menu, Journal, Pack and Guild
    ===================================================================== */
+const TILE_SVG={
+ train:'<svg viewBox="0 0 32 32" width="38" height="38" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v8M8 9v14M24 9v14M28 12v8M8 16h16"/></svg>',
+ hunt:'<svg viewBox="0 0 32 32" width="38" height="38" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 26 22 10M18 8l6 0 0 6M7 22l3 3M4 29l3-3"/><path d="M26 26 10 10M14 8H8v6"/></svg>',
+ town:'<svg viewBox="0 0 32 32" width="38" height="38" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 27V15l6-5 6 5v12M15 27v-8l7-5 7 5v8M2 27h28"/><path d="M8 27v-5h3v5"/></svg>'
+};
 const BTN_RE=/<button class="btn[^"]*" data-a="(go|roughIn)"(?: data-p="(\w*)")?[^>]*>[\s\S]*?<\/button>/g;
-const TOWN_CORE=['train','hunt','guild','shop'];
+const TOWN_CORE=['train','hunt'];
+const STREET_ORDER=['guild','shop','library','tavern','square','people','doings','news','exchange','bank','crew','tinker','estate'];
 const btnOfHtml=(html,a,p)=>{const m=html.match(new RegExp('<button[^>]*data-a="'+a+'"'+(p!=null?'[^>]*data-p="'+p+'"':'')+'[^>]*>[\\s\\S]*?<\\/button>'));return m?m[0]:'';};
 // the places of the town, gathered from the full town screen
 function townPlaces(){
@@ -9169,15 +9184,21 @@ VIEWS.town=function(){
  t=t.replace(/<button class="btn[^"]*" data-a="walk"[^>]*>[\s\S]*?<\/button>/,'');
  t=t.replace(/<div class="grid">\s*<\/div>/g,'');
  t=t.replace(/<h2>Around town<\/h2>\s*(?=<div class="grid">|<div style="margin-top)/,'');
- const h=S.hero,walk=btn('🚶 Walk around town','go','streets','',false,n?`${n} places: tavern, bank, library and more`:'see what the streets hold');
+ const h=S.hero;
+ const tile=(p,title,sub,col,icon,big)=>`<button class="bigtile${big?' big':''}" data-a="go" data-p="${p}" style="--tc:${col}"><span class="bi">${icon}</span><span class="btxt"><span class="bt">${title}</span><small>${sub}</small></span></button>`;
+ const mk=(p)=>(p==='train'?tile('train','Train','Raise your stats · 2 stamina','#f0b94a',TILE_SVG.train,1):tile('hunt','Hunt &amp; Explore','Fight, forage and find secrets','#ff7a4a',TILE_SVG.hunt,1));
+ // the two main tiles replace their old buttons, and the town walk is the third
+ t=t.replace(/<button class="btn[^"]*" data-a="go" data-p="train"[^>]*>[\s\S]*?<\/button>/,mk('train')).replace(/<button class="btn[^"]*" data-a="go" data-p="hunt"[^>]*>[\s\S]*?<\/button>/,mk('hunt'));
+ t=t.replace(/<div class="grid">(\s*<button class="bigtile[\s\S]*?)<\/div>/,'<div>$1</div>');
+ const walk=tile('streets','Explore the Town',n?`${n} places: guild, market, tavern, bank and more`:'See what the streets hold','#7fb2ff',TILE_SVG.town,0);
  const sl='<div style="margin-top:10px"><button class="btn good" data-a="sleep"';
- t=t.includes(sl)?t.replace(sl,'<div style="margin-top:8px">'+walk+'</div>'+sl):t+walk;
+ t=t.includes(sl)?t.replace(sl,walk+sl):t+walk;
  return t;
 };
 VIEWS.streets=function(){
  const h=S.hero,w=S.world;
  let t=`<h1>🚶 Around ${esc(TOWNS[where()].n)}</h1><p class="mut">Streets, shops and neighbours. Everything the town offers is a short walk from here.</p>`;
- const ps=townPlaces();
+ const ps=townPlaces().sort((a,b)=>{const k=s=>{const m=s.match(/data-p="(\w*)"/);const i=m?STREET_ORDER.indexOf(m[1]):-1;return i<0?99:i;};return k(a)-k(b);});
  t+=`<div class="grid">${ps.join('')}</div>`;
  if(oddOK()||h.odd||h.oddOffer)t+='<div style="height:8px"></div>'+btn('👀 Wander the streets','walk',undefined,'c',h.walkDay===h.day||!!S.dg,h.walkDay===h.day?'you have already wandered today':'see what turns up · free');
  return t+'<div style="height:8px"></div>'+btn('← Back to town','go','town','c');
