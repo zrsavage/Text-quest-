@@ -227,3 +227,5 @@ After your first kill and your return to town, a single pop-up explains time of 
 ## More colour
 - Each part of the game has its own accent: the Town gold, Hunt and dungeons ember orange, the Guild blue, Hero violet, Pack teal, Journal rose, Menu slate, markets green. The accent tints headings, the top bar, primary buttons, card edges and the background glow. Bottom tiles each have their own colour.
 - Settings has six colour themes (Classic, Forest, Ocean, Dusk, Ember, Parchment) that change the whole backdrop.
+
+- Reward and chat pop-ups no longer repeat what the screen already says: if every line of a pop-up is already visible on the current screen (conversations, quest talks, rumours), the pop-up is dropped.

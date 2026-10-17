@@ -7406,6 +7406,13 @@ function popReward(title,lines,ms){
   ms=ms||2500;el.style.animationDuration=ms+'ms';
   el.addEventListener('click',()=>el.remove());
   document.body.appendChild(el);setTimeout(()=>{if(el.parentNode)el.remove();},ms+200);
+  // if the same words are already on the screen, the pop-up is only noise
+  setTimeout(()=>{try{
+   const norm=s=>String(s).replace(/<[^>]+>/g,' ').replace(/&[a-z#0-9]+;/gi,' ').toLowerCase().replace(/[^a-z0-9]+/g,'');
+   const v=norm((document.getElementById('view')||{}).innerText||'');
+   const ls=(lines||[]).map(norm).filter(x=>x.length>=5);
+   if(ls.length&&ls.every(x=>v.includes(x.slice(0,40)))&&el.parentNode)el.remove();
+  }catch(e){}},80);
  }catch(e){}
 }
 {
