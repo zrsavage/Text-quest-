@@ -368,7 +368,7 @@ const SK={
  bash:{n:'Shield Bash',t:1,c:4,d:l=>`${Math.round((1+.1*(l-1))*100)}% damage, ${Math.round((50+8*l))}% to stun.`},
  mend:{n:'Mend',t:0,c:4,d:l=>`Heal ${Math.round(22+5*(l-1))}% max HP (+INT).`},
  venom:{n:'Venom Stab',t:1,c:4,d:l=>`${Math.round((.8+.08*(l-1))*100)}% damage and 3 turns of poison.`},
- cry:{n:'Battle Cry',t:0,c:3,d:l=>`+${Math.round(30+5*(l-1))}% attack for 3 turns.`},
+ cry:{n:'Battle Cry',t:0,c:3,d:l=>`+${Math.round(30+7.8*(l-1))}% attack for 3 turns.`},
  fire:{n:'Fireball',t:2,c:5,d:l=>`Magic blast, ${Math.round((2+.2*(l-1))*100)}%, ignores half defense.`},
  iron:{n:'Iron Skin',t:2,c:4,d:l=>`+${Math.round(50+10*(l-1))}% defense for 3 turns.`},
  bite:{n:'Vampiric Bite',t:2,c:5,d:l=>`${Math.round((1.3+.12*(l-1))*100)}% damage, heal half of it.`},
@@ -2197,7 +2197,7 @@ function castSkill(id,free){
   case 'bash':strike(1+.1*(l-1),{label:'🛡️ Shield Bash hits',tags:T});if(tryStun(e,(50+8*l)/100))say(`${esc(e.name)} is stunned!`,'g');break;
   case 'mend':{const n=healHero(Math.round((p.maxhp*(.22+.05*(l-1))+p.int*2)*(1+mendBonus())));say(`💚 Mend restores ${n} HP.`,'g');if(c.party.length){const t=healAllies(.12*(1+(l-1)*.2),0);if(t)say(`💚 Your companions are mended too (+${t}).`,'g');}break;}
   case 'venom':strike(.8+.08*(l-1),{label:'🐍 Venom Stab hits',tags:T});applyPoison(e,Math.max(1,Math.round(p.atk*.35*(1+.1*(l-1)))));say(`${esc(e.name)} is poisoned!`,'g');break;
-  case 'cry':c.hb.atk=.3+.05*(l-1);c.hb.atkT=3;say('📣 Battle Cry! Attack up for 3 turns.','g');break;
+  case 'cry':c.hb.atk=.3+.078*(l-1);c.hb.atkT=3;say('📣 Battle Cry! Attack up for 3 turns.','g');break;
   case 'fire':strike(2+.2*(l-1),{magic:1,pierce:.5,label:'🔥 Fireball scorches',tags:T});applyBurn(e,Math.round(p.int*.8+p.atk*.1),3);break;
   case 'iron':c.hb.def=.5+.1*(l-1);c.hb.defT=3;say('🪨 Iron Skin! Defense up for 3 turns.','g');break;
   case 'bite':{const d=strike(1.3+.12*(l-1),{label:'🧛 Vampiric Bite tears',tags:T});const n=healHero(Math.round(d*.5));if(n)say(`You drain ${n} HP.`,'g');break;}
@@ -8268,6 +8268,7 @@ Object.assign(ACT,{
 /* =====================================================================
    PASS AG — three hundred more skills, built from a small set of effects
    ===================================================================== */
+const bsc=l=>1+(l-1)/3; // attack and defense buffs grow to four times their start by Lv 10
 const SKX={};
 const SKS={};Object.keys(SK).forEach(k=>{SKS[k]='classic';});
 function parseFx(str){
@@ -8316,7 +8317,7 @@ function fxDesc(f,l){
  if(f.wk)a.push(`weakens the foe for ${f.wk} turns`);if(f.snd)a.push(`cuts its defense by ${Math.min(35,Math.round(f.snd*s*100))}%`);
  if(f.hl)a.push(`heals ${pc(f.hl*(1+.08*(l-1)))}% HP`);if(f.dr)a.push(`you heal ${pc(f.dr)}% of the damage`);
  if(f.fc)a.push(`gather ${f.fc} Focus`);
- if(f.ba)a.push(`+${pc(f.ba[0]*(1+.06*(l-1)))}% attack for ${f.ba[1]} turns`);if(f.bd)a.push(`+${pc(f.bd[0]*(1+.06*(l-1)))}% defense for ${f.bd[1]} turns`);
+ if(f.ba)a.push(`+${pc(f.ba[0]*bsc(l))}% attack for ${f.ba[1]} turns`);if(f.bd)a.push(`+${pc(f.bd[0]*bsc(l))}% defense for ${f.bd[1]} turns`);
  if(f.br)a.push(`a ward absorbs ${pc(f.br*s)}% of your max HP`);if(f.cl)a.push('cleanses poison and curses');
  if(f.sf)a.push(`costs you ${pc(f.sf)}% of your max HP`);
  const t=a.join(', ');return t.charAt(0).toUpperCase()+t.slice(1)+'.';
@@ -8535,8 +8536,8 @@ Object.keys(SKS).forEach(id=>{
   if(f.hl){const n=healHero(Math.round(p.maxhp*f.hl*(1+.08*(l-1))));if(n)say(`${esc(lab)} restores ${n} HP.`,'g');}
   if(f.dr&&dealt>0){const n=healHero(Math.round(dealt*f.dr));if(n)say(`You draw in ${n} HP.`,'g');}
   if(f.fc){c.focus=Math.min(p.maxfocus,c.focus+f.fc);say(`You gather ${f.fc} Focus.`,'g');}
-  if(f.ba){c.hb.atk=Math.max(c.hb.atk,f.ba[0]*(1+.06*(l-1)));c.hb.atkT=Math.max(c.hb.atkT,f.ba[1]);say(`Attack up for ${f.ba[1]} turns.`,'g');}
-  if(f.bd){c.hb.def=Math.max(c.hb.def,f.bd[0]*(1+.06*(l-1)));c.hb.defT=Math.max(c.hb.defT,f.bd[1]);say(`Defense up for ${f.bd[1]} turns.`,'g');}
+  if(f.ba){c.hb.atk=Math.max(c.hb.atk,f.ba[0]*bsc(l));c.hb.atkT=Math.max(c.hb.atkT,f.ba[1]);say(`Attack up for ${f.ba[1]} turns.`,'g');}
+  if(f.bd){c.hb.def=Math.max(c.hb.def,f.bd[0]*bsc(l));c.hb.defT=Math.max(c.hb.defT,f.bd[1]);say(`Defense up for ${f.bd[1]} turns.`,'g');}
   if(f.br){const a=Math.round(p.maxhp*f.br*s);c.pb.barrier=(c.pb.barrier||0)+a;say(`A ward rises (${c.pb.barrier}).`,'g');}
   if(f.cl){if(c.hb.poison)c.hb.poison=0;c.hb.weak=0;c.hb.stun=0;say('Your ailments clear.','g');}
   c.curSk=null;
@@ -9796,6 +9797,27 @@ function foeForEvent(ev,elite){
  let e;try{e=makeEnemy(ev.zi,false,elite);}finally{ZONES[ev.zi]=saved;}
  if(ev.def.id==='duelist')e.name='Wandering Swordsman';
  return e;
+}
+/* ----- skills are renamed as they are mastered ----- */
+{
+ const LAD={ba:['Rousing Cry','Battle Hymn','War Chant',"Warlord's Roar"],bd:['Hardened Guard','Bulwark Stance','Unyielding Wall','Aegis of Ages'],br:['Stout Ward','Warding Circle','Sanctum Ward','Aegis Veil'],
+  hl:['Steady Mending','Deep Mending','Lifeweave','Vital Renewal'],fc:['Calm Breath','Still Mind','Clear Focus','Perfect Stillness'],wk:['Cowing Presence','Dread Aspect',"Terror's Mantle",'Sovereign Dread'],cl:['Purging Touch','Clean Slate','Pure Body','Unblemished']};
+ const PRE=['','Honed ','Tempered ','Veteran ','Mythic '];
+ // 'phoenix' heals and scorches, so it has no job; it simply takes the prefixes
+ Object.keys(SK).forEach(id=>{
+  const o=SK[id],base=o.n,j=skJobs(id)[0];
+  delete o.n;o.base=base;
+  Object.defineProperty(o,'n',{enumerable:true,configurable:true,get(){
+   let l=0;try{l=(S&&S.hero&&S.hero.skills&&S.hero.skills[id])||0;}catch(e){}
+   const r=skRank(l);if(r<=0)return base;
+   const lad=LAD[j];return lad?lad[r-1]:PRE[r]+base;},set(v){o.base=v;}});
+ });
+ const _su=skillUse;
+ skillUse=function(id){
+  const h=S.hero,b=SK[id]&&SK[id].n;const m=_su.apply(this,arguments);
+  try{if(m&&SK[id].n!==b)return m+` It is now called <b>${SK[id].n}</b>.`;}catch(e){}
+  return m;
+ };
 }
 /* ----- a slow start: bodies heal over days, not overnight, until you are properly seasoned ----- */
 const nightRecovery=()=>{const L=S.hero.lvl;return L>=8?1:Math.min(1,.38+.09*(L-1));};

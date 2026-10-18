@@ -312,3 +312,6 @@ After your first kill and your return to town, a single pop-up explains time of 
 
 ## One job, one slot
 Supports now have a job (raise attack, raise defense, a ward, weaken, heal, gather Focus, attune an element). You can hold only one support per job. A stronger-tier skill with the same job offers to replace the one you have; a weaker or equal one is never offered by tomes, choices or the Library. Attacks and aspect-granted skills are unaffected.
+
+## Skills rename as they rank up
+Each time a skill breaks through (Lv 3, 5, 7, 9) it takes a new name. Supports follow a ladder for their job (Battle Cry → Rousing Cry → Battle Hymn → War Chant → Warlord's Roar); attacks gain a prefix (Honed, Tempered, Veteran, Mythic). Attack and defense buffs now grow to four times their starting strength by Lv 10 (Rally 25% → 100%).
