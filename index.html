@@ -10005,8 +10005,17 @@ BIZ.unshift(
  completeDungeon=function(D){
   const r=_cd.apply(this,arguments);
   try{const w=S.world;
-   if(!w.abyssFound&&Object.keys(w.map.cleared).length>=3){w.abyssFound=true;
-    note('🌀 Behind the last chamber a stair cuts down into the rock, wider than the tunnel that led to it. It does not seem to end. You can find it again from the wilds.','y');}
+   if(!w.abyssFound&&Object.keys(w.map.cleared).length>=3&&Math.random()<.06){w.abyssFound=true;
+    note('🌀 In the last chamber, the wall behind the vault is not a wall. A stair goes down from it, wider than the tunnel that brought you here, and it does not seem to end. You mark where it is.','y');}
+  }catch(e){}
+  return r;
+ };
+ const _de=doExplore;
+ doExplore=function(zi){
+  const r=_de.apply(this,arguments);
+  try{const w=S.world,ev=S.ev;
+   if(!w.abyssFound&&zi>=2&&ev&&ev.kind==='res'&&ev.lines&&Object.keys(w.map.cleared).length>=3&&Math.random()<.03){w.abyssFound=true;
+    ev.lines.push('🌀 <b>The ground here is wrong.</b> Between two roots, a stair goes down into the earth. The stone is too clean, the steps too even. Nothing about it belongs to this place. You mark where it is and do not stay long.');}
   }catch(e){}
   return r;
  };
@@ -10014,7 +10023,7 @@ BIZ.unshift(
  dressWilds=function(html){
   let t=_dw(html);
   try{const h=S.hero,w=S.world;
-   if(abyssOpen()&&!S.dg)t+=`<div class="card"><div class="row2"><b>🌀 The Abyss Stair</b><span class="tag">best floor ${w.delve.best||0}</span></div><div class="sm mut">The stair you found below the dungeons. Endless, and built from your own strength.</div><div style="margin-top:8px">${S.dl?btn('Resume your descent','go','delve','pri c'):btn('Go down','delveStart',undefined,'c',h.sta<2,'2⚡')}</div></div>`;
+   if(abyssOpen()&&!S.dg)t+=`<div class="card"><div class="row2"><b>🌀 The Stair</b><span class="tag">best floor ${w.delve.best||0}</span></div><div class="sm mut">You found it once, where it had no business being. It goes down further than any stair should, and it is built from whatever you are.</div><div style="margin-top:8px">${S.dl?btn('Resume your descent','go','delve','pri c'):btn('Go down','delveStart',undefined,'c',h.sta<2,'2⚡')}</div></div>`;
   }catch(e){}
   return t;
  };
