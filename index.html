@@ -7313,8 +7313,8 @@ const KEEPERS={
 Object.keys(KEEPERS).forEach(tn=>{const k=KEEPERS[tn];NPC_BY['kp_'+tn]={id:'kp_'+tn,n:k[0],role:k[1],ic:'',trait:k[2],teach:'m',like:'talk',intro:k[3],town:tn};});
 const keeper=()=>NPC_BY['kp_'+where()]||null;
 const keeperTier=()=>{try{const k=keeper();return k?npcTier(aff(k.id).a):0;}catch(e){return 0;}};
-function sellMult(){return ([1,1.03,1.06,1.1][keeperTier()]||1)+crewClerk()+.04*Math.min(1,trN('haggler'));}
-const buyMult=()=>([1,.97,.94,.9][keeperTier()]||1)-crewClerk()-.03*Math.min(1,trN('haggler'));
+function sellMult(){return ([1,1.03,1.06,1.1][keeperTier()]||1)+crewClerk()+.06*Math.min(1,trN('haggler'));}
+const buyMult=()=>([1,.97,.94,.9][keeperTier()]||1)-crewClerk()-.04*Math.min(1,trN('haggler'));
 const MKT_LINES=[
  'Business is steady. People always need boots.',
  'Prices follow the roads. When the roads are bad, everything costs more.',
@@ -9516,10 +9516,10 @@ const GTRAITS={
  scavenger:{n:'Scavenger',sl:['helm','ring'],w:2,d:'A kill leaves an extra material 20% of the time.'},
  trailwise:{n:'Trailwise',sl:['boots'],w:3,d:'+1 maximum stamina.'},
  quickfeet:{n:'Quick Feet',sl:['boots'],w:3,d:'+12% to slip away from a fight and to flee.'},
- haggler:{n:'Haggler',sl:['ring'],w:3,d:'You buy for 3% less and sell for 4% more.'},
+ haggler:{n:'Haggler',sl:['ring'],w:3,d:'You buy for 4% less and sell for 6% more.'},
  silver:{n:'Silver Tongue',sl:['ring','amulet'],w:2,d:'Conversations with companions earn +2 trust.'},
  tonic:{n:'Apothecary\'s Charm',sl:['amulet'],w:3,d:'Healing potions restore 25% more.'},
- lightsleeper:{n:'Light Sleeper',sl:['amulet','armor'],w:2,d:'Waking restores an extra 15% of your health.'},
+ lightsleeper:{n:'Light Sleeper',sl:['amulet','armor'],w:2,d:'You wake quick on your feet: +8% dodge for six fights, and 15% extra health if you are still mending.'},
  scholar:{n:'Scholar\'s Habit',sl:['amulet','ring'],w:2,d:'Skills gain mastery 12% faster.'}
 };
 function trN(id){try{return SLOTS.filter(s=>{const it=S.hero.equip[s];return it&&it.tr&&it.tr.includes(id);}).length;}catch(e){return 0;}}
@@ -9535,7 +9535,8 @@ const trapMit=()=>(hasSpecial('delver')?.5:1)*(1-.3*Math.min(1,trN('padded')));
    if(it&&!it.leg&&!it.tr&&it.rar>=1){
     const chance=[0,.15,.5,1][Math.min(3,it.rar)];
     if(Math.random()<chance){
-     const pool=Object.keys(GTRAITS).filter(k=>GTRAITS[k].sl.includes(it.slot));
+     const FOCUSY=['siphon','ambush','steady','scholar'];
+     const pool=Object.keys(GTRAITS).filter(k=>GTRAITS[k].sl.includes(it.slot)&&(hasFocus()||!FOCUSY.includes(k)));
      const first=wroll(pool.map(k=>GTRAITS[k].w));it.tr=[pool[first]];
      if(it.rar>=3&&Math.random()<.35){const rest=pool.filter(k=>k!==pool[first]);if(rest.length)it.tr.push(rest[wroll(rest.map(k=>GTRAITS[k].w))]);}
     }
@@ -9562,9 +9563,10 @@ const trapMit=()=>(hasSpecial('delver')?.5:1)*(1-.3*Math.min(1,trN('padded')));
  };
  const _pa=playerAct;
  playerAct=function(type,arg){
-  const c=S.cb,had=c&&!c.over;
+  const c=S.cb,had=c&&!c.over,hp0=S.hero.hp;
   _pa.apply(this,arguments);
   try{
+   if(type==='pot'&&trN('tonic')&&S.hero.hp>hp0){const x=healHero(Math.round((S.hero.hp-hp0)*.25));if(x&&S.cb)say(`✨ The charm adds ${x} HP.`,'g');}
    if(had&&S.cb&&!S.cb.over){
     if(type==='atk'&&trN('siphon'))S.cb.focus=Math.min(P().maxfocus,S.cb.focus+1);
     if(type==='guard'&&trN('steady'))S.cb.focus=Math.min(P().maxfocus,S.cb.focus+2);
@@ -9580,15 +9582,15 @@ const trapMit=()=>(hasSpecial('delver')?.5:1)*(1-.3*Math.min(1,trN('padded')));
  };
  const _af=addFamiliarity;
  addFamiliarity=function(zi,gain){return _af(zi,gain*(1+.25*Math.min(1,trN('keeneye'))));};
- const _pt=ACT.pot;
- ACT.pot=function(id){
-  const h=S.hero,b=h.hp;_pt.apply(this,arguments);
+ const _up=ACT.usePot;
+ ACT.usePot=function(id){
+  const h=S.hero,b=h.hp;_up.apply(this,arguments);
   try{if(trN('tonic')&&h.hp>b){const x=healHero(Math.round((h.hp-b)*.25));if(x)note(`✨ The charm adds ${x} HP.`,'g');}}catch(e){}
  };
  const _sd=sleepDay;
  sleepDay=function(){
   _sd.apply(this,arguments);
-  try{if(S.screen!=='death'&&trN('lightsleeper')){const x=healHero(Math.round(P().maxhp*.15));if(x)note(`😴 You sleep lightly and well. +${x} HP.`,'g');}}catch(e){}
+  try{if(S.screen!=='death'&&trN('lightsleeper')){const x=healHero(Math.round(P().maxhp*.15));addFx('swift');note(`😴 You wake quick on your feet: Fleetfoot${x?`, and +${x} HP`:''}.`,'g');}}catch(e){}
  };
  const _su=skillUse;
  skillUse=function(id){
@@ -9654,7 +9656,7 @@ VIEWS.train=function(){
  return s.replace(/(<\/p>)/,'$1'+card);
 };
 if(typeof document!=='undefined'&&typeof window!=='undefined'&&!window.__TQ_TEST){try{render();}catch(e){}}
-if(typeof window!=='undefined')window.TQ={GTRAITS,trN,trTag,statLine,rollRarity,rivalClaims,crewEvents,BOND_MOVE,storyDone,bondLvl,synOf,synGroups,pairsText,roleOf,slotCheck,slotUse,skKind,synLines,ATT,elemMastery,SKX,SKS,fxDesc,fxCost,learnTome,SK,castSkill,offerSkillChoice,skillPool,matPrice,UNLOCKS,checkUnlocks,showAnn,VIEWS,BOND,QS,qEvent,stepDone,qTalkChoose,STORIES,legacyLines,registerStories,compCard,applyOut,checkDeath,rankIdx,sleepDay,CREW,crewOf,crewLvl,rkTrialReady,trialReady,rankRaw,genRivals,popReward,forageZone,apprChance,DG,HAB,MONPIC,addXP,wroll,refreshShop,lvCap,rankName,rarGov,keeper,keeperTier,KPJ,makeHeir,lsUse,lsLvl,lsRec,slogHtml,ROUGH,cpic,hasFocus,hprice,nextStep,foldHtml,upDiff,reportText,tele,loadBackup,skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,rkTrialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
+if(typeof window!=='undefined')window.TQ={trapHit,addFamiliarity,trapMit,skillUse,GTRAITS,trN,trTag,statLine,rollRarity,rivalClaims,crewEvents,BOND_MOVE,storyDone,bondLvl,synOf,synGroups,pairsText,roleOf,slotCheck,slotUse,skKind,synLines,ATT,elemMastery,SKX,SKS,fxDesc,fxCost,learnTome,SK,castSkill,offerSkillChoice,skillPool,matPrice,UNLOCKS,checkUnlocks,showAnn,VIEWS,BOND,QS,qEvent,stepDone,qTalkChoose,STORIES,legacyLines,registerStories,compCard,applyOut,checkDeath,rankIdx,sleepDay,CREW,crewOf,crewLvl,rkTrialReady,trialReady,rankRaw,genRivals,popReward,forageZone,apprChance,DG,HAB,MONPIC,addXP,wroll,refreshShop,lvCap,rankName,rarGov,keeper,keeperTier,KPJ,makeHeir,lsUse,lsLvl,lsRec,slogHtml,ROUGH,cpic,hasFocus,hprice,nextStep,foldHtml,upDiff,reportText,tele,loadBackup,skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,rkTrialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>
 </html>
