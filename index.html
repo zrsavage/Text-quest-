@@ -3690,7 +3690,7 @@ function render(){
  if(S.screen==='convo'&&!S.cv)S.screen='tavern';
  const sc=S.screen,h=S.hero,p=P();
  top.style.display=sc==='death'?'none':'block';
- top.innerHTML=`<div class="row"><span><b>${esc(h.name)}</b> Lv ${h.lvl} <span class="mut">· ${rankName()}</span></span><span>💰 <b>${fmt(S.world.gold)}</b></span>${S.world.spirit||(h.ess&&h.ess.length)?`<span>🕯️ <b>${S.world.spirit||0}</b></span>`:''}<span>⚡ <b>${h.sta}/${p.maxsta}</b></span><span>${envIcons()} Day <b>${h.day}</b></span></div>${bar(h.hp,p.maxhp,'hp')}<div class="row"><span>❤ ${h.hp}/${p.maxhp}</span><span>XP ${h.xp}/${xpNeed(h.lvl)}</span></div>`;
+ top.innerHTML=`<div class="row"><span><b>${esc(h.name)}</b> Lv ${h.lvl} <span class="mut">· ${rankName()}</span></span><span>💰 <b>${fmt(S.world.gold)}</b></span>${S.world.spirit||(h.ess&&h.ess.length)?`<span>🕯️ Wicks <b>${S.world.spirit||0}</b></span>`:''}<span>⚡ <b>${h.sta}/${p.maxsta}</b></span><span>${envIcons()} Day <b>${h.day}</b></span></div>${bar(h.hp,p.maxhp,'hp')}<div class="row"><span>❤ ${h.hp}/${p.maxhp}</span><span>XP ${h.xp}/${xpNeed(h.lvl)}</span></div>`;
  view.innerHTML=hintHtml(sc)+VIEWS[sc]();
  const showNav=!['combat','death','enc','bgpick'].includes(sc);
  nav.style.display=showNav?'flex':'none';

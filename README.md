@@ -302,3 +302,5 @@ After your first kill and your return to town, a single pop-up explains time of 
 - When you take a chance you can see, a wheel pops up showing your odds of success and failure in 5% slices (20 slices, success in green, failure in red), spins for two seconds, then announces the result before the action plays out. The wheel's rounded odds are the real odds: a 52% check becomes 50%, a 63% check becomes 65%.
 - It is used for: picking a lock, smashing a chest, dodging or disarming a trap, skill-check choices in exploration events, slipping away from a fight or an event, fleeing mid-fight, and bluffing past a toll. Auto-battle's emergency flee does not use it.
 - Slipping away from an encounter now includes your gear's Quick Feet bonus, which it was missing.
+
+- The top bar labels your wicks ("Wicks 7") instead of showing a lone number between gold and stamina once the icon is hidden.
