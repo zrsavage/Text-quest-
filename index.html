@@ -8001,12 +8001,12 @@ const UNLOCKS=[
  {id:'notice',when:()=>huntUnlocked(),t:'The Notice Board',x:'Odd jobs and small happenings around town, for coin and training. The board changes every day.',go:'doings',b:'Read the Notice Board'},
  {id:'people',when:()=>huntUnlocked()&&featKills('people'),t:'People',x:'You know a few faces now. Chat once a day and give gifts. Friends share tips, discounts and sometimes work.',go:'people',b:'See who is about'},
  {id:'tavern',when:()=>huntUnlocked()&&featKills('tavern'),t:'The Gilded Mug',x:'The tavern is open to you: meals, rumours, and people who may one day fight beside you if they come to trust you.',go:'tavern',b:'Go to the tavern'},
- {id:'news',when:()=>huntUnlocked()&&featKills('news'),t:'The Town Crier',x:'A man in a very large hat shouts the news: events, prices, trouble on the roads.',go:'news',b:'Hear the news'},
+ {id:'news',when:()=>huntUnlocked()&&featKills('news'),t:'The Town Crier',x:'A man in a very large hat now shouts the news in the Town Square: events, prices, trouble on the roads.',go:'square',b:'Go to the Town Square'},
  {id:'tinker',when:()=>huntUnlocked()&&featKills('tinker'),t:'The Tinker\'s Wagon',x:'Bring scrap from salvaged gear and gamble it for something new.',go:'tinker',b:'Visit the wagon'},
  {id:'guild',when:()=>!!S.world.guild,t:'The Lanternwatch Guild',x:'The guild has noticed you. Take contracts and bounties for gold and permanent bonuses. Your rank decides how high your level can grow, and there is a roll of other adventurers to spar with.',go:'guild',b:'Go to the guild'},
  {id:'focus',when:()=>hasFocus(),t:'Focus',x:'You can use skills now. The Old Library sells skill tomes, and skills grow with use.',go:'library',b:'Visit the Old Library'},
  {id:'bank',when:()=>huntUnlocked()&&placeOpen('bank',HT)&&atHome(),t:'The Counting House',x:'Keep gold safe (it passes to your heir), borrow against your name, or back a venture.',go:'bank',b:'Visit the Counting House'},
- {id:'post',when:()=>huntUnlocked()&&placeOpen('post',HT)&&atHome(),t:'The Trading Post',x:'Buy goods where they are cheap and sell them where they sell for more. Every town prices differently.',go:'exchange',b:'Visit the Trading Post'},
+ {id:'post',when:()=>huntUnlocked()&&placeOpen('post',HT)&&atHome(),t:'The Trading Post',x:'The Market now has a Trading Post: buy goods where they are cheap and sell them where they sell for more. Every town prices differently.',go:'shop',b:'Visit the Market'},
  {id:'travel',when:()=>TOWN_IDS.some(x=>x!==where()&&knowT(x)),t:'Roads to other towns',x:'You know of other towns now. Travel costs days and has dangers, but every town has its own prices, people and secrets.',go:'map',b:'Open the map'},
  {id:'crew',when:()=>!!S.world.guild&&S.hero.contracts>=1,t:'The Hiring Hall',x:'You can pay people to work for you: a porter, a scout, a clerk, a bodyguard. They get better the longer they stay.',go:'crew',b:'Visit the Hiring Hall'},
  {id:'trial',when:()=>rkTrialReady(),t:'A rank trial',x:'Your contracts qualify you for the next rank. Take the trial at the guild. If you lose you walk away at 1 HP and can try again tomorrow.',go:'guild',b:'Go to the guild'}
@@ -9249,7 +9249,7 @@ const TOWN_CORE=['train','hunt'];
 const STREET_ORDER=['guild','shop','library','tavern','square','people','doings','news','exchange','bank','crew','tinker','estate'];
 const btnOfHtml=(html,a,p)=>{const m=html.match(new RegExp('<button[^>]*data-a="'+a+'"'+(p!=null?'[^>]*data-p="'+p+'"':'')+'[^>]*>[\\s\\S]*?<\\/button>'));return m?m[0]:'';};
 // the places of the town, gathered from the full town screen
-function townPlaces(){
+function rawPlaces(){
  const keep={f:S.fold,o:S.oddRes,w:S.walkMsg};
  S.fold=Object.assign({},S.fold||{},{places:true,svc:true,log:false});
  let raw='';try{raw=_townFull();}catch(e){}
@@ -9258,6 +9258,8 @@ function townPlaces(){
  while((m=re.exec(raw))){if(m[1]==='go'&&(TOWN_CORE.includes(m[2])||m[2]==='streets'))continue;out.push(m[0]);}
  return out;
 }
+const FOLDED_PLACES=['news','exchange'];
+function townPlaces(){return rawPlaces().filter(m=>!FOLDED_PLACES.some(p=>m.includes('data-p="'+p+'"')));}
 const _townFull=VIEWS.town;
 VIEWS.town=function(){
  let t=_townFull();
@@ -9483,6 +9485,24 @@ function dressEstate(html){
   `<div class="ptile static" style="--tc:#8a93a6"><span class="pi">${sv('<rect x="6" y="14" width="20" height="14" rx="2"/><path d="M11 14v-3a5 5 0 0 1 10 0v3"/>',28)}</span><span class="pt">${t}</span><span class="pd">${d}</span><span class="ps">${tag}</span></div>`);
  return wrapRuns(html,/(?:<div class="ptile static"[\s\S]*?<\/div>\s*)+/);
 }
+function addPostToMarket(html){
+ try{
+  if(!atHome())return html;
+  const m=rawPlaces().find(x=>x.includes('data-p="exchange"'));if(!m)return html;
+  const b=m.replace(/<button class="btn[^"]*"/,'<button class="btn c"');
+  return html.replace(/<h2>/,'<div style="margin:8px 0">'+b+'</div><h2>');
+ }catch(e){return html;}
+}
+function addCrierToSquare(html){
+ try{
+  if(!atHome()||!featOpen('news'))return html;
+  VIEWS.news();// reading the news also marks the places it names on your map
+  const items=T().news.slice(0,3);
+  const body=items.length?items.map(n=>`<div class="card sm">🗣️ ${n.t}<div class="mut" style="font-size:.75rem">${ago(n.c)}</div></div>`).join(''):'<div class="card sm mut">The crier has nothing worth shouting about. He shouts it anyway.</div>';
+  const sec=`<h2>The Town Crier</h2><p class="mut sm">A man in a very large hat shouts the day's business at anyone standing still.</p>${body}`;
+  return html.includes('<button class="btn c" data-a="go" data-p="town"')?html.replace(/(<button class="btn c" data-a="go" data-p="town")/,sec+'$1'):html+sec;
+ }catch(e){return html;}
+}
 function dressTavern(html){
  return html.replace(/(?:<div class="card"><div class="sm mut">Someone at the bar[\s\S]*?<\/button><\/div>)+/,run=>{
   const tiles=[];const re=/A ([a-z -]+), by the look of them\.<\/div><button[^>]*data-a="approach" data-p="([^"]+)"/g;let m;
@@ -9494,7 +9514,7 @@ function dressTavern(html){
  const old=VIEWS[sc];if(typeof old!=='function')return;
  VIEWS[sc]=function(){
   let h=old.apply(this,arguments);
-  try{if(sc==='hunt')h=dressWilds(h);if(sc==='train')h=dressTrain(h);if(sc==='tavern')h=dressTavern(h);if(sc==='shop')h=dressShop(h);if(sc==='library')h=dressLibrary(h);if(sc==='estate')h=dressEstate(h);if(sc==='doings')h=dressDoings(h);if(sc==='exchange')h=h.replace(/<div class="card sm">(<div class="row2"><b>[^<]*<\/b><span class="tag" style="color:var\(--good\)">cheap)/g,'<div class="card sm gcheap">$1').replace(/<div class="card sm">(<div class="row2"><b>[^<]*<\/b><span class="tag" style="color:#ff9a3c">pricey)/g,'<div class="card sm gdear">$1');return dressPage(sc,h);}catch(e){return h;}
+  try{if(sc==='hunt')h=dressWilds(h);if(sc==='train')h=dressTrain(h);if(sc==='shop')h=addPostToMarket(h);if(sc==='exchange'&&atHome())h=h.replace(/(data-a="go" data-p=)"town"([^>]*>)← Back/,'$1"shop"$2← Back to the Market');if(sc==='square')h=addCrierToSquare(h);if(sc==='tavern')h=dressTavern(h);if(sc==='shop')h=dressShop(h);if(sc==='library')h=dressLibrary(h);if(sc==='estate')h=dressEstate(h);if(sc==='doings')h=dressDoings(h);if(sc==='exchange')h=h.replace(/<div class="card sm">(<div class="row2"><b>[^<]*<\/b><span class="tag" style="color:var\(--good\)">cheap)/g,'<div class="card sm gcheap">$1').replace(/<div class="card sm">(<div class="row2"><b>[^<]*<\/b><span class="tag" style="color:#ff9a3c">pricey)/g,'<div class="card sm gdear">$1');return dressPage(sc,h);}catch(e){return h;}
  };
 });
 
