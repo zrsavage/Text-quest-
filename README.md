@@ -339,3 +339,6 @@ The Abyss Stair is not in town. After three dungeons are cleared, it can turn up
 
 ## Something is out there
 Thirty small signs, unexplained, hint at six presences that are never named: one that counts the dead, one that tends what grows, one that works in the dark, one that is a lamp, one with dice, one that listens. They turn up by chance in the log or on an exploration result (sleeping, boss kills, dungeon clears, exploring, rumours at the tavern, an heir taking over). They never change a number. The ones you have noticed are kept under Journal, Perks &amp; Lore, in a fold called "Things you have noticed", and carry over to heirs.
+
+## Things you have learned
+Journal, Guide tab, top fold. A short reminder for each mechanic the player has already met (stamina, danger, odds wheels, skills and the one-job rule, aspects, wicks and vestiges, tinkering, gear and wear, companions and roles, guild, seasons, towns, bank, estate, heirs). A lesson only appears once its feature has been seen, so nothing is spoiled.
