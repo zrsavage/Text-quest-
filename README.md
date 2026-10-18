@@ -319,3 +319,6 @@ Each time a skill breaks through (Lv 3, 5, 7, 9) it takes a new name. Supports f
 ## Attack lines and quest materials
 - Attacks of the same element and shape (Frost Dart → Bolt → Burst → Nova) are now one line: hold one, and a stronger tier offers to replace it. Existing saves keep the higher-tier one.
 - A quest that asks you to bring a material makes it drop more often from kills in the zone where it belongs.
+
+## The Forge
+A fold in the Market. Gold tempers a worn piece: +6% to every stat on it per tempering, costing (60 + 14 × item level) × 1.9^n gold. The limit is half your level (max 8) per piece, and tempering stays on the item, so an heir inherits it.
