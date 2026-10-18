@@ -3606,7 +3606,7 @@ VIEWS.talk=function(){
   s+=`<div class="card">${t.lines.map(l=>`<p>${l}</p>`).join('')}</div>${btn('Done','tback',undefined,'pri c')}`;
  }else{
   const st=qStep(t.id),pr=stepProg(t.id),done=pr[0]>=pr[1];
-  s+=`<div class="card"><p><i>${st.tk.t}</i></p></div>`;
+  s+=done?`<div class="card"><p><i>${st.tk.t}</i></p></div>`:`<div class="card"><p><i>${esc(q.npc)} looks at you expectantly. "Not yet, then. I will be here."</i></p></div>`;
   if(!done)s+=`<p class="mut sm">Objective: ${esc(st.j)} (${pr[0]}/${pr[1]})</p>${btn('Back','tback',undefined,'c')}`;
   else s+=st.tk.ch.map((c,i)=>btn(esc(c.l),'tch',i,'')).join('');
  }
