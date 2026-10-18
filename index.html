@@ -4263,17 +4263,17 @@ Object.assign(ACT,{
 });
 function powHtml(){
  const h=S.hero,w=S.world,pw=powOf(),keys=Object.keys(pw),sl=powSlots(),bag=h.corebag||[];
- let t=`<h2>🕯️ Wicks & Vestiges</h2><p class="mut sm">Wicks are the lantern-light left behind by monsters. They deepen aspects and bind vestiges. A vestige is a rare fragment of a monster family, and each teaches the power of its monster family. A power resonates with the aspects it works with and grows far stronger. Powers held: ${keys.length}/${sl}.</p><div class="card sm">🕯️ <b>${w.spirit||0}</b> wicks</div>`;
+ let t=`<h2>🕯️ Wicks & Vestiges</h2><p class="mut sm">Wicks are the lantern-light left behind by monsters. They deepen aspects and bind vestiges. A vestige is a rare fragment of a monster family, and each teaches the power of its monster family. A power resonates with the aspects it works with and grows far stronger. Powers held: ${keys.length}/${sl}.</p><div class="card sm">You hold <b>${w.spirit||0}</b> wicks.</div>`;
  keys.forEach(f=>{const d=POW[f],m=powRes(f);
   t+=`<div class="card"><div class="row2"><b>${d.ic} ${d.n}</b><span class="tag">Lv ${pw[f]}/${powMax}</span></div><div class="mut sm">Works with: ${d.w.map(id=>`${ESSX[id].ic} ${ESSX[id].n}${m.includes(id)?' ✓':''}`).join(', ')}</div><div class="sm ${m.length?'up':'mut'}">${m.length?`Resonating with ${m.map(id=>ESSX[id].n).join(' and ')}: effect ×${RES}.`:'No resonance. Kindle a matching aspect to strengthen it.'}</div>${btn('Let it go','pwForget',f,'')}</div>`;});
  if(bag.length){
   t+=`<h3>Vestiges carried</h3>`+bag.map((c,i)=>{const d=POW[c.f],cur=pw[c.f]||0,full=!cur&&keys.length>=sl,m=powRes(c.f);
-   return `<div class="card sm"><b>${d.ic} ${cap1(c.f)} vestige</b> <span class="tag">grade ${c.g}</span><br><span class="mut">${d.n}. Works with ${d.w.map(id=>ESSX[id].n).join(', ')}.</span>${m.length?` <span class="up">Good for you: resonates with ${m.map(id=>ESSX[id].n).join(' and ')}.</span>`:''}${btn(cur?'Strengthen '+d.n:'Absorb',  'pwAbsorb',i,'',full||cur>=powMax||(w.spirit||0)<absorbCost(cur,c.g),full?'no free power slot':`🕯️ ${absorbCost(cur,c.g)} · `+(cur?`Lv ${cur} → ${Math.min(powMax,Math.max(cur+1,c.g))}`:`Lv ${c.g}`))}</div>`;}).join('');
+   return `<div class="card sm"><b>${d.ic} ${cap1(c.f)} vestige</b> <span class="tag">grade ${c.g}</span><br><span class="mut">${d.n}. Works with ${d.w.map(id=>ESSX[id].n).join(', ')}.</span>${m.length?` <span class="up">Good for you: resonates with ${m.map(id=>ESSX[id].n).join(' and ')}.</span>`:''}${btn(cur?'Strengthen '+d.n:'Absorb',  'pwAbsorb',i,'',full||cur>=powMax||(w.spirit||0)<absorbCost(cur,c.g),full?'no free power slot':`costs ${absorbCost(cur,c.g)} wicks · `+(cur?`Lv ${cur} → ${Math.min(powMax,Math.max(cur+1,c.g))}`:`Lv ${c.g}`))}</div>`;}).join('');
  }
  const pb=w.pbook||{},pk=Object.keys(pb);
  if(pk.length&&inhSlots()>0){
   t+=`<h3>Bloodline memory</h3><p class="mut sm">Powers your ancestors mastered. Your heir may rekindle ${inhSlots()} of them (${h.inh||0} used) for wicks, one level weaker.</p>`+pk.map(f=>{const lv=Math.max(1,pb[f]-1),cost=inheritCost(lv);
-   return `<div class="card sm"><b>${POW[f].ic} ${POW[f].n}</b> <span class="mut">best ancestral Lv ${pb[f]}</span>${btn(pw[f]?'Already known':'Rekindle at Lv '+lv,'pwInherit',f,'',!!pw[f]||(h.inh||0)>=inhSlots()||keys.length>=sl||(w.spirit||0)<cost,`🕯️ ${cost}`)}</div>`;}).join('');
+   return `<div class="card sm"><b>${POW[f].ic} ${POW[f].n}</b> <span class="mut">best ancestral Lv ${pb[f]}</span>${btn(pw[f]?'Already known':'Rekindle at Lv '+lv,'pwInherit',f,'',!!pw[f]||(h.inh||0)>=inhSlots()||keys.length>=sl||(w.spirit||0)<cost,`costs ${cost} wicks`)}</div>`;}).join('');
  }else if(pk.length)t+=`<p class="mut sm">Your ancestors left powers behind. The bloodline will be able to rekindle them from the second generation on.</p>`;
  return t;
 }
@@ -4282,7 +4282,7 @@ function essHtml(){
  let t=`<h2>💠 Aspects</h2><p class="mut sm">Aspects kindle in you at the guild and shape who you become. Each grants a skill and a bonus, and certain pairs form a harmony. Wicks deepen them, and monster vestiges teach powers that resonate with them. Your heirs kindle their own aspects but can inherit ancestral powers.</p>`;
  if(!slots){return t+`<div class="card sm mut">Join the ${GUILD} to kindle your first aspect.</div>`;}
  own.forEach(x=>{const d=ESSX[x.id],cap=essCap();
-  t+=`<div class="card"><div class="row2"><b>${d.ic} ${d.n}</b><span class="tag">Depth ${x.a}/${cap}</span></div><div class="mut sm">${d.d}</div>${x.a<cap?btn('Deepen','essAbsorb',x.id,'',(S.world.spirit||0)<attuneCost(x.a),`🕯️ ${attuneCost(x.a)}`):'<div class="mut sm">Rank more contracts to attune further.</div>'}</div>`;});
+  t+=`<div class="card"><div class="row2"><b>${d.ic} ${d.n}</b><span class="tag">Depth ${x.a}/${cap}</span></div><div class="mut sm">${d.d}</div>${x.a<cap?btn('Deepen','essAbsorb',x.id,'',(S.world.spirit||0)<attuneCost(x.a),`costs ${attuneCost(x.a)} wicks`):'<div class="mut sm">Rank more contracts to attune further.</div>'}</div>`;});
  const cf=confluences();
  if(cf.length)t+=cf.map(c=>`<div class="card sm">✨ <b>${c.n}</b> <span class="mut">(${ESSX[c.a].n} + ${ESSX[c.b].n})</span><br>${c.d}</div>`).join('');
  if(own.length<slots){
@@ -6746,7 +6746,7 @@ function calmText(s){
   .replace(/🔷[\uFE0F]?\s*(?=Focus)/g,'')
   .replace(/🔷[\uFE0F]?\s*/g,'Focus ')
   .replace(/(\d[\d,.]*)\s*🕯️?/g,'$1 wicks')
-  .replace(/🕯️?\s*(\d[\d,.]*)/g,'Wicks $1')
+  .replace(/🕯️?\s*(\d[\d,.]*)/g,'$1 wicks')
   .replace(/✅️?/g,'✓').replace(/⬜️?/g,'○')
   .replace(EMO_RE,'')
   .replace(/[ \t]{2,}/g,' ');

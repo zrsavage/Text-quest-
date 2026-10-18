@@ -304,3 +304,4 @@ After your first kill and your return to town, a single pop-up explains time of 
 - Slipping away from an encounter now includes your gear's Quick Feet bonus, which it was missing.
 
 - The top bar labels your wicks ("Wicks 7") instead of showing a lone number between gold and stamina once the icon is hidden.
+- Everywhere wicks are shown they are named: "costs 20 wicks" on Deepen, Absorb and Rekindle, "You hold 37 wicks" on the aspects page, and the plain-text mode now turns a stray "🕯️ 5" into "5 wicks".
