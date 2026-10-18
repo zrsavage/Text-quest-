@@ -10028,6 +10028,94 @@ BIZ.unshift(
   return t;
  };
 }
+/* =====================================================================
+   Something is out there. Nobody says what.
+   Small signs, now and then, in the log and in the Journal. They explain nothing and change nothing.
+   ===================================================================== */
+const OMENS=[
+ // the one who counts the dead
+ {id:'f1',on:'heir',t:'A coin lies in the dead hand when you find it. Nobody in the house admits to putting it there. It has no face on either side.'},
+ {id:'f2',on:'boss',t:'As the creature falls, you feel counted. Not watched. Counted, the way a shopkeeper counts at the end of the day.'},
+ {id:'f3',on:'sleep',t:'You dream of a river you have never seen, and of someone patient standing in the shallows with a lantern, looking past you at the people behind you.'},
+ {id:'f4',on:'kill',t:'The body is gone when you turn back. There are no tracks, and the grass is dry where it should be wet.'},
+ {id:'f5',on:'dungeon',t:'Someone has set a single flat stone on the lowest step, the way you would for a ferryman. It is warm.'},
+ // the one who tends what grows
+ {id:'g1',on:'explore',t:'Something has been growing along the path in a straight line, as if it were planted. Just ahead of you, the shoots are taller.'},
+ {id:'g2',on:'sleep',t:'In the morning there is moss on the windowsill that was not there. It is on the inside.'},
+ {id:'g3',on:'rumor',t:'An old woman leaves a bowl of milk on her step on the longest night and swears she has never once had to pour it out.'},
+ {id:'g4',on:'kill',t:'Where it fell, green comes up through the dirt faster than green should. By the time you leave, there is a small flower.'},
+ {id:'g5',on:'dungeon',t:'Roots have gone through the stone down here, deliberately, like fingers choosing a door.'},
+ // the one who works in the dark
+ {id:'s1',on:'sleep',t:'Late in the night you hear hammering, even and slow, from somewhere under the town. In the morning the cellar stones are warm.'},
+ {id:'s2',on:'explore',t:'A single horseshoe, perfectly made, half sunk in the road. No one in the district shoes horses with iron this good.'},
+ {id:'s3',on:'dungeon',t:'The hinges on this door are newer than the dungeon, and finer than anything the smiths in town could make.'},
+ {id:'s4',on:'rumor',t:'A smith in a village you have never visited says the best blade he ever made, he made in his sleep, and that he woke with burns on his hands.'},
+ {id:'s5',on:'boss',t:'The weapon you finish it with rings once, clearly, like a struck bell, though nothing was near enough to ring.'},
+ // the one who is a lamp
+ {id:'l1',on:'explore',t:'A light on the hillside where there is no house. You walk toward it and it is always the same distance away, and then it is gone, and you are on the right road.'},
+ {id:'l2',on:'sleep',t:'Your candle burns all night without shrinking. In the morning it is the same height it was.'},
+ {id:'l3',on:'dungeon',t:'A lamp hangs from a chain in a room with no ceiling. It is lit. The oil in it is clear and does not smell of anything.'},
+ {id:'l4',on:'kill',t:'You were certain you were lost. A dog you have never seen appears, leads you out, and is not there when you thank it.'},
+ {id:'l5',on:'rumor',t:'The old scholars have a saying about being found by the thing you were not looking for. They do not say who is doing the finding.'},
+ // the one with the dice
+ {id:'d1',on:'explore',t:'A coin lands on its edge on the stone beside you and stays. When you pick it up, it is just a coin.'},
+ {id:'d2',on:'boss',t:'The blow should have missed. For the space of a breath, it was as though the whole room leaned, ever so slightly, in your favour.'},
+ {id:'d3',on:'sleep',t:'You wake knowing what card would have come up. You are right, and you did not own a deck.'},
+ {id:'d4',on:'rumor',t:'Gamblers at the old tables never say good luck to each other. They say "may it be noticed".'},
+ {id:'d5',on:'dungeon',t:'Two dice on the floor of an empty vault, both showing the same face, worn smooth by hands that were not human.'},
+ // the one who is quiet
+ {id:'q1',on:'sleep',t:'In the stillest hour, the whole town holds its breath. For a moment you can hear someone listening back.'},
+ {id:'q2',on:'explore',t:'Your own footsteps stop echoing in the narrow places. Then, a little later, a long way off, you hear them again.'},
+ {id:'q3',on:'kill',t:'Afterward, it is entirely quiet. Not the quiet of a field; the quiet of a room after a secret has been told.'},
+ {id:'q4',on:'rumor',t:'Children in Hollowmere whisper into a hole in the old wall and say it keeps what it is told. Adults tell them to stop, and some of them do not.'},
+ {id:'q5',on:'dungeon',t:'The walls here are carved with a hundred thousand tiny ears. None of them are the same.'},
+ {id:'z1',on:'heir',t:'Your heir finds a line in your own handwriting, in a book you never owned: "They are not kind and not cruel. They are interested."'}
+];
+const OMEN_RATE={sleep:.07,boss:.25,kill:.012,dungeon:.3,explore:.035,heir:.7,rumor:.12};
+function omenRoll(on){
+ try{
+  const w=S.world;w.omens=w.omens||{};
+  if(Math.random()>(OMEN_RATE[on]||0))return null;
+  const left=OMENS.filter(o=>o.on===on&&!w.omens[o.id]);
+  if(!left.length)return null;
+  const o=pick(left);w.omens[o.id]=S.hero?S.hero.day:1;
+  return `<span class="mut"><i>${o.t}</i></span>`;
+ }catch(e){return null;}
+}
+{
+ const _sd=sleepDay;
+ sleepDay=function(){_sd.apply(this,arguments);const t=omenRoll('sleep');if(t)note(t);};
+ const _v=victory;
+ victory=function(){
+  const c=S.cb,boss=c&&c.e&&c.e.tier==='b';
+  const r=_v.apply(this,arguments);
+  const t=omenRoll(boss?'boss':'kill');if(t){if(S.res&&S.res.lines)S.res.lines.push(t);else note(t);}
+  return r;
+ };
+ const _cd=completeDungeon;
+ completeDungeon=function(){const r=_cd.apply(this,arguments);const t=omenRoll('dungeon');if(t)note(t);return r;};
+ const _de=doExplore;
+ doExplore=function(zi){
+  const r=_de.apply(this,arguments);
+  try{const ev=S.ev;if(ev&&ev.kind==='res'&&ev.lines){const t=omenRoll('explore');if(t)ev.lines.push(t);}}catch(e){}
+  return r;
+ };
+ const _mh=makeHeir;
+ makeHeir=function(){_mh.apply(this,arguments);const t=omenRoll('heir');if(t)note(t);};
+ const _li=ACT.listen;
+ ACT.listen=function(){const h=S.hero,done=h&&h.lstDay===h.day;_li.apply(this,arguments);if(!done){const t=omenRoll('rumor');if(t)S.rumor=(S.rumor?S.rumor+'<br>':'')+t;}};
+ const _jv=VIEWS.journal;
+ VIEWS.journal=function(){
+  let t=_jv.apply(this,arguments);
+  try{const w=S.world,ids=Object.keys(w.omens||{});
+   if(S.jtab==='perks'&&ids.length){
+    const list=OMENS.filter(o=>w.omens[o.id]).map(o=>`<div class="card sm"><i>${o.t}</i></div>`).join('');
+    t+=foldShut('omens','<h2>Things you have noticed</h2>',`<p class="mut sm">Nobody has explained any of these to you. You wrote them down anyway.</p>${list}`);
+   }
+  }catch(e){}
+  return t;
+ };
+}
 /* ----- a slow start: bodies heal over days, not overnight, until you are properly seasoned ----- */
 const nightRecovery=()=>{const L=S.hero.lvl;return L>=8?1:Math.min(1,.38+.09*(L-1));};
 const _sleepDayRec=sleepDay;
@@ -10068,7 +10156,7 @@ VIEWS.train=function(){
  return s.replace(/(<\/p>)/,'$1'+card);
 };
 if(typeof document!=='undefined'&&typeof window!=='undefined'&&!window.__TQ_TEST){try{render();}catch(e){}}
-if(typeof window!=='undefined')window.TQ={repairCost,wearMult,condOf,temperCost,temperMax,dedupeSkills,skJobs,skClash,foeForEvent,EVFOE,trapHit,addFamiliarity,trapMit,skillUse,GTRAITS,trN,trTag,statLine,rollRarity,rivalClaims,crewEvents,BOND_MOVE,storyDone,bondLvl,synOf,synGroups,pairsText,roleOf,slotCheck,slotUse,skKind,synLines,ATT,elemMastery,SKX,SKS,fxDesc,fxCost,learnTome,SK,castSkill,offerSkillChoice,skillPool,matPrice,UNLOCKS,checkUnlocks,showAnn,VIEWS,BOND,QS,qEvent,stepDone,qTalkChoose,STORIES,legacyLines,registerStories,compCard,applyOut,checkDeath,rankIdx,sleepDay,CREW,crewOf,crewLvl,rkTrialReady,trialReady,rankRaw,genRivals,popReward,forageZone,apprChance,DG,HAB,MONPIC,addXP,wroll,refreshShop,lvCap,rankName,rarGov,keeper,keeperTier,KPJ,makeHeir,lsUse,lsLvl,lsRec,slogHtml,ROUGH,cpic,hasFocus,hprice,nextStep,foldHtml,upDiff,reportText,tele,loadBackup,skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,rkTrialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
+if(typeof window!=='undefined')window.TQ={OMENS,omenRoll,repairCost,wearMult,condOf,temperCost,temperMax,dedupeSkills,skJobs,skClash,foeForEvent,EVFOE,trapHit,addFamiliarity,trapMit,skillUse,GTRAITS,trN,trTag,statLine,rollRarity,rivalClaims,crewEvents,BOND_MOVE,storyDone,bondLvl,synOf,synGroups,pairsText,roleOf,slotCheck,slotUse,skKind,synLines,ATT,elemMastery,SKX,SKS,fxDesc,fxCost,learnTome,SK,castSkill,offerSkillChoice,skillPool,matPrice,UNLOCKS,checkUnlocks,showAnn,VIEWS,BOND,QS,qEvent,stepDone,qTalkChoose,STORIES,legacyLines,registerStories,compCard,applyOut,checkDeath,rankIdx,sleepDay,CREW,crewOf,crewLvl,rkTrialReady,trialReady,rankRaw,genRivals,popReward,forageZone,apprChance,DG,HAB,MONPIC,addXP,wroll,refreshShop,lvCap,rankName,rarGov,keeper,keeperTier,KPJ,makeHeir,lsUse,lsLvl,lsRec,slogHtml,ROUGH,cpic,hasFocus,hprice,nextStep,foldHtml,upDiff,reportText,tele,loadBackup,skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,rkTrialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>
 </html>
