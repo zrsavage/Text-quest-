@@ -305,3 +305,7 @@ After your first kill and your return to town, a single pop-up explains time of 
 
 - The top bar labels your wicks ("Wicks 7") instead of showing a lone number between gold and stamina once the icon is hidden.
 - Everywhere wicks are shown they are named: "costs 20 wicks" on Deepen, Absorb and Rekindle, "You hold 37 wicks" on the aspects page, and the plain-text mode now turns a stray "🕯️ 5" into "5 wicks".
+
+## People in the wild
+- Every region now has human foes among its ordinary encounters: Hungry Poachers and Footpads in the meadow, Woodland Bandits, Deserters and Renegade Hunters in the Whisperwood, Cult Acolytes and Grave Robbers in the catacombs, Cliff Raiders and Ember Cultists on the cliffs, Pass Raiders and Frostbitten Mercenaries in the Frostmarch, and Rift Cultists and Fallen Knights in the Rift. They drop their own parts.
+- Exploration events that name a person now send a person: the ambush, the lone swordsman (he is "Wandering Swordsman"), the trap-cart bandits and the camp owners who return are all human, and the battlefield ghost and the drowned bell send the dead.
