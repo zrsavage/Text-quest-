@@ -3451,7 +3451,7 @@ VIEWS.town=function(){
   ${hu?btn('🍺 Tavern','go','tavern','',false,'Food, drink, gossip'):''}
   ${hu?btn('🚚 Tinker\'s Wagon','go','tinker','',false,'Scrap → random loot'):''}
   ${w.anc.length?btn('⚰️ Family Crypt','go','crypt','',!hu,'Face your ancestors'):''}
-  ${hu&&S.world.estate.deed?btn('🏡 Estate','go','estate','',false,S.world.estate.deed?HOME[estLv('home')].n+(S.world.estate.vault.gold||S.world.estate.vault.items.length?' · goods waiting':''):'Earn a place of your own'):''}
+  ${hu&&(S.world.estate.deed||S.hero.lvl>=3)?btn('🏡 Estate','go','estate','',false,S.world.estate.deed?HOME[estLv('home')].n+(S.world.estate.vault.gold||S.world.estate.vault.items.length?' · goods waiting':''):'Land of your own, for a price'):''}
   ${abyssOpen()&&hu?(S.dl?btn('🌀 Abyss Stair','go','delve','pri',false,'Resume your descent'):btn('🌀 Abyss Stair','delveStart',undefined,'',h.sta<2||!!S.dg,`2⚡ · endless · best floor ${w.delve.best||0}`)):''}
  </div>
  <div style="margin-top:10px">${btn('🛏️ Sleep until morning','sleep',undefined,'good',!!S.dg,S.dg?'Leave the dungeon first':'Restore HP & stamina · next day · refreshes shop/board')}</div>
@@ -9926,6 +9926,55 @@ const temperCost=it=>Math.round((60+(it.il||1)*14)*Math.pow(1.9,it.tp||0));
    t+=foldShut('forge','<h2>🔨 The Forge</h2>',inner);
   }catch(e){}
   return t;
+ };
+}
+/* ----- a place of your own, early: buy a plot, then spend on gathering and making ----- */
+const DEED_COST=300;
+HOME[0].vault=5;HOME[1].need={contracts:4};HOME[1].needT='4 contracts completed';HOME[1].days=6;
+BIZ.unshift(
+ {id:'forage',n:'Foraging Shed',ic:'🧺',home:0,cost:120,ok:()=>true,need:'A plot of land',d:lv=>`Gathers ${lv} material${lv>1?'s':''} a day from the region matching your level.`},
+ {id:'snares',n:'Snare Line',ic:'🪤',home:0,cost:220,ok:()=>S.hero.kills>=20,need:'20 kills',d:lv=>`Takes ${lv} creature part${lv>1?'s':''} a day from the beasts of your region.`},
+ {id:'bench',n:'Workbench',ic:'🛠️',home:0,cost:350,ok:()=>S.hero.lvl>=4,need:'Level 4',d:lv=>`Every ${lv>=3?'day':'other day'}, turns 5 materials (from the vault first, then your pack) and a fee for tools into a piece of gear.`}
+);
+{
+ const zoneOf=()=>{let zi=0;ZONES.forEach((z,k)=>{if(z.min<=S.hero.lvl)zi=k;});return zi;};
+ Object.assign(ACT,{
+  buyDeed(){
+   const w=S.world,E=w.estate;if(E.deed)return;
+   if(w.gold<DEED_COST){note('Not enough gold.','e');return;}
+   w.gold-=DEED_COST;E.deed=true;E.age=0;E.since=0;
+   note('🏡 <b>You buy a plot of land by the town wall.</b> Nothing is built on it yet, but it is yours, and your family\'s after you.','y');
+  }
+ });
+ const _ev=VIEWS.estate;
+ VIEWS.estate=function(){
+  const w=S.world,E=w.estate,h=S.hero;
+  if(E.deed)return _ev.apply(this,arguments);
+  return `<h1>🏡 The ${esc(h.fam)} Estate</h1><div class="card"><p>You own nothing in Hollowmere yet.</p><p class="mut">The mayor's office grants a plot to those who keep the roads safe. The clerk will also sell you one, if you would rather not wait.</p>
+  ${btn('Buy a plot of land','buyDeed',undefined,'pri c',w.gold<DEED_COST,DEED_COST+'g')}
+  <p class="sm mut" style="margin-top:8px">Or earn it: ${qd('mayor')?'✅':'⬜'} complete <b>Safe Roads</b> for Aide Corvin, and ${h.contracts>=4?'✅':'⬜'} reach Copper rank (${h.contracts}/4 contracts).</p></div>${btn('← Back to town','go','town','c')}`;
+ };
+ const _ed=estateDaily;
+ estateDaily=function(){
+  const E=S.world.estate,h=S.hero,w=S.world;
+  const open=E&&E.deed&&E.vault.n<HOME[E.home].vault;
+  _ed.apply(this,arguments);
+  if(!open)return;
+  try{
+   const v=E.vault,zi=zoneOf();
+   if(E.biz.forage){for(let i=0;i<E.biz.forage;i++){const m=pick(ZGATHER[zi]);v.mats[m]=(v.mats[m]||0)+1;}}
+   if(E.biz.snares){const names=ZONES[zi].mon.map(m=>m.n).filter(n=>MONMAT[n]);for(let i=0;i<E.biz.snares&&names.length;i++){const m=MONMAT[pick(names)][0];v.mats[m]=(v.mats[m]||0)+1;}}
+   const bl=E.biz.bench;
+   if(bl&&(bl>=3||h.day%2===0)&&v.items.length<10){
+    const sum=o=>Object.values(o).reduce((a,b)=>a+b,0),fee=20+h.lvl*5;
+    if(sum(v.mats)+sum(w.mats)>=5&&w.gold>=fee){
+     let need=5;for(const src of [v.mats,w.mats]){for(const m of Object.keys(src)){if(!need)break;const t=Math.min(need,src[m]);src[m]-=t;need-=t;if(!src[m])delete src[m];}}
+     w.gold-=fee;
+     v.items.push(genItem(Math.max(1,h.lvl),rollRarity(bl>=3?[45,40,13,2]:[65,29,5,1])));
+     note(`🛠️ Your workbench turned out a piece of gear. (-${fee}g for tools)`);
+    }
+   }
+  }catch(e){}
  };
 }
 /* ----- a slow start: bodies heal over days, not overnight, until you are properly seasoned ----- */

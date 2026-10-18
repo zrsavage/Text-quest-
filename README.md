@@ -326,3 +326,7 @@ A fold in the Market. Gold tempers a worn piece: +6% to every stat on it per tem
 ## Gold has jobs
 - **Wear:** gear loses condition with every fight (weapon fastest). Below 50% it gives less, down to 65% of its stats when worn out. The Forge's "Mend everything" fixes it, costing (20 + 10 × item level) × the missing share, per piece.
 - **Room and board:** sleeping in Hollowmere costs 2 + 1.8 × level gold, unless you own a home. If you cannot pay you sleep in the stable and wake at 70% HP and stamina.
+
+## An early place of your own
+- From level 3 the Estate is in town even without the mayor's deed. The clerk sells a plot for 300g (the Safe Roads quest still grants one free). The Cabin now needs only 4 contracts and 6 days.
+- Three early businesses on the bare plot: Foraging Shed (120g, materials), Snare Line (220g, creature parts), Workbench (350g, level 4: 5 materials plus a tool fee make a piece of gear). The plot's vault holds 5 days of goods.
