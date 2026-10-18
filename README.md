@@ -309,3 +309,6 @@ After your first kill and your return to town, a single pop-up explains time of 
 ## People in the wild
 - Every region now has human foes among its ordinary encounters: Hungry Poachers and Footpads in the meadow, Woodland Bandits, Deserters and Renegade Hunters in the Whisperwood, Cult Acolytes and Grave Robbers in the catacombs, Cliff Raiders and Ember Cultists on the cliffs, Pass Raiders and Frostbitten Mercenaries in the Frostmarch, and Rift Cultists and Fallen Knights in the Rift. They drop their own parts.
 - Exploration events that name a person now send a person: the ambush, the lone swordsman (he is "Wandering Swordsman"), the trap-cart bandits and the camp owners who return are all human, and the battlefield ghost and the drowned bell send the dead.
+
+## One job, one slot
+Supports now have a job (raise attack, raise defense, a ward, weaken, heal, gather Focus, attune an element). You can hold only one support per job. A stronger-tier skill with the same job offers to replace the one you have; a weaker or equal one is never offered by tomes, choices or the Library. Attacks and aspect-granted skills are unaffected.
