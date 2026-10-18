@@ -282,3 +282,11 @@ After your first kill and your return to town, a single pop-up explains time of 
 - Items with an affix in front ("Keen", "Hale", "Nimble") skip the plain wear word at low tiers, so there are no stacked adjectives like "Hale Rusty Boots". Material words still appear ("Honed Iron Axe").
 - Percentage stats no longer say "+2% Dodge %", and regeneration reads "+3 HP regen a turn".
 - A couple of nonsensical flavour lines were rewritten (the ring and the plate armour).
+
+## Gear with tricks (utility traits)
+- Uncommon (15%), rare (50%) and epic (always, sometimes two) gear can carry a utility trait on top of its stats, shown with a ◆ in lists and described on the item. Legendaries keep their own specials.
+- Weapons: **Opening Strike** (first attack +35%), **Finisher** (+25% against foes under 30% health), **Focus Siphon** (+1 Focus on a basic attack), **Ambusher** (start with 2 Focus; also on helms).
+- Armor: **Second Wind** (once a fight, under 25% health restores 15%), **Steady Guard** (guarding gathers 2 more Focus), **Padded** (trap damage -30%; also boots), **Light Sleeper** (wake with 15% more health; also amulets).
+- Helms: **Keen Eye** (regions become familiar 25% faster), **Trapsense** (chests show if they are trapped; also amulets), **Scavenger** (an extra material 20% of the time; also rings).
+- Boots: **Trailwise** (+1 maximum stamina), **Quick Feet** (+12% to slip away and to flee).
+- Rings and amulets: **Haggler** (buy 3% cheaper, sell 4% dearer), **Silver Tongue** (+2 trust from conversations), **Apothecary's Charm** (potions heal 25% more), **Scholar's Habit** (skills gain mastery 12% faster).

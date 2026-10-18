@@ -1322,7 +1322,7 @@ function applyOut(o,zi,qid){
  if(o.xp){const x=Math.round(o.xp*(10+L*3.2)*catchMult()*(1+p.xpf/100));out.push(`✨ +${x} XP`);out.push(...addXP(x));}
  if(o.hp){
   if(o.hp>0){const n=healHero(Math.round(p.maxhp*o.hp));out.push(`💚 +${n} HP`);}
-  else{const d=Math.max(1,Math.round(p.maxhp*-o.hp*(hasSpecial('delver')?.5:1)));h.hp=Math.max(1,h.hp-d);out.push(`💔 −${d} HP`);}
+  else{const d=Math.max(1,Math.round(p.maxhp*-o.hp*trapMit()));h.hp=Math.max(1,h.hp-d);out.push(`💔 −${d} HP`);}
  }
  if(o.item!=null){const it=genItem(L+ri(0,2),rollRarity(RW[o.item],1+p.dropf/200));const r=addItem(it);out.push(`🎁 ${rarName(it)} <span class="mut">(${RAR[it.rar].n})</span>${r==='full'?' — pack full, sold':r==='sold'?' — auto-sold':''}`);}
  if(o.mat){const z=ZONES[clamp(zi==null?tierOf(h.lvl):zi,0,5)],m=pick(ZGATHER[ZONES.indexOf(z)]);w.mats[m]=(w.mats[m]||0)+o.mat;out.push(`🧶 +${o.mat} ${m}`);}
@@ -1527,7 +1527,7 @@ function chestLoot(D,vault,smash){
 }
 function trapHit(mult){
  const h=S.hero,p=P();
- const d=Math.max(1,Math.round(p.maxhp*rnd(.12,.25)*mult*(hasSpecial('delver')?.5:1)));
+ const d=Math.max(1,Math.round(p.maxhp*rnd(.12,.25)*mult*trapMit()));
  h.hp=Math.max(1,h.hp-d);return d;
 }
 function completeDungeon(D){
@@ -2286,7 +2286,7 @@ function playerAct(type,arg){
  }
  else if(type==='flee'){
   if(c.boss){say('You cannot flee from a boss.','e');return;}
-  const ch=hasSpecial('runner')?100:clamp(45+p.st.agi*.6-e.lvl*.4,15,90);
+  const ch=hasSpecial('runner')?100:clamp(45+p.st.agi*.6-e.lvl*.4+12*Math.min(1,trN('quickfeet')),15,90);
   if(Math.random()*100<ch){c.over=true;fleeOK();return;}
   say('You fail to get away.','e');
  }
@@ -3199,7 +3199,7 @@ const bar=(cur,max,cls)=>`<div class="bar ${cls}"><i style="width:${clamp(cur/ma
 const btn=(label,act,p,cls,dis,sub)=>`<button class="btn ${cls||''}" data-a="${act}" ${p!==undefined?`data-p="${p}"`:''} ${dis?'disabled':''}>${label}${sub?`<small>${sub}</small>`:''}</button>`;
 function logHtml(arr,n){return `<div class="log" id="log">${arr.slice(-n).map(l=>`<div class="${l.c}">${l.t}</div>`).join('')}</div>`;}
 function itemRow(it,extra){
- const a=Object.keys(it.st).slice(0,4).map(k=>statLine(k,it.st[k])).join(' · ');
+ const a=Object.keys(it.st).slice(0,4).map(k=>statLine(k,it.st[k])).join(' · ')+trTag(it);
  return `<div class="item" data-a="open" data-p="${it.id}"><div><div class="n">${SLOT_ICON[it.slot]} ${rarName(it)}</div><div class="s">Lv ${it.il} · ${a}</div></div><div class="s">${extra||''}</div></div>`;
 }
 
@@ -3335,7 +3335,7 @@ const VIEWS={
   let t=`<h1>🛒 Market</h1><p class="mut">💰 <b>${fmt(w.gold)}</b></p><h2>Potions</h2>`;
   Object.keys(POTS).forEach(k=>{t+=btn(`${POTS[k].n} <span class="tag">own ${w.pots[k]}</span>`,'buyPot',k,'',w.gold<potPrice(k),`${potPrice(k)}g · heals ${Math.round(POTS[k].pct*100)}%`);});
   t+=`<h2>Today's gear</h2><p class="sm mut">Restocks each morning.</p>`;
-  t+=w.shop.length?w.shop.map((it,i)=>`<div class="item" data-a="shopView" data-p="${i}"><div><div class="n">${SLOT_ICON[it.slot]} ${rarName(it)}</div><div class="s">Lv ${it.il} · ${Object.keys(it.st).slice(0,3).map(k=>statLine(k,it.st[k])).join(' · ')}</div></div><div class="s" style="color:var(--acc)">${it.price}g</div></div>`).join(''):'<p class="mut sm">Sold out.</p>';
+  t+=w.shop.length?w.shop.map((it,i)=>`<div class="item" data-a="shopView" data-p="${i}"><div><div class="n">${SLOT_ICON[it.slot]} ${rarName(it)}</div><div class="s">Lv ${it.il} · ${Object.keys(it.st).slice(0,3).map(k=>statLine(k,it.st[k])).join(' · ')+trTag(it)}</div></div><div class="s" style="color:var(--acc)">${it.price}g</div></div>`).join(''):'<p class="mut sm">Sold out.</p>';
   return t+'<div style="height:8px"></div>'+btn('← Back to town','go','town','c');
  },
  library(){
@@ -3386,7 +3386,7 @@ function modalHtml(){
   const it=f.it,cur=S.hero.equip[it.slot],d=score(it)-score(cur);
   inner=`<h3 style="font-size:18px;margin:0">${SLOT_ICON[it.slot]} ${rarName(it)}</h3><div class="mut sm">${RAR[it.rar].n} ${it.slot} · Item Lv ${it.il} · Needs Lv ${it.req}</div>
   <p class="mut sm" style="margin:4px 0"><i>“${itemQuip(it)}”</i></p>
-  <div class="card">${Object.keys(it.st).map(k=>`<div>${statLine(k,it.st[k])}</div>`).join('')}${it.sp?`<p style="color:var(--acc)">★ ${SPECIAL[it.sp]}</p>`:''}${it.lore?`<p class="mut sm"><i>${esc(it.lore)}</i></p>`:''}</div>
+  <div class="card">${Object.keys(it.st).map(k=>`<div>${statLine(k,it.st[k])}</div>`).join('')}${trLines(it)}${it.sp?`<p style="color:var(--acc)">★ ${SPECIAL[it.sp]}</p>`:''}${it.lore?`<p class="mut sm"><i>${esc(it.lore)}</i></p>`:''}</div>
   ${f.where==='inv'&&cur?`<p class="sm">vs. equipped: <b class="${d>=0?'up':'dn'}">${d>=0?'▲ +':'▼ '}${d}</b> rating</p>`:''}`;
   inner+=f.where==='inv'?btn('Equip','equip',it.id,'pri c',S.hero.lvl<it.req,S.hero.lvl<it.req?'Requires level '+it.req:'')+'<div style="height:6px"></div>'+`<div class="grid">${btn('Sell '+sellVal(it)+'g','sell',it.id,'c')}${btn('Salvage','salvage',it.id,'c',false,'→ materials')}</div>`
    :btn('Unequip','unequip',it.id,'c');
@@ -3540,7 +3540,7 @@ VIEWS.dungeon=function(){
   const e=r.e,dn=danger(e);
   t+=`<h3 style="display:flex;align-items:center;gap:8px">${monIcon(e,52)} <span>${esc(e.name)}</span> <span class="tag">Lv ${e.lvl}</span></h3><p>Danger: <b style="color:${dn[1]}">${dn[0]}</b> <span class="skull">${'💀'.repeat(dn[2])}</span></p>${r.t==='key'?'<p class="mut sm">It guards the key to the boss door.</p>':''}${r.t==='boss'?'<p class="dn sm">No escape once the fight begins.</p>':''}<div class="grid">${btn('⚔️ Fight','dgFight',undefined,'pri c')}${retreat||'<div></div>'}</div>`;
  }else if((r.t==='treasure'||r.t==='vault')&&!r.d){
-  t+=`<h3>${r.t==='vault'?'💎 Secret Vault':'📦 Chest'}</h3><p class="mut sm">${hasSpecial('delver')?(r.tr?'🏮 Your lantern shows: trapped.':'🏮 Your lantern shows: safe.'):'It might be trapped. It might bite.'}</p>
+  t+=`<h3>${r.t==='vault'?'💎 Secret Vault':'📦 Chest'}</h3><p class="mut sm">${(hasSpecial('delver')||trN('trapsense'))?(r.tr?'🏮 Your lantern shows: trapped.':'🏮 Your lantern shows: safe.'):'It might be trapped. It might bite.'}</p>
   ${btn('Open it','dgChest','open','pri')}<div style="height:6px"></div><div class="grid">${btn('Pick the lock','dgChest','pick','c',false,`AGI ${chkChance('agi',1,D.lvl)}%`)}${btn('Smash it','dgChest','smash','c',false,`STR ${chkChance('str',0,D.lvl)}% · worse loot`)}</div>`;
  }else if(r.t==='trap'&&!r.d){
   const tp=TRAPS[r.tp];
@@ -5745,7 +5745,7 @@ function fenceStock(){
 VIEWS.fence=function(){
  const w=S.world,st=fenceStock();
  let s=`<h1>🕶️ The Fence</h1><p class="mut">A shop with no sign, no windows, and a very polite man who does not have a name. Cheap goods. Some of them are warmer than others.</p><p class="sm mut">💰 ${fmt(w.gold)}g · Hot goods can be taken by the guards when you enter a town. Pay to have them cleaned.</p><h2>For sale</h2>`;
- s+=st.length?st.map((it,i)=>`<div class="item" data-a="shopViewF" data-p="${i}"><div><div class="n">${SLOT_ICON[it.slot]} ${rarName(it)}${it.hot?' 🔥':''}</div><div class="s">Lv ${it.il} · ${Object.keys(it.st).slice(0,3).map(k=>statLine(k,it.st[k])).join(' · ')}</div></div><div style="width:92px">${btn(fmt(it.price)+'g','fenceBuy',i,'c',w.gold<it.price)}</div></div>`).join(''):'<p class="mut sm">Nothing today. Come back later.</p>';
+ s+=st.length?st.map((it,i)=>`<div class="item" data-a="shopViewF" data-p="${i}"><div><div class="n">${SLOT_ICON[it.slot]} ${rarName(it)}${it.hot?' 🔥':''}</div><div class="s">Lv ${it.il} · ${Object.keys(it.st).slice(0,3).map(k=>statLine(k,it.st[k])).join(' · ')+trTag(it)}</div></div><div style="width:92px">${btn(fmt(it.price)+'g','fenceBuy',i,'c',w.gold<it.price)}</div></div>`).join(''):'<p class="mut sm">Nothing today. Come back later.</p>';
  s+=`<h2>Sell (60% of value, no questions)</h2>`;
  const inv=w.inv.slice(0,12);
  s+=inv.length?inv.map(it=>`<div class="item" style="cursor:default"><div><div class="n">${SLOT_ICON[it.slot]} ${rarName(it)}${it.hot?' 🔥':''}</div></div><div style="width:150px;display:flex;gap:6px">${it.hot?btn('Clean','fenceClean',it.id,'c',w.gold<Math.round(it.val*.15),Math.round(it.val*.15)+'g'):''}${btn(Math.round(it.val*.6)+'g','fenceSell',it.id,'c')}</div></div>`).join(''):'<p class="mut sm">Nothing in your pack.</p>';
@@ -6896,7 +6896,7 @@ VIEWS.pack=function(){
  <div class="sm mut" style="margin-top:8px">Sort</div><div class="chips2">${PSORT.map(x=>`<button class="chipb ${sort===x[0]?'on':''}" data-a="psort" data-p="${x[0]}">${x[1]}</button>`).join('')}</div>
  <div class="sm mut" style="margin-top:6px">Show</div><div class="chips2">${['all'].concat(SLOTS).map(x=>`<button class="chipb ${sl===x?'on':''}" data-a="pslot" data-p="${x}">${x==='all'?'All':cap1(x)}</button>`).join('')}</div>`;
  s+=inv.length?inv.map(it=>{
-  const d=upDiff(it),can=h.lvl>=it.req,a=Object.keys(it.st).slice(0,4).map(k=>statLine(k,it.st[k])).join(' · ');
+  const d=upDiff(it),can=h.lvl>=it.req,a=Object.keys(it.st).slice(0,4).map(k=>statLine(k,it.st[k])).join(' · ')+trTag(it);
   const mark=!can?`<span class="dn">Req Lv ${it.req}</span>`:h.equip[it.slot]?(d>0?`<span class="up">+${d} better</span>`:`<span class="mut">${d} vs worn</span>`):'<span class="up">empty slot</span>';
   return `<div class="item" data-a="open" data-p="${it.id}"><div><div class="n">${SLOT_ICON[it.slot]} ${rarName(it)}${it.lock?' <span class="tag">locked</span>':''}</div><div class="s">Lv ${it.il} · ${a}</div></div><div class="s" style="text-align:right">${mark}<br><button class="hb mutb" data-a="lock" data-p="${it.id}">${it.lock?'Unlock':'Lock'}</button></div></div>`;
  }).join(''):'<p class="mut sm">Nothing here.</p>';
@@ -7313,8 +7313,8 @@ const KEEPERS={
 Object.keys(KEEPERS).forEach(tn=>{const k=KEEPERS[tn];NPC_BY['kp_'+tn]={id:'kp_'+tn,n:k[0],role:k[1],ic:'',trait:k[2],teach:'m',like:'talk',intro:k[3],town:tn};});
 const keeper=()=>NPC_BY['kp_'+where()]||null;
 const keeperTier=()=>{try{const k=keeper();return k?npcTier(aff(k.id).a):0;}catch(e){return 0;}};
-function sellMult(){return ([1,1.03,1.06,1.1][keeperTier()]||1)+crewClerk();}
-const buyMult=()=>([1,.97,.94,.9][keeperTier()]||1)-crewClerk();
+function sellMult(){return ([1,1.03,1.06,1.1][keeperTier()]||1)+crewClerk()+.04*Math.min(1,trN('haggler'));}
+const buyMult=()=>([1,.97,.94,.9][keeperTier()]||1)-crewClerk()-.03*Math.min(1,trN('haggler'));
 const MKT_LINES=[
  'Business is steady. People always need boots.',
  'Prices follow the roads. When the roads are bad, everything costs more.',
@@ -9498,6 +9498,122 @@ function dressTavern(html){
  };
 });
 
+/* =====================================================================
+   Gear with a trick up its sleeve: utility traits on uncommon and better
+   pieces (a first strike, a second wind, cheaper haggling, kinder trap
+   chests, and more)
+   ===================================================================== */
+const GTRAITS={
+ opener:{n:'Opening Strike',sl:['weapon'],w:3,d:'Your first attack in a fight hits 35% harder.'},
+ finisher:{n:'Finisher',sl:['weapon'],w:3,d:'+25% damage against foes under 30% health.'},
+ siphon:{n:'Focus Siphon',sl:['weapon'],w:2,d:'Your basic attack gathers 1 extra Focus.'},
+ ambush:{n:'Ambusher',sl:['weapon','helm'],w:2,d:'You start every fight with 2 Focus.'},
+ secondwind:{n:'Second Wind',sl:['armor'],w:3,d:'Once a fight, dropping under 25% health restores 15% of your health.'},
+ steady:{n:'Steady Guard',sl:['armor'],w:2,d:'Guarding gathers 2 extra Focus.'},
+ padded:{n:'Padded',sl:['armor','boots'],w:2,d:'Trap damage in dungeons is cut by 30%.'},
+ keeneye:{n:'Keen Eye',sl:['helm'],w:2,d:'Regions become familiar 25% faster.'},
+ trapsense:{n:'Trapsense',sl:['helm','amulet'],w:2,d:'Chests show whether they are trapped.'},
+ scavenger:{n:'Scavenger',sl:['helm','ring'],w:2,d:'A kill leaves an extra material 20% of the time.'},
+ trailwise:{n:'Trailwise',sl:['boots'],w:3,d:'+1 maximum stamina.'},
+ quickfeet:{n:'Quick Feet',sl:['boots'],w:3,d:'+12% to slip away from a fight and to flee.'},
+ haggler:{n:'Haggler',sl:['ring'],w:3,d:'You buy for 3% less and sell for 4% more.'},
+ silver:{n:'Silver Tongue',sl:['ring','amulet'],w:2,d:'Conversations with companions earn +2 trust.'},
+ tonic:{n:'Apothecary\'s Charm',sl:['amulet'],w:3,d:'Healing potions restore 25% more.'},
+ lightsleeper:{n:'Light Sleeper',sl:['amulet','armor'],w:2,d:'Waking restores an extra 15% of your health.'},
+ scholar:{n:'Scholar\'s Habit',sl:['amulet','ring'],w:2,d:'Skills gain mastery 12% faster.'}
+};
+function trN(id){try{return SLOTS.filter(s=>{const it=S.hero.equip[s];return it&&it.tr&&it.tr.includes(id);}).length;}catch(e){return 0;}}
+const trTag=it=>it&&it.tr&&it.tr.length?' · ◆ '+it.tr.map(k=>GTRAITS[k]?GTRAITS[k].n:'').filter(Boolean).join(', '):'';
+const trLines=it=>it&&it.tr?it.tr.filter(k=>GTRAITS[k]).map(k=>`<p style="color:var(--acc);margin:4px 0">◆ <b>${GTRAITS[k].n}</b>: ${GTRAITS[k].d}</p>`).join(''):'';
+const trapMit=()=>trapMit()*(1-.3*Math.min(1,trN('padded')));
+// pieces roll a trait: uncommon sometimes, rare often, epic always (and sometimes two)
+{
+ const _g=genItem;
+ genItem=function(){
+  const it=_g.apply(this,arguments);
+  try{
+   if(it&&!it.leg&&!it.tr&&it.rar>=1){
+    const chance=[0,.15,.5,1][Math.min(3,it.rar)];
+    if(Math.random()<chance){
+     const pool=Object.keys(GTRAITS).filter(k=>GTRAITS[k].sl.includes(it.slot));
+     const first=wroll(pool.map(k=>GTRAITS[k].w));it.tr=[pool[first]];
+     if(it.rar>=3&&Math.random()<.35){const rest=pool.filter(k=>k!==pool[first]);if(rest.length)it.tr.push(rest[wroll(rest.map(k=>GTRAITS[k].w))]);}
+    }
+   }
+  }catch(e){}
+  return it;
+ };
+}
+// ---- the effects ----
+{
+ const _st=strike;
+ strike=function(mult,o){
+  o=o||{};const c=S.cb;
+  if(c&&c.e&&!o.noatt){
+   if(!c.opnDone){c.opnDone=1;if(trN('opener'))mult*=1+.35*Math.min(1,trN('opener'));}
+   if(c.e.hp<c.e.max*.3&&trN('finisher'))mult*=1+.25*Math.min(1,trN('finisher'));
+  }
+  return _st(mult,o);
+ };
+ const _sc=startCombat;
+ startCombat=function(){
+  _sc.apply(this,arguments);
+  try{if(S.cb&&trN('ambush'))S.cb.focus=Math.min(P().maxfocus,S.cb.focus+2*Math.min(2,trN('ambush')));}catch(e){}
+ };
+ const _pa=playerAct;
+ playerAct=function(type,arg){
+  const c=S.cb,had=c&&!c.over;
+  _pa.apply(this,arguments);
+  try{
+   if(had&&S.cb&&!S.cb.over){
+    if(type==='atk'&&trN('siphon'))S.cb.focus=Math.min(P().maxfocus,S.cb.focus+1);
+    if(type==='guard'&&trN('steady'))S.cb.focus=Math.min(P().maxfocus,S.cb.focus+2);
+   }
+  }catch(e){}
+ };
+ const _ap=afterPlayer;
+ afterPlayer=function(){
+  _ap.apply(this,arguments);
+  try{const c=S.cb,h=S.hero;
+   if(c&&!c.over&&h.hp>0&&trN('secondwind')&&!c.swUsed&&h.hp<P().maxhp*.25){c.swUsed=1;const n=healHero(Math.round(P().maxhp*.15));if(n)say(`🍃 A second wind steadies you. +${n} HP.`,'g');}
+  }catch(e){}
+ };
+ const _af=addFamiliarity;
+ addFamiliarity=function(zi,gain){return _af(zi,gain*(1+.25*Math.min(1,trN('keeneye'))));};
+ const _pt=ACT.pot;
+ ACT.pot=function(id){
+  const h=S.hero,b=h.hp;_pt.apply(this,arguments);
+  try{if(trN('tonic')&&h.hp>b){const x=healHero(Math.round((h.hp-b)*.25));if(x)note(`✨ The charm adds ${x} HP.`,'g');}}catch(e){}
+ };
+ const _sd=sleepDay;
+ sleepDay=function(){
+  _sd.apply(this,arguments);
+  try{if(S.screen!=='death'&&trN('lightsleeper')){const x=healHero(Math.round(P().maxhp*.15));if(x)note(`😴 You sleep lightly and well. +${x} HP.`,'g');}}catch(e){}
+ };
+ const _su=skillUse;
+ skillUse=function(id){
+  const h=S.hero;h.sx=h.sx||{};const b=h.sx[id]||0;
+  const r=_su.apply(this,arguments);
+  try{const n=trN('scholar');if(n){const d=(h.sx[id]||0)-b;if(d>0)h.sx[id]+=d*.12*Math.min(1,n);}}catch(e){}
+  return r;
+ };
+ const _ps=P;
+ P=function(){const p=_ps.apply(this,arguments);try{p.maxsta+=trN('trailwise');}catch(e){}return p;};
+ const _av=avoidChance;
+ avoidChance=function(e){return clamp(_av(e)+12*Math.min(1,trN('quickfeet')),30,97);};
+ const _vc=victory;
+ victory=function(){
+  const c=S.cb,e=c&&c.e;_vc.apply(this,arguments);
+  try{if(e&&trN('scavenger')&&Math.random()<.2&&S.res&&S.res.lines){const m=dropMat(e);S.world.mats[m]=(S.world.mats[m]||0)+1;S.res.lines.push(`🧶 +1 ${m} <span class="mut">(scavenger)</span>`);}}catch(x){}
+ };
+ const _cvt=ACT.cvch;
+ ACT.cvch=function(i){
+  const cv=S.cv,had=cv&&cv.res,m=cv&&S.world.meet[cv.id],b=m&&m.chat;
+  _cvt.apply(this,arguments);
+  try{if(cv&&cv.res&&!had&&trN('silver')&&m.chat>b){m.chat=Math.min(45,m.chat+2);cv.res.push('🗣️ Your silver tongue earns +2 more.');}}catch(e){}
+ };
+}
+
 /* ----- a slow start: bodies heal over days, not overnight, until you are properly seasoned ----- */
 const nightRecovery=()=>{const L=S.hero.lvl;return L>=8?1:Math.min(1,.38+.09*(L-1));};
 const _sleepDayRec=sleepDay;
@@ -9538,7 +9654,7 @@ VIEWS.train=function(){
  return s.replace(/(<\/p>)/,'$1'+card);
 };
 if(typeof document!=='undefined'&&typeof window!=='undefined'&&!window.__TQ_TEST){try{render();}catch(e){}}
-if(typeof window!=='undefined')window.TQ={statLine,rollRarity,rivalClaims,crewEvents,BOND_MOVE,storyDone,bondLvl,synOf,synGroups,pairsText,roleOf,slotCheck,slotUse,skKind,synLines,ATT,elemMastery,SKX,SKS,fxDesc,fxCost,learnTome,SK,castSkill,offerSkillChoice,skillPool,matPrice,UNLOCKS,checkUnlocks,showAnn,VIEWS,BOND,QS,qEvent,stepDone,qTalkChoose,STORIES,legacyLines,registerStories,compCard,applyOut,checkDeath,rankIdx,sleepDay,CREW,crewOf,crewLvl,rkTrialReady,trialReady,rankRaw,genRivals,popReward,forageZone,apprChance,DG,HAB,MONPIC,addXP,wroll,refreshShop,lvCap,rankName,rarGov,keeper,keeperTier,KPJ,makeHeir,lsUse,lsLvl,lsRec,slogHtml,ROUGH,cpic,hasFocus,hprice,nextStep,foldHtml,upDiff,reportText,tele,loadBackup,skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,rkTrialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
+if(typeof window!=='undefined')window.TQ={GTRAITS,trN,trTag,statLine,rollRarity,rivalClaims,crewEvents,BOND_MOVE,storyDone,bondLvl,synOf,synGroups,pairsText,roleOf,slotCheck,slotUse,skKind,synLines,ATT,elemMastery,SKX,SKS,fxDesc,fxCost,learnTome,SK,castSkill,offerSkillChoice,skillPool,matPrice,UNLOCKS,checkUnlocks,showAnn,VIEWS,BOND,QS,qEvent,stepDone,qTalkChoose,STORIES,legacyLines,registerStories,compCard,applyOut,checkDeath,rankIdx,sleepDay,CREW,crewOf,crewLvl,rkTrialReady,trialReady,rankRaw,genRivals,popReward,forageZone,apprChance,DG,HAB,MONPIC,addXP,wroll,refreshShop,lvCap,rankName,rarGov,keeper,keeperTier,KPJ,makeHeir,lsUse,lsLvl,lsRec,slogHtml,ROUGH,cpic,hasFocus,hprice,nextStep,foldHtml,upDiff,reportText,tele,loadBackup,skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,rkTrialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>
 </html>
