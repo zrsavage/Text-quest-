@@ -8613,13 +8613,17 @@ function slotUse(){const ks=slotSkills(),na=ks.filter(k=>skKind(k)==='atk').leng
 // supports do a job (more attack, more defense, a ward, healing...). Two supports with the same job are a wasted slot
 const SKJOB_HAND={cry:['ba'],iron:['bd'],brace:['bd'],mend:['hl'],dress:['hl','cl'],wind:['hl','fc'],thorn:['br'],roar:['wk'],fold:['fc','hl','cl'],feint:[]};
 function skJobs(id){
- if(!SK[id]||skKind(id)!=='sup')return[];
+ if(!SK[id])return[];
+ if(skKind(id)!=='sup'){ // an attack line: the same element and the same shape at different strengths (Dart, Bolt, Burst, Nova)
+  const f=SKX[id]&&SKX[id].fx;if(!f)return[];
+  return['a:'+[f.M?'M':'p',f.n>1?'x'+(f.n>3?4:f.n):'x1',...Object.keys(f).filter(k=>!['d','n','M'].includes(k)).sort(),'|',...(SKT[id]||[])].join(' ')];
+ }
  if(ATT[id])return['att'];
  let j=SKX[id]?['ba','bd','br','wk','hl','fc','cl'].filter(x=>SKX[id].fx[x]):(SKJOB_HAND[id]||[]);
  if(j.length>1)j=j.filter(x=>x!=='cl');
  return j;
 }
-const SKJOBN={ba:'raise attack',bd:'raise defense',br:'raise a ward',wk:'weaken the foe',hl:'heal',fc:'gather Focus',cl:'cleanse',att:'attune an element'};
+const SKJOBN={a:'strike the same way',ba:'raise attack',bd:'raise defense',br:'raise a ward',wk:'weaken the foe',hl:'heal',fc:'gather Focus',cl:'cleanse',att:'attune an element'};
 // the held skill that does the same job, if any
 function skClash(id){
  const j=skJobs(id);if(!j.length)return null;
@@ -8656,7 +8660,7 @@ learnTome=function(zi){
  const _bt=ACT.buyTome,_sp=ACT.skpick;
  ACT.buyTome=function(id){
   const h=S.hero,w=S.world,l=h.skills[id]||0;
-  if(!l){const c=slotCheck(id);if(c&&c.clash&&!c.upg){note(`${SK[id].n} and ${SK[c.clash].n} both ${SKJOBN[skClashJob(id,c.clash)]||'do the same thing'}. You only need one.`,'e');return;}}
+  if(!l){const c=slotCheck(id);if(c&&c.clash&&!c.upg){note(`${SK[id].n} and ${SK[c.clash].n} both ${String(skClashJob(id,c.clash)).startsWith('a:')?'strike the same way':(SKJOBN[skClashJob(id,c.clash)]||'do the same thing')}. You only need one.`,'e');return;}}
   if(!l&&slotCheck(id)){const pr=tomePrice(id,0);if(w.gold<pr){note('Not enough gold.','e');return;}S.modal={t:'skreplace',id,pay:pr,src:'the Library'};return;}
   return _bt.call(this,id);
  };
@@ -9826,7 +9830,7 @@ function dedupeSkills(){
  for(const a of ks){
   if(!h.skills[a])continue;
   const b=skClash(a);if(!b||!h.skills[b])continue;
-  const sc=k=>h.skills[k]*100+(SK[k].t||0)*10+((h.sx&&h.sx[k])||0)/100;
+  const sc=k=>(SK[k].t||0)*1000+h.skills[k]*10+((h.sx&&h.sx[k])||0)/100;
   const keep=sc(a)>=sc(b)?a:b,drop=keep===a?b:a,dn=SK[drop].n;
   delete h.skills[drop];if(h.sx)delete h.sx[drop];if(h.su)delete h.su[drop];if(h.skReady)delete h.skReady[drop];
   try{note(`${dn} did the same job as ${SK[keep].n}, so you only keep the better one.`,'y');}catch(e){}
@@ -9835,6 +9839,20 @@ function dedupeSkills(){
 {
  const _r=render;
  render=function(){try{dedupeSkills();}catch(e){}return _r.apply(this,arguments);};
+}
+/* ----- a quest that asks for a material makes it turn up more often where it belongs ----- */
+{
+ const _dm=dropMat;
+ dropMat=function(e){
+  const m=_dm.apply(this,arguments);
+  try{
+   const h=S.hero,w=S.world;if(!h||!h.q)return m;
+   const want=[];
+   for(const id in h.q){const st=QS[id]&&QS[id].steps[h.q[id].s];if(st&&st.k==='gather'&&(w.mats[st.m]||0)<st.n&&MT[st.m]===e.zi)want.push(st.m);}
+   if(want.length&&Math.random()<.3)return pick(want);
+  }catch(x){}
+  return m;
+ };
 }
 /* ----- a slow start: bodies heal over days, not overnight, until you are properly seasoned ----- */
 const nightRecovery=()=>{const L=S.hero.lvl;return L>=8?1:Math.min(1,.38+.09*(L-1));};

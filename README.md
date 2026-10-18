@@ -315,3 +315,7 @@ Supports now have a job (raise attack, raise defense, a ward, weaken, heal, gath
 
 ## Skills rename as they rank up
 Each time a skill breaks through (Lv 3, 5, 7, 9) it takes a new name. Supports follow a ladder for their job (Battle Cry → Rousing Cry → Battle Hymn → War Chant → Warlord's Roar); attacks gain a prefix (Honed, Tempered, Veteran, Mythic). Attack and defense buffs now grow to four times their starting strength by Lv 10 (Rally 25% → 100%).
+
+## Attack lines and quest materials
+- Attacks of the same element and shape (Frost Dart → Bolt → Burst → Nova) are now one line: hold one, and a stronger tier offers to replace it. Existing saves keep the higher-tier one.
+- A quest that asks you to bring a material makes it drop more often from kills in the zone where it belongs.
