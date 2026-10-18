@@ -95,6 +95,15 @@ body[data-theme=parchment]{--bg:#1c1812;--panel:#2b251b;--panel2:#382f22;--line:
 .gdear{border-color:color-mix(in srgb,#ff9a3c 55%,var(--line))!important;background:linear-gradient(150deg,color-mix(in srgb,#ff9a3c 12%,var(--panel)),var(--panel))!important}
 .ftile{border-color:color-mix(in srgb,#7fd65f 45%,var(--line))!important;background:linear-gradient(150deg,color-mix(in srgb,#7fd65f 14%,var(--panel)),var(--panel))!important}
 .ftile .btn{border-color:#7fd65f;color:#9be57f}
+#wheelov{position:fixed;inset:0;z-index:70;background:rgba(5,7,12,.82);display:flex;align-items:center;justify-content:center;animation:fadein .2s ease}
+#wheelov .wbox{width:min(88vw,340px);text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:18px 16px 16px;box-shadow:0 0 40px -10px #000}
+#wheelov .wt{font-family:"Pirata One","MedievalSharp",var(--fh,serif);font-size:1.6rem;color:var(--acc);line-height:1.1}
+#wheelov .wo{font-size:.85rem;margin:6px 0 10px}
+#wheelov .wwrap{position:relative;width:min(70vw,250px);margin:0 auto}
+#wheelov .wsvg{width:100%;display:block}
+#wheelov .wptr{position:absolute;left:50%;top:-6px;margin-left:-10px;border-left:10px solid transparent;border-right:10px solid transparent;border-top:20px solid #f0b94a;filter:drop-shadow(0 2px 2px rgba(0,0,0,.6))}
+#wheelov .wres{margin-top:12px;min-height:1.6em;font-weight:700;font-size:1.2rem;color:var(--mut)}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
 h1{font-size:1.375rem;margin:4px 0 2px}h2{font-size:1.0625rem;margin:16px 0 6px;color:var(--acc)}h3{font-size:0.9375rem;margin:10px 0 4px}
 p{margin:6px 0}.mut{color:var(--mut)}.sm{font-size:0.8125rem}.c{text-align:center}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0}
@@ -1759,14 +1768,14 @@ Object.assign(ACT,{
    if(c.cost.pot){if(!w.pots[c.cost.pot]){note('You have none.','e');return;}w.pots[c.cost.pot]--;}
   }
   let o;
-  if(c.chk){o=Math.random()*100<chkChance(c.chk.s,c.chk.d,L)?c.ok:c.no;}
+  if(c.chk){o=oddsRoll(chkChance(c.chk.s,c.chk.d,L))?c.ok:c.no;}
   else if(Array.isArray(c.o)){o=c.o[wroll(c.o.map(x=>x[0]))][1];}
   else o=c.o;
   const lines=applyOut(o,zi,E.q);
   ev.res={lines,fight:o.fight||null};
  },
  evfight(){const ev=S.ev,k=ev.res&&ev.res.fight;const e=ev.kind==='fight'?ev.e:makeEnemy(ev.zi,false,k==='e');S.ev=null;startCombat(e,false,{type:'ev',zi:ev.zi,free:true,hunt:ev.hunt});},
- evslip(){const ev=S.ev;if(Math.random()*100<chkChance('agi',0,lvlRef(ev.zi))){note('You slip away unseen.');S.ev=null;S.screen='hunt';}else{S.ev.slipFail=true;}},
+ evslip(){const ev=S.ev;if(oddsRoll(chkChance('agi',0,lvlRef(ev.zi)))){note('You slip away unseen.');S.ev=null;S.screen='hunt';}else{S.ev.slipFail=true;}},
  evdone(){
   const ev=S.ev;S.ev=null;
   if(ev&&ev.dgroom!=null&&S.dg){S.dg.rooms[ev.dgroom].d=1;S.screen='dungeon';}
@@ -1802,8 +1811,8 @@ Object.assign(ACT,{
   const dg=S.dg,r=dgRoom(),D=getD(dg.id);if(r.d||r.opened)return;
   const L=D.lvl;let trap=r.tr,smash=false;const vault=r.t==='vault';
   const lines=[];
-  if(mode==='pick'){if(Math.random()*100<chkChance('agi',1,L)+partyPass('pick')*100){trap=false;lines.push('🔓 You deftly pick the lock.');}else lines.push('🔧 The lock fights back.');}
-  if(mode==='smash'){if(Math.random()*100<chkChance('str',0,L)){trap=false;smash=true;lines.push('💥 You smash the chest open. Something inside breaks.');}else{trap=r.tr;lines.push('💥 The chest holds. You hurt your hands.');const d=trapHit(.25);lines.push(`💔 −${d} HP`);}}
+  if(mode==='pick'){if(oddsRoll(chkChance('agi',1,L)+partyPass('pick')*100)){trap=false;lines.push('🔓 You deftly pick the lock.');}else lines.push('🔧 The lock fights back.');}
+  if(mode==='smash'){if(oddsRoll(chkChance('str',0,L))){trap=false;smash=true;lines.push('💥 You smash the chest open. Something inside breaks.');}else{trap=r.tr;lines.push('💥 The chest holds. You hurt your hands.');const d=trapHit(.25);lines.push(`💔 −${d} HP`);}}
   if(r.mm){r.t='elite';r.e=buildDgEnemy(D,'elite',{mimic:true});dgSay([...lines,'🦷 <b>It is a mimic!</b>']);return;}
   if(trap){const d=trapHit(1);lines.push(`⚠️ A trap springs! −${d} HP`);}
   lines.push(...chestLoot(D,vault,smash));
@@ -1813,8 +1822,8 @@ Object.assign(ACT,{
  dgTrap(mode){
   const dg=S.dg,r=dgRoom(),D=getD(dg.id),L=D.lvl;if(r.d)return;
   let ok,lines=[];
-  if(mode==='dodge')ok=Math.random()*100<chkChance('agi',0,L);
-  else if(mode==='disarm')ok=Math.random()*100<chkChance('int',1,L)+partyPass('disarm')*100;
+  if(mode==='dodge')ok=oddsRoll(chkChance('agi',0,L));
+  else if(mode==='disarm')ok=oddsRoll(chkChance('int',1,L)+partyPass('disarm')*100);
   else{ok=true;const d=trapHit(.5);lines.push(`🛡️ You power through. −${d} HP`);}
   if(mode!=='brace'){if(ok)lines.push('✅ You get past safely.');else{const d=trapHit(1);lines.push(`💥 You trigger it! −${d} HP`);}}
   const x=Math.round((10+L*3.2)*.5*catchMult());lines.push(`✨ +${x} XP`);lines.push(...addXP(x));
@@ -2287,7 +2296,7 @@ function playerAct(type,arg){
  else if(type==='flee'){
   if(c.boss){say('You cannot flee from a boss.','e');return;}
   const ch=hasSpecial('runner')?100:clamp(45+p.st.agi*.6-e.lvl*.4+12*Math.min(1,trN('quickfeet')),15,90);
-  if(Math.random()*100<ch){c.over=true;fleeOK();return;}
+  if(oddsRoll(ch)){c.over=true;fleeOK();return;}
   say('You fail to get away.','e');
  }
  afterPlayer();
@@ -2616,8 +2625,8 @@ Object.assign(ACT,{
  cxopen(n){S.cxo=S.cxo===n?null:n;},
  avoid(){
   const en=S.enc,e=en.e,h=S.hero,p=P();
-  const ch=en.boss?100:clamp(78+(h.lvl-e.lvl)*4+(p.st.agi-10)*.3+bgv('slip')+weatherSlip(),30,95);
-  if(Math.random()*100<ch){S.enc=null;S.screen='hunt';note(`You slip away from ${e.name}.`);}
+  const ch=en.boss?100:avoidChance(e);
+  if(oddsRoll(ch)){S.enc=null;S.screen='hunt';note(`You slip away from ${e.name}.`);}
   else{S.enc=null;note(`${e.name} spots you!`,'e');startCombat(e,en.boss,{type:'hunt',ambush:true});}
  }
 });
@@ -5060,7 +5069,7 @@ Object.assign(ACT,{
   const tr=S.trip,h=S.hero,p=P();if(!tr||!tr.pend||tr.pend.k!=='toll')return;
   const ch=clamp(.25+p.int*.006+p.st.agi*.004+lsLvl('bluff')*.008,.2,.8);
   tr.pend=null;
-  if(Math.random()<ch){tr.lines=['😎 You explain, loudly and with great detail, that the toll was paid by someone else. They are not sure who. They let you go, confused.'];}
+  if(oddsRoll(ch*100)){tr.lines=['😎 You explain, loudly and with great detail, that the toll was paid by someone else. They are not sure who. They let you go, confused.'];}
   else{const e=makeEnemyHab(routeHab(),false);tr.lines=['😬 They did not buy it.'];tr.stage='night';startCombat(e,false,{type:'loc',free:true,ret:'trip'});}
  },
  tripFight(){const tr=S.trip;if(!tr||!tr.pend||tr.pend.k!=='toll')return;tr.pend=null;const e=makeEnemyHab(routeHab(),false);tr.stage='night';startCombat(e,false,{type:'loc',free:true,ret:'trip'});},
@@ -9652,6 +9661,65 @@ function bossify(e){
  const _bd=buildDgEnemy;buildDgEnemy=function(){return bossify(_bd.apply(this,arguments));};
  const _mh=makeEnemyHab;makeEnemyHab=function(){return bossify(_mh.apply(this,arguments));};
  const _de=delveEnemy;delveEnemy=function(){return bossify(_de.apply(this,arguments));};
+}
+
+/* =====================================================================
+   The odds wheel: when you gamble on a roll you can see, a wheel shows
+   your chances in 5% slices and spins for two seconds to decide it
+   ===================================================================== */
+function oddsRoll(pct){
+ if(typeof window!=='undefined'&&window.__forced!=null){const r=window.__forced;window.__forced=null;return r;}
+ return Math.random()*100<pct;
+}
+function wheelSlices(k){
+ let s='';const R=100;
+ for(let i=0;i<20;i++){
+  const a0=(i*18-90)*Math.PI/180,a1=((i+1)*18-90)*Math.PI/180;
+  const x0=(R*Math.cos(a0)).toFixed(2),y0=(R*Math.sin(a0)).toFixed(2),x1=(R*Math.cos(a1)).toFixed(2),y1=(R*Math.sin(a1)).toFixed(2);
+  s+=`<path d="M0 0L${x0} ${y0}A${R} ${R} 0 0 1 ${x1} ${y1}Z" fill="${i<k?'#3fae6a':'#b8403f'}" stroke="#0b0e14" stroke-width="1.5"/>`;
+ }
+ return s;
+}
+function spinWheel(title,pct,cont){
+ const k=clamp(Math.round(pct/5),1,19),shown=k*5;
+ const win=Math.random()*20<k;
+ const lo=win?3:k*18+3,hi=win?k*18-3:357,theta=lo+Math.random()*(hi-lo);
+ const old=document.getElementById('wheelov');if(old)old.remove();
+ const el=document.createElement('div');el.id='wheelov';
+ el.innerHTML=`<div class="wbox"><div class="wt">${esc(title)}</div><div class="wo"><b style="color:#5fd38d">Success ${shown}%</b> · <b style="color:#ff6b6b">Failure ${100-shown}%</b></div><div class="wwrap"><svg viewBox="-104 -104 208 208" class="wsvg"><g id="wrot" style="transform-origin:0 0;transition:transform 2s cubic-bezier(.12,.62,.12,1)">${wheelSlices(k)}</g><circle r="9" fill="#0b0e14" stroke="#cfd6e4" stroke-width="2"/></svg><div class="wptr"></div></div><div class="wres" id="wres">Spinning...</div></div>`;
+ document.body.appendChild(el);
+ window.__wheelBusy=true;
+ requestAnimationFrame(()=>requestAnimationFrame(()=>{const g=document.getElementById('wrot');if(g)g.style.transform=`rotate(${1440-theta}deg)`;}));
+ try{if(typeof sfx==='function')sfx('tick');}catch(e){}
+ setTimeout(()=>{
+  const r=document.getElementById('wres');if(r){r.textContent=win?'Success!':'Failure';r.style.color=win?'#5fd38d':'#ff6b6b';}
+  setTimeout(()=>{el.remove();window.__wheelBusy=false;cont(win);},850);
+ },2050);
+}
+// each rolled action asks the wheel first, then runs with the wheel's answer
+function withWheel(name,pctFn,titleFn){
+ const orig=ACT[name];if(typeof orig!=='function')return;
+ ACT[name]=function(){
+  const args=arguments;
+  if(typeof document==='undefined'||window.__wheelBusy)return;
+  if(typeof navigator!=='undefined'&&navigator.webdriver&&!window.__wheelTest)return orig.apply(this,args);
+  let pct=null,title='';try{pct=pctFn.apply(null,args);title=titleFn?titleFn.apply(null,args):'';}catch(e){pct=null;}
+  if(pct==null||!(pct>0)||pct>=100)return orig.apply(this,args);
+  const self=this;
+  spinWheel(title||'Try your luck',pct,win=>{window.__forced=win;try{orig.apply(self,args);}finally{window.__forced=null;}try{render();}catch(e){}});
+ };
+}
+{
+ const dgL=()=>getD(S.dg.id).lvl;
+ withWheel('dgChest',mode=>{const r=dgRoom();if(r.d||r.opened)return null;const L=dgL();return mode==='pick'?chkChance('agi',1,L)+partyPass('pick')*100:mode==='smash'?chkChance('str',0,L):null;},mode=>mode==='pick'?'Pick the lock':'Smash the chest');
+ withWheel('dgTrap',mode=>{const L=dgL();return mode==='dodge'?chkChance('agi',0,L):mode==='disarm'?chkChance('int',1,L)+partyPass('disarm')*100:null;},mode=>mode==='dodge'?'Dodge the trap':'Disarm the trap');
+ withWheel('evch',i=>{const ev=S.ev;if(!ev||ev.res)return null;const c=ev.def.ch[+i];if(!c||!c.chk)return null;const L=lvlRef(ev.zi),u=10+L*3,w=S.world;
+   if(c.cost){if(c.cost.gold&&w.gold<Math.round(c.cost.gold*u))return null;if(c.cost.pot&&!w.pots[c.cost.pot])return null;}
+   return chkChance(c.chk.s,c.chk.d,L);},i=>{const c=S.ev.def.ch[+i];return (c.l||'A test of skill')+' ('+c.chk.s.toUpperCase()+')';});
+ withWheel('evslip',()=>chkChance('agi',0,lvlRef(S.ev.zi)),()=>'Slip away unseen');
+ withWheel('avoid',()=>{const en=S.enc;if(!en||en.boss||!en.e)return null;return avoidChance(en.e);},()=>'Slip away');
+ withWheel('flee',()=>{const c=S.cb;if(!c||c.boss||c.over)return null;const p=P(),e=c.e;if(hasSpecial('runner'))return null;return clamp(45+p.st.agi*.6-e.lvl*.4+12*Math.min(1,trN('quickfeet')),15,90);},()=>'Flee the fight');
+ withWheel('tripBluff',()=>{const tr=S.trip;if(!tr||!tr.pend||tr.pend.k!=='toll')return null;const p=P();return 100*clamp(.25+p.int*.006+p.st.agi*.004+lsLvl('bluff')*.008,.2,.8);},()=>'Bluff past the toll');
 }
 /* ----- a slow start: bodies heal over days, not overnight, until you are properly seasoned ----- */
 const nightRecovery=()=>{const L=S.hero.lvl;return L>=8?1:Math.min(1,.38+.09*(L-1));};
