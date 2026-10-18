@@ -3451,7 +3451,7 @@ VIEWS.town=function(){
   ${hu?btn('🍺 Tavern','go','tavern','',false,'Food, drink, gossip'):''}
   ${hu?btn('🚚 Tinker\'s Wagon','go','tinker','',false,'Scrap → random loot'):''}
   ${w.anc.length?btn('⚰️ Family Crypt','go','crypt','',!hu,'Face your ancestors'):''}
-  ${hu&&(S.world.estate.deed||S.hero.lvl>=3)?btn('🏡 Estate','go','estate','',false,S.world.estate.deed?HOME[estLv('home')].n+(S.world.estate.vault.gold||S.world.estate.vault.items.length?' · goods waiting':''):'Land of your own, for a price'):''}
+  ${hu&&(S.world.estate.deed||S.world.estate.seen)?btn('🏡 Estate','go','estate','',false,S.world.estate.deed?HOME[estLv('home')].n+(S.world.estate.vault.gold||S.world.estate.vault.items.length?' · goods waiting':''):'Land of your own, for a price'):''}
   ${abyssOpen()&&hu?(S.dl?btn('🌀 Abyss Stair','go','delve','pri',false,'Resume your descent'):btn('🌀 Abyss Stair','delveStart',undefined,'',h.sta<2||!!S.dg,`2⚡ · endless · best floor ${w.delve.best||0}`)):''}
  </div>
  <div style="margin-top:10px">${btn('🛏️ Sleep until morning','sleep',undefined,'good',!!S.dg,S.dg?'Leave the dungeon first':'Restore HP & stamina · next day · refreshes shop/board')}</div>
@@ -9895,6 +9895,7 @@ const temperCost=it=>Math.round((60+(it.il||1)*14)*Math.pow(1.9,it.tp||0));
   try{const h=S.hero;let worst=null;
    SLOTS.forEach(sl=>{const it=h.equip[sl];if(!it)return;const d=WEAR[sl]*(Math.random()<.5?1.5:.5);const before=condOf(it);it.cn=Math.max(0,Math.round((before-d)*10)/10);
     if(before>=25&&it.cn<25||before>=10&&it.cn<10)worst=it;});
+   if(!S.world.forgeSeen&&SLOTS.some(sl=>h.equip[sl]&&condOf(h.equip[sl])<75)){S.world.forgeSeen=true;note('🔨 Your gear is showing its age. Someone in the Market is hammering metal: the smith there takes work. (The Forge, in the Market.)','y');}
    if(worst)note(`Your ${esc(worst.name)} is badly worn and no longer does its job. The smith can mend it (Market, The Forge).`,'e');
   }catch(e){}
   return r;
@@ -9923,7 +9924,7 @@ const temperCost=it=>Math.round((60+(it.il||1)*14)*Math.pow(1.9,it.tp||0));
    }).join('');
    let rt=0;SLOTS.forEach(sl=>{if(h.equip[sl])rt+=repairCost(h.equip[sl]);});
    const inner=`${btn('Mend everything you wear','repairAll',undefined,rt?'good c':'c',!rt||w.gold<rt,rt?fmt(rt)+'g':'nothing needs mending')}<p class="mut sm">Gear wears with every fight, and worn gear does less. </p><p class="mut sm">The smith will not make you a new blade, but he can make yours better. Each tempering adds ${Math.round(TEMPER_PCT*100)}% to everything on a worn piece, and costs more each time. You can carry ${mx} tempering${mx===1?'':'s'} per piece at your level, and it goes with the piece, so an heir inherits it.</p>${rows||'<p class="mut sm">You wear nothing worth working on.</p>'}`;
-   t+=foldShut('forge','<h2>🔨 The Forge</h2>',inner);
+   if(w.forgeSeen)t+=foldShut('forge','<h2>🔨 The Forge</h2>',inner);
   }catch(e){}
   return t;
  };
@@ -9974,6 +9975,28 @@ BIZ.unshift(
      note(`🛠️ Your workbench turned out a piece of gear. (-${fee}g for tools)`);
     }
    }
+  }catch(e){}
+ };
+}
+/* ----- the estate office and the forge are found, not announced ----- */
+{
+ const _w=ACT.walk;
+ ACT.walk=function(){
+  const h0=S.hero,E=S.world.estate,d0=h0&&h0.walkDay;
+  _w.apply(this,arguments);
+  try{
+   const h=S.hero;if(!h||h.walkDay===d0)return;
+   if(E&&!E.deed&&!E.seen&&h.lvl>=3&&Math.random()<.35){E.seen=true;note('🪧 By the town wall a clerk is hammering in a sign: plots of land for sale. The Estate office is open to anyone with the coin.','y');}
+   else if(!S.world.forgeSeen&&h.lvl>=4&&Math.random()<.25){S.world.forgeSeen=true;note('🔨 Behind the market stalls a smith works a hot forge, and will temper and mend gear for coin. (The Forge, in the Market.)','y');}
+  }catch(e){}
+ };
+ const _sd=sleepDay;
+ sleepDay=function(){
+  _sd.apply(this,arguments);
+  try{
+   const h=S.hero,E=S.world.estate;
+   if(E&&!E.deed&&!E.seen&&h.lvl>=5&&Math.random()<.15){E.seen=true;note('🪧 A notice on the guild door: the mayor\'s clerk is selling plots by the town wall.','y');}
+   if(!S.world.forgeSeen&&h.lvl>=6&&Math.random()<.15){S.world.forgeSeen=true;note('🔨 A smith has set up a forge in the Market. He tempers and mends gear.','y');}
   }catch(e){}
  };
 }

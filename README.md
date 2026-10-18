@@ -330,3 +330,6 @@ A fold in the Market. Gold tempers a worn piece: +6% to every stat on it per tem
 ## An early place of your own
 - From level 3 the Estate is in town even without the mayor's deed. The clerk sells a plot for 300g (the Safe Roads quest still grants one free). The Cabin now needs only 4 contracts and 6 days.
 - Three early businesses on the bare plot: Foraging Shed (120g, materials), Snare Line (220g, creature parts), Workbench (350g, level 4: 5 materials plus a tool fee make a piece of gear). The plot's vault holds 5 days of goods.
+
+## Found, not announced
+The Estate office and the Forge no longer appear on their own. The estate shows after you notice the land-for-sale sign (a street wander from level 3, or a guild notice from level 5). The Forge shows after you see the smith (a street wander from level 4, a notice from level 6, or the first time your gear wears below 75%). The clue appears in Recent events, not as a pop-up. Existing estate owners are unaffected.
