@@ -61,6 +61,8 @@ body[data-theme=parchment]{--bg:#1c1812;--panel:#2b251b;--panel2:#382f22;--line:
 .ptile .pd{font-size:.78rem;color:var(--tx);opacity:.82;line-height:1.3}
 .ptile .ps{font-size:.72rem;color:var(--mut);margin-top:auto}
 .ptile:active{filter:brightness(1.25)}
+.ptile.static{cursor:default;min-height:110px}
+.ptile.gear{min-height:118px}
 /* town pages */
 .pbanner{display:flex;align-items:center;gap:14px;padding:16px;margin:2px 0 12px;border-radius:18px;border:1px solid color-mix(in srgb,var(--tc) 50%,var(--line));background:linear-gradient(135deg,color-mix(in srgb,var(--tc) 26%,var(--panel)),color-mix(in srgb,var(--tc) 6%,var(--panel)));box-shadow:0 0 26px -12px var(--tc)}
 .pbanner .pbi{color:var(--tc);flex:none;display:flex}
@@ -693,7 +695,7 @@ const ACT={
   const before=rankIdx(h.contracts),rb=1+rankIdx(h.contracts)*.05;
   const gold=Math.round(c.gold*rb*(wf('guildfav')?1.1:1)*(rel('guildseal')?1.25:1)),xp=Math.round(c.xp*catchMult());
   w.gold+=gold;h.contracts++;h.pts+=2;h.active.splice(+i,1);
-  const z=ZONES[c.zi],it=genItem(z.max-ri(0,2),rollRarity(c.q===2?[0,10,60,30]:[10,55,28,7]));
+  const z=ZONES[c.zi],it=genItem(z.max-ri(0,2),rollRarity(c.q===2?[5,50,38,7]:[20,60,17,3]));
   const r=addItem(it);
   S.cres=[`✅ Contract complete! +${gold}g, +${xp} XP, +2 stat points`,`🎁 ${rarName(it)}${r==='full'?' (pack full, sold)':''}`,...addXP(xp)];
   if(rankIdx(h.contracts)>before){S.cres.push(`🏅 <b>Promoted to ${RANKS[rankIdx(h.contracts)].n} rank!</b> (+2 stamina, +5% contract gold, new hunting grounds)`);}
@@ -735,7 +737,7 @@ function h_clamp(){const h=S.hero;if(h)h.hp=Math.min(h.hp,P().maxhp);}
 /* =====================================================================
    EXPANSION A — DATA: dungeons, riddles, events, quests
    ===================================================================== */
-const RW=[[70,25,5,0],[40,40,17,3],[10,45,35,10],[0,20,55,25],[0,0,50,50]];
+const RW=[[78,19,3,0],[55,36,8,1],[28,52,17,3],[10,50,32,8],[0,40,45,15]];
 const FX={
  bless:{n:'Blessing',ic:'✨',atk:.1,def:.1,hp:.1},curse:{n:'Curse',ic:'🌑',atk:-.1,def:-.1},
  fury:{n:'Fury',ic:'🔥',atk:.2,def:-.1},fed:{n:'Well Fed',ic:'🍞',hp:.1},
@@ -1494,7 +1496,7 @@ function chestLoot(D,vault,smash){
  const g=Math.round((10+L*5)*rnd(.8,1.5)*(vault?2:1)*(1+p.goldf/100));w.gold+=g;lines.push(`💰 +${g} gold`);
  const n=1+(Math.random()<.35?1:0)+(vault?1:0)+(hasSpecial('delver')?1:0);
  for(let i=0;i<n;i++){
-  let rar=rollRarity(vault?[0,10,50,40]:[20,45,28,7],1+p.dropf/200);if(smash)rar=Math.max(0,rar-1);
+  let rar=rollRarity(vault?[0,40,45,15]:[30,52,16,2],1+p.dropf/200);if(smash)rar=Math.max(0,rar-1);
   const it=genItem(L+ri(0,3),rar);const r=addItem(it);
   lines.push(`🎁 ${rarName(it)} <span class="mut">(${RAR[it.rar].n}, Lv ${it.il})</span>${r==='full'?' — pack full, sold':r==='sold'?' — auto-sold':''}`);
  }
@@ -1516,8 +1518,8 @@ function completeDungeon(D){
  const xp=Math.round((10+L*3.2)*10*(firstH?1.5:1)*clamp(1-(h.lvl-L)*.05,.15,1.5)*catchMult()*(1+p.xpf/100));
  lines.push(`🏆 <b>${D.n} cleared!</b>${firstW?' <span class="up">(First clear in your bloodline!)</span>':''}`,`💰 +${g} gold`,`✨ +${xp} XP`);
  lines.push(...addXP(xp));
- for(let i=0;i<2;i++){const it=genItem(L+ri(2,4),rollRarity([0,0,60,40],1+p.dropf/200));const r=addItem(it);lines.push(`🎁 ${rarName(it)} <span class="mut">(${RAR[it.rar].n}, Lv ${it.il})</span>${r==='full'?' — pack full, sold':''}`);}
- if(D.leg&&Math.random()<(firstW?1:.2*(1+p.dropf/100))){
+ for(let i=0;i<2;i++){const it=genItem(L+ri(2,4),rollRarity([5,50,38,7],1+p.dropf/200));const r=addItem(it);lines.push(`🎁 ${rarName(it)} <span class="mut">(${RAR[it.rar].n}, Lv ${it.il})</span>${r==='full'?' — pack full, sold':''}`);}
+ if(D.leg&&Math.random()<(firstW?.12:.03)*(1+p.dropf/200)){
   const def=LEGENDS.find(l=>l.k===D.leg);if(def){const it=genLegend(def);const r=addItem(it);lines.push(`🌟 <b>LEGENDARY!</b> ${rarName(it)}${r==='full'?' — pack full, sold':''}`);note(`Legendary from ${D.n}: ${it.name}!`,'y');}
  }
  if(D.relic)lines.push(...addRelic(D.relic));
@@ -1562,11 +1564,11 @@ function victory(){
  if((ctx.type==='hunt'||ctx.type==='ev')&&!e.dg)lines.push(...regionProgress(e));
  const z=ZONES[e.zi],ch=({n:.16,e:.6,b:1}[e.tier])*(e.pack?1.4:1)*(1+p.dropf/100)*(ctx.type==='dg'?1.3:1)*dr()*envDrop();
  if(Math.random()<ch){
-  const ws={n:[60,28,9,3],e:[30,40,22,8],b:[0,20,55,25]}[e.tier];
+  const ws={n:[78,18,3.4,.6],e:[50,36,11,3],b:[10,42,36,12]}[e.tier];
   const it=genItem(e.lvl+ri(0,2),rollRarity(ws,1+p.dropf/200));
   const r=addItem(it);lines.push(`🎁 ${rarName(it)} <span class="mut">(${RAR[it.rar].n}, Lv ${it.il})</span>${r==='sold'?' — auto-sold':r==='full'?' — pack full, sold':''}`);
  }
- const lg=({n:.0008,e:.006,b:e.dg?0:.07}[e.tier])*(1+p.dropf/100);
+ const lg=0; // legendaries come only from dungeons
  if(Math.random()<lg){
   const pool=LEGENDS.filter(d=>!d.dg&&d.il>=z.min-4&&d.il<=z.max+6);
   if(pool.length){const it=genLegend(pick(pool));const r=addItem(it);lines.push(`🌟 <b>LEGENDARY!</b> ${rarName(it)}${r==='full'?' — pack full, sold':''}`);note(`Legendary drop: ${it.name}!`,'y');}
@@ -1605,7 +1607,7 @@ function victory(){
  if(ctx.type==='delve'&&S.dl){
   const f=S.dl.f,bonus=Math.round((20+f*12)*(1+f*.06)*dr());w.gold+=bonus;lines.push(`🌀 Floor ${f} cleared. +${bonus} gold`);
   lines.push(...delveMilestone(f));
-  if(e.tier==='b'){const it=genItem(e.lvl+ri(1,3),rollRarity([0,0,45,55],1+p.dropf/200));const r=addItem(it);lines.push(`🎁 ${rarName(it)} <span class="mut">(${RAR[it.rar].n}, Lv ${it.il})</span>${r==='full'?' — pack full, sold':''}`);}
+  if(e.tier==='b'){const it=genItem(e.lvl+ri(1,3),rollRarity([0,35,50,15],1+p.dropf/200));const r=addItem(it);lines.push(`🎁 ${rarName(it)} <span class="mut">(${RAR[it.rar].n}, Lv ${it.il})</span>${r==='full'?' — pack full, sold':''}`);}
   S.dl.f++;healHero(Math.round(p.maxhp*.08));
  }
  S.res={lines,zi:e.zi,boss:c.boss,name:e.name,lvl:e.lvl,ctx,done};
@@ -3160,7 +3162,7 @@ function bountyKill(e){
   w.gold+=gold;w.bounty.kills+=b.rep;
   lines.push(`🎯 <b>Bounty complete: ${b.type==='notorious'?`Notorious ${esc(b.nick)} the ${esc(b.name)}`:`${b.n} × ${esc(b.name)}`}</b>`,`💰 +${gold} gold · ✨ +${xp} XP · 🏅 +${b.rep} marks`);
   lines.push(...addXP(xp));
-  const it=genItem(b.lvl+ri(1,3),rollRarity(b.type==='notorious'?[0,0,50,50]:[30,45,20,5]));const r=addItem(it);
+  const it=genItem(b.lvl+ri(1,3),rollRarity(b.type==='notorious'?[0,35,50,15]:[40,45,13,2]));const r=addItem(it);
   lines.push(`🎁 ${rarName(it)} <span class="mut">(${RAR[it.rar].n})</span>${r==='full'?' — pack full, sold':''}`);
   if(b.type==='notorious'){const bb=w.best[b.name]=w.best[b.name]||{k:0,zi:b.zi};bb.k+=5;bb.not=(bb.not||0)+1;}
   const nb=brank();if(BRANKS[nb][1]>0&&w.bounty.kills-b.rep<BRANKS[nb][1])lines.push(`🏅 <b>Bounty rank: ${BRANKS[nb][0]}!</b> (+2% bounty rewards)`);
@@ -9430,6 +9432,37 @@ function dressDoings(html){
  if(any&&i>=0){const lastTile=html.lastIndexOf('<button class="ptile" data-a="doDo"');const end=html.indexOf('</button>',lastTile)+9;html=html.slice(0,i)+'<div class="pgrid">'+html.slice(i,end)+'</div>'+html.slice(end);}
  return html;
 }
+const SLOT_SVG={
+ weapon:'<path d="M5 27 21 11M17 7h8v8M8 24l-3 3M10 22l3 3"/>',
+ helm:'<path d="M6 18a10 10 0 0 1 20 0v6H6zM16 8v6"/>',
+ armor:'<path d="M9 5l-5 5 4 4v13h16V14l4-4-5-5-4 3h-6z"/>',
+ boots:'<path d="M10 4v14l-5 4v4h17v-4l-6-3V4z"/>',
+ ring:'<circle cx="16" cy="19" r="8"/><path d="M12 8l4-4 4 4-4 4z"/>',
+ amulet:'<path d="M8 4c0 8 4 10 8 10s8-2 8-10M16 14v4"/><circle cx="16" cy="22" r="4"/>'
+};
+const wrapRuns=(html,re)=>html.replace(new RegExp(re.source,'g'),run=>`<div class="pgrid">${run}</div>`);
+function dressShop(html){
+ const shop=(S.world&&S.world.shop)||[];
+ html=html.replace(/<div class="item" data-a="shopView" data-p="(\d+)"><div><div class="n">[\s\S]*?<\/span><\/div><div class="s">([^<]*)<\/div><\/div><div class="s"[^>]*>([^<]*)<\/div><\/div>/g,(m,i,stats,price)=>{
+  const it=shop[+i];if(!it)return m;const col=RAR[it.rar].c;
+  const name=(m.match(/<span[^>]*>([^<]*)<\/span>/)||[,it.name])[1];
+  return `<button class="ptile gear" data-a="shopView" data-p="${i}" style="--tc:${col}"><span class="pi">${sv(SLOT_SVG[it.slot]||SLOT_SVG.weapon,32)}</span><span class="pt">${name}</span><span class="pd">${stats}</span><span class="ps"><b style="color:#f0b94a">${price}</b> · ${RAR[it.rar].n}</span></button>`;});
+ return wrapRuns(html,/(?:<button class="ptile gear"[\s\S]*?<\/button>)+/);
+}
+const SCHOOL_COL={classic:'#f0b94a',weapon:'#ff7a4a',support:'#7fd65f',trick:'#c077ff',elem:'#4aa3ff'};
+function dressLibrary(html){
+ html=html.replace(/<button class="btn[^"]*" data-a="buyTome" data-p="(\w+)"( disabled="")?[^>]*>([\s\S]*?)<small>([\s\S]*?)<\/small><\/button>/g,(m,id,dis,lab,sub)=>{
+  const col=SCHOOL_COL[SKS[id]]||'#c077ff',name=lab.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
+  const lv=(lab.match(/<span class="tag">([^<]*)<\/span>/)||[,''])[1],tier=(lab.match(/Tier \d+/)||[''])[0];
+  const nm=name.replace(/\s*(unknown|Lv \d+)?\s*Tier \d+\s*$/,'').replace(/\s*(unknown|Lv \d+)\s*$/,'');
+  return `<button class="ptile"${dis?' disabled':''} data-a="buyTome" data-p="${id}" style="--tc:${col};${dis?'opacity:.55':''}"><span class="pi">${sv(PLACE_META.library.i.replace(/^<svg[^>]*>|<\/svg>$/g,''),30)}</span><span class="pt">${nm}</span><span class="pd">${tier} · ${lv}</span><span class="ps">${sub}</span></button>`;});
+ return wrapRuns(html,/(?:<button class="ptile"[^>]*data-a="buyTome"[\s\S]*?<\/button>)+/);
+}
+function dressEstate(html){
+ html=html.replace(/<div class="card"[^>]*><div class="row2"><b>([^<]*)<\/b><span class="tag">(not yet|locked)<\/span><\/div><div class="sm mut">([^<]*)<\/div><\/div>/g,(m,t,tag,d)=>
+  `<div class="ptile static" style="--tc:#8a93a6"><span class="pi">${sv('<rect x="6" y="14" width="20" height="14" rx="2"/><path d="M11 14v-3a5 5 0 0 1 10 0v3"/>',28)}</span><span class="pt">${t}</span><span class="pd">${d}</span><span class="ps">${tag}</span></div>`);
+ return wrapRuns(html,/(?:<div class="ptile static"[\s\S]*?<\/div>\s*)+/);
+}
 function dressTavern(html){
  return html.replace(/(?:<div class="card"><div class="sm mut">Someone at the bar[\s\S]*?<\/button><\/div>)+/,run=>{
   const tiles=[];const re=/A ([a-z -]+), by the look of them\.<\/div><button[^>]*data-a="approach" data-p="([^"]+)"/g;let m;
@@ -9441,7 +9474,7 @@ function dressTavern(html){
  const old=VIEWS[sc];if(typeof old!=='function')return;
  VIEWS[sc]=function(){
   let h=old.apply(this,arguments);
-  try{if(sc==='hunt')h=dressWilds(h);if(sc==='train')h=dressTrain(h);if(sc==='tavern')h=dressTavern(h);if(sc==='doings')h=dressDoings(h);if(sc==='exchange')h=h.replace(/<div class="card sm">(<div class="row2"><b>[^<]*<\/b><span class="tag" style="color:var\(--good\)">cheap)/g,'<div class="card sm gcheap">$1').replace(/<div class="card sm">(<div class="row2"><b>[^<]*<\/b><span class="tag" style="color:#ff9a3c">pricey)/g,'<div class="card sm gdear">$1');return dressPage(sc,h);}catch(e){return h;}
+  try{if(sc==='hunt')h=dressWilds(h);if(sc==='train')h=dressTrain(h);if(sc==='tavern')h=dressTavern(h);if(sc==='shop')h=dressShop(h);if(sc==='library')h=dressLibrary(h);if(sc==='estate')h=dressEstate(h);if(sc==='doings')h=dressDoings(h);if(sc==='exchange')h=h.replace(/<div class="card sm">(<div class="row2"><b>[^<]*<\/b><span class="tag" style="color:var\(--good\)">cheap)/g,'<div class="card sm gcheap">$1').replace(/<div class="card sm">(<div class="row2"><b>[^<]*<\/b><span class="tag" style="color:#ff9a3c">pricey)/g,'<div class="card sm gdear">$1');return dressPage(sc,h);}catch(e){return h;}
  };
 });
 
@@ -9485,7 +9518,7 @@ VIEWS.train=function(){
  return s.replace(/(<\/p>)/,'$1'+card);
 };
 if(typeof document!=='undefined'&&typeof window!=='undefined'&&!window.__TQ_TEST){try{render();}catch(e){}}
-if(typeof window!=='undefined')window.TQ={rivalClaims,crewEvents,BOND_MOVE,storyDone,bondLvl,synOf,synGroups,pairsText,roleOf,slotCheck,slotUse,skKind,synLines,ATT,elemMastery,SKX,SKS,fxDesc,fxCost,learnTome,SK,castSkill,offerSkillChoice,skillPool,matPrice,UNLOCKS,checkUnlocks,showAnn,VIEWS,BOND,QS,qEvent,stepDone,qTalkChoose,STORIES,legacyLines,registerStories,compCard,applyOut,checkDeath,rankIdx,sleepDay,CREW,crewOf,crewLvl,rkTrialReady,trialReady,rankRaw,genRivals,popReward,forageZone,apprChance,DG,HAB,MONPIC,addXP,wroll,refreshShop,lvCap,rankName,rarGov,keeper,keeperTier,KPJ,makeHeir,lsUse,lsLvl,lsRec,slogHtml,ROUGH,cpic,hasFocus,hprice,nextStep,foldHtml,upDiff,reportText,tele,loadBackup,skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,rkTrialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
+if(typeof window!=='undefined')window.TQ={rollRarity,rivalClaims,crewEvents,BOND_MOVE,storyDone,bondLvl,synOf,synGroups,pairsText,roleOf,slotCheck,slotUse,skKind,synLines,ATT,elemMastery,SKX,SKS,fxDesc,fxCost,learnTome,SK,castSkill,offerSkillChoice,skillPool,matPrice,UNLOCKS,checkUnlocks,showAnn,VIEWS,BOND,QS,qEvent,stepDone,qTalkChoose,STORIES,legacyLines,registerStories,compCard,applyOut,checkDeath,rankIdx,sleepDay,CREW,crewOf,crewLvl,rkTrialReady,trialReady,rankRaw,genRivals,popReward,forageZone,apprChance,DG,HAB,MONPIC,addXP,wroll,refreshShop,lvCap,rankName,rarGov,keeper,keeperTier,KPJ,makeHeir,lsUse,lsLvl,lsRec,slogHtml,ROUGH,cpic,hasFocus,hprice,nextStep,foldHtml,upDiff,reportText,tele,loadBackup,skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,rkTrialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>
 </html>

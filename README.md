@@ -271,3 +271,8 @@ After your first kill and your return to town, a single pop-up explains time of 
 - **The wilds**: weather is three small chips; every region is its own coloured card (a drawn icon, name in the display font, level range, familiarity) with large Hunt and Scout tiles; foraging has a green tile.
 - **Training**: each stat has its own colour, icon and button.
 - **Tavern** strangers and **Notice Board** jobs are two-column tiles. **Trading Post** goods are tinted green when cheap and orange when pricey.
+
+## Rarer gear, no wild legendaries
+- **Legendaries no longer drop from monsters or bosses in the wilds.** They come only from dungeons: a first clear now has a 12% chance (it used to be guaranteed) and repeat clears 3%, each nudged by drop-find.
+- Rare and epic drops are much lower everywhere: ordinary kills about 2% rare and a fraction of a percent epic at the point they become possible (rares from item level 16, epics from 36), elites about 8% rare, bosses about 27% rare. Dungeon rewards, chests, contract rewards, bounties and event rewards were pulled down the same way.
+- The Library's skills, the Market's gear and the Estate's rooms are two-column tiles, coloured by school, rarity or lock state, with an icon for each gear slot.
