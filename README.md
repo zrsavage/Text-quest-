@@ -322,3 +322,7 @@ Each time a skill breaks through (Lv 3, 5, 7, 9) it takes a new name. Supports f
 
 ## The Forge
 A fold in the Market. Gold tempers a worn piece: +6% to every stat on it per tempering, costing (60 + 14 × item level) × 1.9^n gold. The limit is half your level (max 8) per piece, and tempering stays on the item, so an heir inherits it.
+
+## Gold has jobs
+- **Wear:** gear loses condition with every fight (weapon fastest). Below 50% it gives less, down to 65% of its stats when worn out. The Forge's "Mend everything" fixes it, costing (20 + 10 × item level) × the missing share, per piece.
+- **Room and board:** sleeping in Hollowmere costs 2 + 1.8 × level gold, unless you own a home. If you cannot pay you sleep in the stable and wake at 70% HP and stamina.

@@ -9857,13 +9857,18 @@ function dedupeSkills(){
 /* ----- the forge: gold tempers the gear you wear, up to what your level can carry ----- */
 const TEMPER_PCT=.06;
 const temperMax=()=>Math.min(8,Math.floor(S.hero.lvl/2));
+// gear wears with use and loses its edge until it is mended
+const condOf=it=>it.cn==null?100:it.cn;
+const wearMult=it=>{const c=condOf(it);return c>=50?1:c>=25?.92:c>=10?.8:.65;};
+const repairCost=it=>Math.round((20+(it.il||1)*10)*(100-condOf(it))/100);
+const WEAR={weapon:1,armor:.8,helm:.6,boots:.5,ring:.25,amulet:.25};
 const temperCost=it=>Math.round((60+(it.il||1)*14)*Math.pow(1.9,it.tp||0));
 {
- const _gt=gearTotals;
  gearTotals=function(){
-  const g=_gt.apply(this,arguments);
-  for(const sl of SLOTS){const it=S.hero.equip[sl];if(!it||!it.tp)continue;
-   for(const k in it.st){const v=it.st[k];if(typeof v==='number'&&v>0){const a=AF[k];g[k]=Math.round(((g[k]||0)+v*TEMPER_PCT*it.tp)*10)/10;if(!a||!a.pct)g[k]=Math.round(g[k]*10)/10;}}}
+  const g={};
+  for(const sl of SLOTS){const it=S.hero.equip[sl];if(!it)continue;
+   const m=(1+TEMPER_PCT*(it.tp||0))*wearMult(it);
+   for(const k in it.st){const v=it.st[k];g[k]=Math.round(((g[k]||0)+(typeof v==='number'?v*m:0))*10)/10;}}
   return g;
  };
  Object.assign(ACT,{
@@ -9876,6 +9881,37 @@ const temperCost=it=>Math.round((60+(it.il||1)*14)*Math.pow(1.9,it.tp||0));
    note(`The smith works ${esc(it.name)} through the fire again. It feels sturdier. (-${fmt(c)}g)`,'g');
   }
  });
+ Object.assign(ACT,{
+  repairAll(){
+   const h=S.hero,w=S.world;let tot=0;SLOTS.forEach(sl=>{const it=h.equip[sl];if(it)tot+=repairCost(it);});
+   if(!tot)return;if(w.gold<tot){note('Not enough gold.','e');return;}
+   w.gold-=tot;SLOTS.forEach(sl=>{const it=h.equip[sl];if(it)it.cn=100;});
+   note(`The smith mends everything you wear. (-${fmt(tot)}g)`,'g');
+  }
+ });
+ const _vw=victory;
+ victory=function(){
+  const r=_vw.apply(this,arguments);
+  try{const h=S.hero;let worst=null;
+   SLOTS.forEach(sl=>{const it=h.equip[sl];if(!it)return;const d=WEAR[sl]*(Math.random()<.5?1.5:.5);const before=condOf(it);it.cn=Math.max(0,Math.round((before-d)*10)/10);
+    if(before>=25&&it.cn<25||before>=10&&it.cn<10)worst=it;});
+   if(worst)note(`Your ${esc(worst.name)} is badly worn and no longer does its job. The smith can mend it (Market, The Forge).`,'e');
+  }catch(e){}
+  return r;
+ };
+ {
+  const _sl=ACT.sleep;
+  ACT.sleep=function(){
+   const w=S.world,h=S.hero,home=where()===HT&&estLv('home')<1;
+   const fee=home?Math.round(2+h.lvl*1.8):0,pay=fee&&w.gold>=fee;
+   if(pay)w.gold-=fee;
+   const d0=h.day;_sl.apply(this,arguments);
+   try{if(S.hero.day>d0&&fee){
+    if(pay)note(`Room and board: -${fee}g.`);
+    else{const p=P();S.hero.hp=Math.round(p.maxhp*.7);S.hero.sta=Math.round(p.maxsta*.7);note('You cannot pay for a room and sleep in the stable. You wake stiff and only part-rested.','e');}
+   }}catch(e){}
+  };
+ }
  const _sv=VIEWS.shop;
  VIEWS.shop=function(){
   let t=_sv.apply(this,arguments);
@@ -9883,9 +9919,10 @@ const temperCost=it=>Math.round((60+(it.il||1)*14)*Math.pow(1.9,it.tp||0));
    const h=S.hero,w=S.world,mx=temperMax();
    const rows=SLOTS.filter(sl=>h.equip[sl]).map(sl=>{
     const it=h.equip[sl],tp=it.tp||0,c=temperCost(it),full=tp>=mx;
-    return `<div class="card sm"><div class="row2"><b>${rarName(it)}</b><span class="tag">${tp?`+${Math.round(tp*TEMPER_PCT*100)}% stats`:'untempered'}</span></div>${btn(full?'At your limit':'Temper','temper',sl,full?'c':'pri c',full||w.gold<c,full?'a higher level carries more':`${fmt(c)}g · +${Math.round(TEMPER_PCT*100)}% to every stat on it`)}</div>`;
+    return `<div class="card sm"><div class="row2"><b>${rarName(it)}</b><span class="tag">${tp?`+${Math.round(tp*TEMPER_PCT*100)}% stats`:'untempered'} · ${Math.round(condOf(it))}% sound</span></div>${btn(full?'At your limit':'Temper','temper',sl,full?'c':'pri c',full||w.gold<c,full?'a higher level carries more':`${fmt(c)}g · +${Math.round(TEMPER_PCT*100)}% to every stat on it`)}</div>`;
    }).join('');
-   const inner=`<p class="mut sm">The smith will not make you a new blade, but he can make yours better. Each tempering adds ${Math.round(TEMPER_PCT*100)}% to everything on a worn piece, and costs more each time. You can carry ${mx} tempering${mx===1?'':'s'} per piece at your level, and it goes with the piece, so an heir inherits it.</p>${rows||'<p class="mut sm">You wear nothing worth working on.</p>'}`;
+   let rt=0;SLOTS.forEach(sl=>{if(h.equip[sl])rt+=repairCost(h.equip[sl]);});
+   const inner=`${btn('Mend everything you wear','repairAll',undefined,rt?'good c':'c',!rt||w.gold<rt,rt?fmt(rt)+'g':'nothing needs mending')}<p class="mut sm">Gear wears with every fight, and worn gear does less. </p><p class="mut sm">The smith will not make you a new blade, but he can make yours better. Each tempering adds ${Math.round(TEMPER_PCT*100)}% to everything on a worn piece, and costs more each time. You can carry ${mx} tempering${mx===1?'':'s'} per piece at your level, and it goes with the piece, so an heir inherits it.</p>${rows||'<p class="mut sm">You wear nothing worth working on.</p>'}`;
    t+=foldShut('forge','<h2>🔨 The Forge</h2>',inner);
   }catch(e){}
   return t;
@@ -9931,7 +9968,7 @@ VIEWS.train=function(){
  return s.replace(/(<\/p>)/,'$1'+card);
 };
 if(typeof document!=='undefined'&&typeof window!=='undefined'&&!window.__TQ_TEST){try{render();}catch(e){}}
-if(typeof window!=='undefined')window.TQ={temperCost,temperMax,dedupeSkills,skJobs,skClash,foeForEvent,EVFOE,trapHit,addFamiliarity,trapMit,skillUse,GTRAITS,trN,trTag,statLine,rollRarity,rivalClaims,crewEvents,BOND_MOVE,storyDone,bondLvl,synOf,synGroups,pairsText,roleOf,slotCheck,slotUse,skKind,synLines,ATT,elemMastery,SKX,SKS,fxDesc,fxCost,learnTome,SK,castSkill,offerSkillChoice,skillPool,matPrice,UNLOCKS,checkUnlocks,showAnn,VIEWS,BOND,QS,qEvent,stepDone,qTalkChoose,STORIES,legacyLines,registerStories,compCard,applyOut,checkDeath,rankIdx,sleepDay,CREW,crewOf,crewLvl,rkTrialReady,trialReady,rankRaw,genRivals,popReward,forageZone,apprChance,DG,HAB,MONPIC,addXP,wroll,refreshShop,lvCap,rankName,rarGov,keeper,keeperTier,KPJ,makeHeir,lsUse,lsLvl,lsRec,slogHtml,ROUGH,cpic,hasFocus,hprice,nextStep,foldHtml,upDiff,reportText,tele,loadBackup,skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,rkTrialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
+if(typeof window!=='undefined')window.TQ={repairCost,wearMult,condOf,temperCost,temperMax,dedupeSkills,skJobs,skClash,foeForEvent,EVFOE,trapHit,addFamiliarity,trapMit,skillUse,GTRAITS,trN,trTag,statLine,rollRarity,rivalClaims,crewEvents,BOND_MOVE,storyDone,bondLvl,synOf,synGroups,pairsText,roleOf,slotCheck,slotUse,skKind,synLines,ATT,elemMastery,SKX,SKS,fxDesc,fxCost,learnTome,SK,castSkill,offerSkillChoice,skillPool,matPrice,UNLOCKS,checkUnlocks,showAnn,VIEWS,BOND,QS,qEvent,stepDone,qTalkChoose,STORIES,legacyLines,registerStories,compCard,applyOut,checkDeath,rankIdx,sleepDay,CREW,crewOf,crewLvl,rkTrialReady,trialReady,rankRaw,genRivals,popReward,forageZone,apprChance,DG,HAB,MONPIC,addXP,wroll,refreshShop,lvCap,rankName,rarGov,keeper,keeperTier,KPJ,makeHeir,lsUse,lsLvl,lsRec,slogHtml,ROUGH,cpic,hasFocus,hprice,nextStep,foldHtml,upDiff,reportText,tele,loadBackup,skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,rkTrialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>
 </html>
