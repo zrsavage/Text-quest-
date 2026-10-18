@@ -61,6 +61,38 @@ body[data-theme=parchment]{--bg:#1c1812;--panel:#2b251b;--panel2:#382f22;--line:
 .ptile .pd{font-size:.78rem;color:var(--tx);opacity:.82;line-height:1.3}
 .ptile .ps{font-size:.72rem;color:var(--mut);margin-top:auto}
 .ptile:active{filter:brightness(1.25)}
+/* town pages */
+.pbanner{display:flex;align-items:center;gap:14px;padding:16px;margin:2px 0 12px;border-radius:18px;border:1px solid color-mix(in srgb,var(--tc) 50%,var(--line));background:linear-gradient(135deg,color-mix(in srgb,var(--tc) 26%,var(--panel)),color-mix(in srgb,var(--tc) 6%,var(--panel)));box-shadow:0 0 26px -12px var(--tc)}
+.pbanner .pbi{color:var(--tc);flex:none;display:flex}
+.pbanner .pbi svg{width:54px;height:54px}
+.pbanner .pbh{font-family:"Pirata One","MedievalSharp",var(--fh,serif);font-size:1.9rem;line-height:1.05;color:var(--tc);letter-spacing:.03em}
+.pbanner .pbs{font-size:.8rem;color:var(--tx);opacity:.82;margin-top:4px;line-height:1.35}
+.tpage h2{display:flex;align-items:center;gap:8px}
+.tpage h2::before{content:"";width:4px;height:1.05em;background:var(--acc);border-radius:2px;flex:none}
+.tpage .card{border-radius:14px;background:linear-gradient(160deg,color-mix(in srgb,var(--acc) 7%,var(--panel)),var(--panel) 75%)}
+.tpage .btn{border-radius:12px;min-height:46px}
+.tpage .item{border-left:4px solid color-mix(in srgb,var(--acc) 60%,var(--line));border-radius:12px;padding:10px 12px}
+.rcard{border-radius:18px!important;padding:14px!important;border:1px solid hsl(var(--zh) 40% 38%)!important;background:linear-gradient(150deg,hsl(var(--zh) 38% 20%),var(--panel) 70%)!important}
+.rcard .rhead{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.rcard .ri{color:hsl(var(--zh) 70% 62%);flex:none;display:flex}
+.rcard .rn{font-family:"Pirata One","MedievalSharp",var(--fh,serif);font-size:1.6rem;line-height:1.05;color:hsl(var(--zh) 75% 72%);letter-spacing:.03em}
+.rcard .rl{font-size:.78rem;color:var(--mut)}
+.rcard .grid .btn{min-height:62px;border-radius:14px}
+.rcard .btn.pri{background:linear-gradient(135deg,color-mix(in srgb,#ff7a4a 32%,var(--panel)),var(--panel2));border-color:#ff7a4a;color:#ffb089;font-size:1rem}
+.rcard .btn.bad{border-radius:14px}
+.scard{border-color:color-mix(in srgb,var(--tc) 45%,var(--line))!important}
+.scard .shead{display:flex;align-items:center;gap:10px}
+.scard .shead .si{color:var(--tc);display:flex;flex:none}
+.scard .shead .row2{flex:1}
+.scard .shead b{font-size:1.1rem;color:var(--tc)}
+.scard .btn,.scard .btn.pri{background:color-mix(in srgb,var(--tc) 16%,var(--panel2));border-color:var(--tc);color:var(--tc);min-height:50px}
+.envrow{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}
+.envrow .ec{border:1px solid var(--line);border-radius:12px;padding:8px;background:var(--panel);font-size:.72rem;line-height:1.3}
+.envrow .ec b{display:block;font-size:.85rem;color:var(--acc);margin-bottom:2px}
+.gcheap{border-color:color-mix(in srgb,var(--good) 55%,var(--line))!important;background:linear-gradient(150deg,color-mix(in srgb,var(--good) 12%,var(--panel)),var(--panel))!important}
+.gdear{border-color:color-mix(in srgb,#ff9a3c 55%,var(--line))!important;background:linear-gradient(150deg,color-mix(in srgb,#ff9a3c 12%,var(--panel)),var(--panel))!important}
+.ftile{border-color:color-mix(in srgb,#7fd65f 45%,var(--line))!important;background:linear-gradient(150deg,color-mix(in srgb,#7fd65f 14%,var(--panel)),var(--panel))!important}
+.ftile .btn{border-color:#7fd65f;color:#9be57f}
 h1{font-size:1.375rem;margin:4px 0 2px}h2{font-size:1.0625rem;margin:16px 0 6px;color:var(--acc)}h3{font-size:0.9375rem;margin:10px 0 4px}
 p{margin:6px 0}.mut{color:var(--mut)}.sm{font-size:0.8125rem}.c{text-align:center}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0}
@@ -9328,6 +9360,91 @@ ACT.gtab=function(k){S.gtab=k;};
   return _qa7(q);
  };
 }
+/* =====================================================================
+   Every screen of the Town tab gets the same look as the main screens:
+   a banner, tile-style cards and an accent colour of its own
+   ===================================================================== */
+const ZSVG=[
+ '<path d="M4 26c3-8 6-12 12-12s9 4 12 12M9 26c1-4 3-6 7-6s6 2 7 6M16 14V6M13 9l3-3 3 3"/>',
+ '<path d="M16 28V16M16 16 8 22l8-14 8 14zM8 22h16M10 28h12"/>',
+ '<path d="M5 28V14a11 11 0 0 1 22 0v14M11 28V16a5 5 0 0 1 10 0v12M3 28h26"/>',
+ '<path d="M3 27 12 8l5 9 3-5 9 15zM12 8l-2 4"/>',
+ '<path d="M16 3v26M5 9l22 14M27 9 5 23M12 5l4 3 4-3M12 27l4-3 4 3"/>',
+ '<circle cx="16" cy="16" r="3"/><path d="M16 4a12 12 0 0 1 12 12M16 28A12 12 0 0 1 4 16M22 16a6 6 0 0 0-6-6M10 16a6 6 0 0 0 6 6"/>'
+];
+const zsvg=i=>`<svg viewBox="0 0 32 32" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ZSVG[i]||ZSVG[0]}</svg>`;
+const PAGE_META={
+ train:{c:'#f0b94a',i:()=>TILE_SVG.train},hunt:{c:'#ff7a4a',i:()=>TILE_SVG.hunt},streets:{c:'#7fb2ff',i:()=>TILE_SVG.town},
+ shop:{c:PLACE_META.shop.c,i:()=>PLACE_META.shop.i},library:{c:PLACE_META.library.c,i:()=>PLACE_META.library.i},tavern:{c:PLACE_META.tavern.c,i:()=>PLACE_META.tavern.i},
+ square:{c:PLACE_META.square.c,i:()=>PLACE_META.square.i},people:{c:PLACE_META.people.c,i:()=>PLACE_META.people.i},doings:{c:PLACE_META.doings.c,i:()=>PLACE_META.doings.i},
+ news:{c:PLACE_META.news.c,i:()=>PLACE_META.news.i},exchange:{c:PLACE_META.exchange.c,i:()=>PLACE_META.exchange.i},bank:{c:PLACE_META.bank.c,i:()=>PLACE_META.bank.i},
+ crew:{c:PLACE_META.crew.c,i:()=>PLACE_META.crew.i},tinker:{c:PLACE_META.tinker.c,i:()=>PLACE_META.tinker.i},estate:{c:PLACE_META.estate.c,i:()=>PLACE_META.estate.i}
+};
+const STAT_LOOK={Strength:['#ff7a4a','<path d="M4 12v8M8 9v14M24 9v14M28 12v8M8 16h16"/>'],Vitality:['#7fd65f','<path d="M16 27C6 20 4 12 9 8c3-2 6 0 7 3 1-3 4-5 7-3 5 4 3 12-7 19z"/>'],Agility:['#4aa3ff','<path d="M5 24 18 6l-2 10h9L12 28l2-10z"/>'],Intellect:['#c077ff','<path d="M16 4a8 8 0 0 0-5 14v4h10v-4A8 8 0 0 0 16 4zM12 26h8M13 29h6"/>']};
+const sv=(b,s)=>`<svg viewBox="0 0 32 32" width="${s||30}" height="${s||30}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${b}</svg>`;
+function dressPage(sc,html){
+ const M=PAGE_META[sc];if(!M||typeof html!=='string')return html;
+ let done=false;
+ html=html.replace(/<h1>([^<]*)<\/h1>(<p class="mut[^"]*"[^>]*>[\s\S]*?<\/p>)?/,(m,t,p)=>{
+  if(done)return m;done=true;
+  const title=t.replace(/^[^A-Za-z0-9]+/,'');
+  const sub=p?p.replace(/^<p class="mut[^"]*"[^>]*>/,'').replace(/<\/p>$/,''):'';
+  return `<div class="pbanner" style="--tc:${M.c}"><span class="pbi">${M.i()}</span><div class="pbt"><div class="pbh">${title}</div>${sub?`<div class="pbs">${sub}</div>`:''}</div></div>`;
+ });
+ return `<div class="tpage" style="--acc:${M.c}">${html}</div>`;
+}
+// the wilds: every region is a card with its own colour and bigger actions
+function dressWilds(html){
+ // the weather strip becomes three small chips
+ html=html.replace(/<div class="card sm">([^]*?)<\/div>/g,(m,x)=>{
+  if(!/Spring|Summer|Autumn|Winter/.test(x)||!/<br>/.test(x))return m;
+  const parts=x.split('<br>').map(s=>s.trim()).filter(Boolean);
+  const chips=parts.map(s=>{const mm=s.match(/<b>([^<]*)<\/b>\s*·?\s*([\s\S]*)/);return mm?`<div class="ec"><b>${mm[1]}</b>${mm[2]}</div>`:`<div class="ec">${s}</div>`;});
+  return `<div class="envrow">${chips.join('')}</div>`;
+ });
+ html=html.replace('<div class="card sm"><div class="row2"><b>Forage</b>','<div class="card sm ftile"><div class="row2"><b>Forage</b>');
+ ZONES.forEach((z,i)=>{
+  const re=new RegExp('<div class="card"><div class="row2"><b>[^<]*'+z.n.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'</b><span class="tag">(Lv [^<]*)</span></div>');
+  html=html.replace(re,(m,lv)=>`<div class="card rcard" style="--zh:${ZHUE[i]}"><div class="rhead"><span class="ri">${zsvg(i)}</span><div class="rtt"><div class="rn">${esc(z.n)}</div><div class="rl">${lv}</div></div></div>`);
+ });
+ return html;
+}
+// training: each stat has its own colour and icon
+function dressTrain(html){
+ Object.keys(STAT_LOOK).forEach(k=>{
+  const [c,ic]=STAT_LOOK[k];
+  html=html.replace(new RegExp('<div class="card">(<div class="row2"><b>'+k+'</b>)'),`<div class="card scard" style="--tc:${c}"><div class="shead"><span class="si">${sv(ic,28)}</span>$1`);
+ });
+ // close the extra wrapper after the first closing row2 of each stat card
+ html=html.replace(/(<div class="card scard"[^>]*><div class="shead"><span class="si">[\s\S]*?<\/span>)(<div class="row2">[\s\S]*?<\/div>)/g,'$1$2</div>');
+ return html;
+}
+function dressDoings(html){
+ const re=/<div class="card sm"><div class="row2"><b>([^<]*)<\/b><span class="tag">([^<]*)<\/span><\/div><div class="mut">([^<]*)<\/div><button class="btn[^"]*" data-a="doDo" data-p="([^"]+)"( disabled="")?[^>]*>[^<]*<\/button><\/div>/g;
+ let any=false;
+ html=html.replace(re,(m,t,cost,d,id,dis)=>{any=true;const col=/stamina/.test(cost)?'#ff7a4a':/g$/.test(cost)?'#e8c26a':'#7fd65f';
+  return `<button class="ptile" data-a="doDo" data-p="${id}"${dis?' disabled':''} style="--tc:${col};${dis?'opacity:.55':''}"><span class="pi">${PLACE_META.doings.i}</span><span class="pt">${t}</span><span class="pd">${d}</span><span class="ps">${cost}</span></button>`;});
+ if(any)html=html.replace(/(<button class="ptile" data-a="doDo"[\s\S]*<\/button>)(?=(?:(?!<button class="ptile")[\s\S])*$)/,'$1');
+ // wrap the run of tiles in a grid
+ const i=html.indexOf('<button class="ptile" data-a="doDo"'),j=html.lastIndexOf('</button>',html.length);
+ if(any&&i>=0){const lastTile=html.lastIndexOf('<button class="ptile" data-a="doDo"');const end=html.indexOf('</button>',lastTile)+9;html=html.slice(0,i)+'<div class="pgrid">'+html.slice(i,end)+'</div>'+html.slice(end);}
+ return html;
+}
+function dressTavern(html){
+ return html.replace(/(?:<div class="card"><div class="sm mut">Someone at the bar[\s\S]*?<\/button><\/div>)+/,run=>{
+  const tiles=[];const re=/A ([a-z -]+), by the look of them\.<\/div><button[^>]*data-a="approach" data-p="([^"]+)"/g;let m;
+  while((m=re.exec(run)))tiles.push(`<button class="ptile" data-a="approach" data-p="${m[2]}" style="--tc:#ff9a3c"><span class="pi">${sv('<circle cx="16" cy="10" r="5"/><path d="M5 28v-3a8 8 0 0 1 8-8h6a8 8 0 0 1 8 8v3"/>',34)}</span><span class="pt">A ${m[1]}</span><span class="pd">Has been watching you from the bar.</span><span class="ps">Tap to go and say hello</span></button>`);
+  return `<div class="pgrid">${tiles.join('')}</div>`;
+ });
+}
+['train','hunt','streets','shop','library','tavern','square','people','doings','news','exchange','bank','crew','tinker','estate'].forEach(sc=>{
+ const old=VIEWS[sc];if(typeof old!=='function')return;
+ VIEWS[sc]=function(){
+  let h=old.apply(this,arguments);
+  try{if(sc==='hunt')h=dressWilds(h);if(sc==='train')h=dressTrain(h);if(sc==='tavern')h=dressTavern(h);if(sc==='doings')h=dressDoings(h);if(sc==='exchange')h=h.replace(/<div class="card sm">(<div class="row2"><b>[^<]*<\/b><span class="tag" style="color:var\(--good\)">cheap)/g,'<div class="card sm gcheap">$1').replace(/<div class="card sm">(<div class="row2"><b>[^<]*<\/b><span class="tag" style="color:#ff9a3c">pricey)/g,'<div class="card sm gdear">$1');return dressPage(sc,h);}catch(e){return h;}
+ };
+});
+
 /* ----- a slow start: bodies heal over days, not overnight, until you are properly seasoned ----- */
 const nightRecovery=()=>{const L=S.hero.lvl;return L>=8?1:Math.min(1,.38+.09*(L-1));};
 const _sleepDayRec=sleepDay;

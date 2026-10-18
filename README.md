@@ -265,3 +265,9 @@ After your first kill and your return to town, a single pop-up explains time of 
 ## A harder early game (Normal)
 - The first regions were too gentle: in a test of a level 3 hero, fights cost about 10% of health and a close call almost never happened. Enemies at levels 1 to 5 now hit harder and have more health (ramping up to roughly the strength of the next region), so a level 2 to 4 fight typically costs about 20 to 25% of your health and about 1 fight in 20 is a real close call. The first four kills are still protected. Story difficulty remains the easy choice.
 - The playtest report counts close calls (a win with under 30% health left).
+
+## One look for the whole Town tab
+- Every Town-tab screen (Training Yard, Beyond the Gate, Market, Old Library, Tavern, Town Square, People, Notice Board, Town Crier, Trading Post, Counting House, Hiring Hall, Tinker, Estate) opens with a banner: a drawn icon, the name in the display font and its description, in the place's own colour. Section headings, cards and rows pick up the same colour.
+- **The wilds**: weather is three small chips; every region is its own coloured card (a drawn icon, name in the display font, level range, familiarity) with large Hunt and Scout tiles; foraging has a green tile.
+- **Training**: each stat has its own colour, icon and button.
+- **Tavern** strangers and **Notice Board** jobs are two-column tiles. **Trading Post** goods are tinted green when cheap and orange when pricey.
