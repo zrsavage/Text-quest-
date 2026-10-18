@@ -276,3 +276,9 @@ After your first kill and your return to town, a single pop-up explains time of 
 - **Legendaries no longer drop from monsters or bosses in the wilds.** They come only from dungeons: a first clear now has a 12% chance (it used to be guaranteed) and repeat clears 3%, each nudged by drop-find.
 - Rare and epic drops are much lower everywhere: ordinary kills about 2% rare and a fraction of a percent epic at the point they become possible (rares from item level 16, epics from 36), elites about 8% rare, bosses about 27% rare. Dungeon rewards, chests, contract rewards, bounties and event rewards were pulled down the same way.
 - The Library's skills, the Market's gear and the Estate's rooms are two-column tiles, coloured by school, rarity or lock state, with an icon for each gear slot.
+
+## Item names and descriptions made to make sense
+- The wear and material word in an item's name now suits what it is made of: metal things are Rusty, Dented or Chipped (then Iron, Steel), cloth and leather ones Patched, Mended or Frayed (then Stitched, Tanned), wooden ones Warped or Splintered (then Seasoned, Yew), jewellery Tarnished or Scratched (then Copper, Silver). No more "Frayed Axe" or "Rusty Sandals".
+- Items with an affix in front ("Keen", "Hale", "Nimble") skip the plain wear word at low tiers, so there are no stacked adjectives like "Hale Rusty Boots". Material words still appear ("Honed Iron Axe").
+- Percentage stats no longer say "+2% Dodge %", and regeneration reads "+3 HP regen a turn".
+- A couple of nonsensical flavour lines were rewritten (the ring and the plate armour).

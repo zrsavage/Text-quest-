@@ -238,8 +238,28 @@ const SLOT_ICON={weapon:'⚔️',helm:'🪖',armor:'🛡️',boots:'👢',ring:'
 const RAR=[{n:'Common',c:'#b8c0cc'},{n:'Uncommon',c:'#5fd38d'},{n:'Rare',c:'#4aa3ff'},{n:'Epic',c:'#c077ff'},{n:'Legendary',c:'#ffb02e'}];
 const TIER_MIN=[1,9,20,34,48,64];
 const TIER_ADJ=['Crude','Iron','Steel','Runed','Frostforged','Voidtouched'];
-const TIER_POOL=[['Crude','Worn','Battered','Rough','Patched','Rusty','Plain','Chipped','Mended','Frayed','Scuffed','Humble'],['Iron','Hardened','Sturdy','Riveted','Tempered','Solid'],['Steel','Honed','Fine','Burnished','Well-made'],['Runed','Etched','Rune-marked'],['Frostforged','Rimed','Winterbound'],['Voidtouched','Hollow-forged','Starless']];
-const tierWord=t=>{const a=TIER_POOL[t]||[TIER_ADJ[t]];return a[Math.floor(Math.random()*a.length)];};
+const ITEM_CAT={};
+['Sword','Axe','Mace','Dagger','Helm','Coif','Circlet','Mail','Plate','Greaves'].forEach(b=>ITEM_CAT[b]='metal');
+['Cap','Hood','Tunic','Robe','Jerkin','Sandals','Boots','Treads'].forEach(b=>ITEM_CAT[b]='soft');
+['Staff','Bow','Spear','Slat Vest'].forEach(b=>ITEM_CAT[b]='wood');
+['Band','Signet','Loop','Seal','Ring','Charm','Pendant','Talisman','Locket','Amulet'].forEach(b=>ITEM_CAT[b]='jewel');
+// wear and material words that suit what the thing is made of
+const TIER_POOL={
+ metal:[['Rusty','Battered','Dented','Chipped','Pitted','Notched','Worn','Crude','Plain'],['Iron','Hardened','Riveted','Solid'],['Steel','Burnished','Blued','Fine'],['Runed','Etched','Rune-marked'],['Frostforged','Rimed','Winterbound'],['Voidtouched','Starless','Hollowed']],
+ soft:[['Worn','Patched','Mended','Frayed','Threadbare','Scuffed','Crude','Plain','Humble'],['Stitched','Boiled','Quilted','Waxed'],['Fine','Supple','Lined','Tanned'],['Runed','Etched','Rune-marked'],['Rimed','Winterbound','Frostwoven'],['Voidtouched','Starless','Hollowed']],
+ wood:[['Worn','Warped','Splintered','Crude','Plain','Mended','Humble'],['Seasoned','Oaken','Ashwood','Ironbound'],['Yew','Hornbeam','Ironwood','Fine'],['Runed','Etched','Rune-marked'],['Rimed','Winterbound','Frostbitten'],['Voidtouched','Starless','Hollowed']],
+ jewel:[['Plain','Tarnished','Dull','Scratched','Crude','Worn','Humble'],['Copper','Brass','Polished','Pewter'],['Silver','Gleaming','Fine','Engraved'],['Runed','Etched','Rune-marked'],['Frostforged','Rimed','Winterbound'],['Voidtouched','Starless','Hollowed']]
+};
+const tierWord=(t,bn,pre)=>{
+ const cat=ITEM_CAT[bn]||'metal',a=(TIER_POOL[cat]||TIER_POOL.metal)[t]||TIER_POOL.metal[t]||[TIER_ADJ[t]];
+ // with an affix in front ("Keen Axe"), plain wear words are left out
+ if(pre&&t===0)return '';
+ if(pre&&t===1&&(cat==='soft'||cat==='wood'))return '';
+ if(pre&&t===1)return cat==='metal'?'Iron':pick(['Copper','Brass','Pewter']);
+ if(pre&&t===2){return {metal:'Steel',soft:'Tanned',wood:pick(['Yew','Hornbeam','Ironwood']),jewel:'Silver'}[cat];}
+ return a[Math.floor(Math.random()*a.length)];
+};
+const buildName=(it)=>{const np=it.np||{};return [np.pre,tierWord(it.tier,it.base,np.pre),it.base,np.suf].filter(Boolean).join(' ')+(np.star?' ✦':'');};
 const tierOf=l=>{let t=0;TIER_MIN.forEach((m,i)=>{if(l>=m)t=i;});return t;};
 const RANKS=[{n:'Unranked',c:0},{n:'Copper',c:4},{n:'Bronze',c:10},{n:'Silver',c:20},{n:'Gold',c:32},{n:'Mythril',c:48},{n:'Adamant',c:70}];
 const STATS=['str','vit','agi','int'];
@@ -425,8 +445,8 @@ function genItem(il,rar,slot){
  const m=[1,1,1.12,1.3][rar];
  used.forEach(k=>{const a=AF[k];let v=a.f(il)*rnd(.8,1.2)*m;v=a.pct?Math.round(v*10)/10:Math.max(1,Math.round(v));st[k]=Math.round(((st[k]||0)+v)*10)/10;});
  const pre=n>=1?pick(AF[used[0]].pre):'',suf=n>=2?pick(AF[used[1]].suf):'';
- const name=[pre,tierWord(t,slot),bn,suf].filter(Boolean).join(' ')+(n>=3?' ✦':'');
- return{id:uid(),slot,base:bn,name,il,tier:t,rar,req:Math.max(1,il-2),st,val:Math.round((8+il*3.5)*VAL_MULT[rar])};
+ const name=[pre,tierWord(t,bn,pre),bn,suf].filter(Boolean).join(' ')+(n>=3?' ✦':'');
+ return{id:uid(),slot,base:bn,name,np:{pre,suf,star:n>=3},il,tier:t,rar,req:Math.max(1,il-2),st,val:Math.round((8+il*3.5)*VAL_MULT[rar])};
 }
 function genLegend(d){
  const st=itemFromBases(d.slot,d.il,d.b,1.4);
@@ -434,7 +454,7 @@ function genLegend(d){
  return{id:uid(),slot:d.slot,name:d.n,il:d.il,tier:tierOf(d.il),rar:4,req:Math.max(1,d.il-2),st,val:Math.round((8+d.il*3.5)*VAL_MULT[4]),leg:d.k,sp:d.sp,lore:d.lore};
 }
 const rarName=it=>`<span style="color:${RAR[it.rar].c}">${esc(it.name)}</span>`;
-function statLine(k,v){const a=AF[k];return `+${v}${a.pct?'%':''} ${a.l}`;}
+function statLine(k,v){const a=AF[k];return `+${v}${a.pct?'%':''} ${a.l.replace(/ %$/,'').replace('Regen/turn','HP regen a turn')}`;}
 function score(it){if(!it)return 0;const s=it.st;let t=0;for(const k in s){const w={atk:1.2,def:1.3,hp:.25,str:2.4,vit:2,agi:2,int:2,crit:3,critdmg:1,dodge:3,lifesteal:6,thorns:1.2,goldf:.5,dropf:.5,xpf:.6,regen:3,maxfocus:1}[k]||1;t+=s[k]*w;}return Math.round(t);}
 function rollRarity(ws,boost){const w=ws.slice();for(let i=1;i<w.length;i++)w[i]*=boost||1;return wroll(w);}
 function addItem(it){
@@ -4432,7 +4452,7 @@ const ITQ={
  Circlet:['Fancy enough to impress goblins.','Tiny crown, enormous ego.'],
  Tunic:['Cloth. Hopeful cloth.','Has seen worse days and a few stains.'],
  Mail:['Thousands of tiny rings, all of them heavy.','Jingles when you sneak. You do not sneak.'],
- Plate:['A very expensive way to be a turtle.','Make sure to sit down before you put it on.'],
+ Plate:['A very expensive way to be a turtle.','Heavy enough that you sit down to put it on.'],
  Robe:['Comfy, mystical, and drafty.','Looks wise. Fits like a tent.'],
  Jerkin:['A vest with a past.','Leather that has had enough.'],
  Sandals:['Bold choice for a monster hunt.','Your toes did not ask for this.'],
@@ -4443,7 +4463,7 @@ const ITQ={
  Signet:['Stamps wax and egos.','Says "I own things" in tiny letters.'],
  Loop:['A loop of metal. Good for fingers.','Does little, with confidence.'],
  Seal:['Official. Somewhat.','Somebody paid for this stamp.'],
- Ring:['Precious, in the loose sense of the word.','Do not, under any circumstances, throw it into a volcano.'],
+ Ring:['Precious, in the loose sense of the word.','Plain, and worn smooth by other hands.'],
  Charm:['Probably lucky. Possibly a button.','A small thing that believes in itself.'],
  Pendant:['Hangs there, looking significant.','Swings when you fight. Distracts everyone, you included.'],
  Talisman:['Humming slightly. Do not ask why.','Warm to the touch, cold to questions.'],
@@ -7032,8 +7052,8 @@ const BASEMIN={Plate:30,Greaves:22,Mail:14,Helm:10};
   if(AF.maxfocus)AF.maxfocus.w=hasFocus()?.8:0;
   let it=null;
   for(let i=0;i<10;i++){it=_gen(il,rar,slot);if(!BASEMIN[it.base]||il>=BASEMIN[it.base])break;}
-  if(it.slot==='armor'&&il<8&&['Mail','Plate'].includes(it.base)){it.name=it.name.replace(it.base,'Slat Vest');it.base='Slat Vest';}
-  if(it.base==='Tunic'&&il<5&&Math.random()<.5){it.name=it.name.replace('Tunic','Slat Vest');it.base='Slat Vest';}
+  if(it.slot==='armor'&&il<8&&['Mail','Plate'].includes(it.base)){it.base='Slat Vest';it.name=buildName(it);}
+  if(it.base==='Tunic'&&il<5&&Math.random()<.5){it.base='Slat Vest';it.name=buildName(it);}
   if(it.base==='Slat Vest'){it.lore='Thin wooden plates tied on with string. It will stop a bad day, not a bad fight.';if(it.st.def)it.st.def=Math.max(1,Math.round(it.st.def*.8));it.val=Math.max(3,Math.round(it.val*.7));}
   return it;
  };
@@ -9518,7 +9538,7 @@ VIEWS.train=function(){
  return s.replace(/(<\/p>)/,'$1'+card);
 };
 if(typeof document!=='undefined'&&typeof window!=='undefined'&&!window.__TQ_TEST){try{render();}catch(e){}}
-if(typeof window!=='undefined')window.TQ={rollRarity,rivalClaims,crewEvents,BOND_MOVE,storyDone,bondLvl,synOf,synGroups,pairsText,roleOf,slotCheck,slotUse,skKind,synLines,ATT,elemMastery,SKX,SKS,fxDesc,fxCost,learnTome,SK,castSkill,offerSkillChoice,skillPool,matPrice,UNLOCKS,checkUnlocks,showAnn,VIEWS,BOND,QS,qEvent,stepDone,qTalkChoose,STORIES,legacyLines,registerStories,compCard,applyOut,checkDeath,rankIdx,sleepDay,CREW,crewOf,crewLvl,rkTrialReady,trialReady,rankRaw,genRivals,popReward,forageZone,apprChance,DG,HAB,MONPIC,addXP,wroll,refreshShop,lvCap,rankName,rarGov,keeper,keeperTier,KPJ,makeHeir,lsUse,lsLvl,lsRec,slogHtml,ROUGH,cpic,hasFocus,hprice,nextStep,foldHtml,upDiff,reportText,tele,loadBackup,skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,rkTrialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
+if(typeof window!=='undefined')window.TQ={statLine,rollRarity,rivalClaims,crewEvents,BOND_MOVE,storyDone,bondLvl,synOf,synGroups,pairsText,roleOf,slotCheck,slotUse,skKind,synLines,ATT,elemMastery,SKX,SKS,fxDesc,fxCost,learnTome,SK,castSkill,offerSkillChoice,skillPool,matPrice,UNLOCKS,checkUnlocks,showAnn,VIEWS,BOND,QS,qEvent,stepDone,qTalkChoose,STORIES,legacyLines,registerStories,compCard,applyOut,checkDeath,rankIdx,sleepDay,CREW,crewOf,crewLvl,rkTrialReady,trialReady,rankRaw,genRivals,popReward,forageZone,apprChance,DG,HAB,MONPIC,addXP,wroll,refreshShop,lvCap,rankName,rarGov,keeper,keeperTier,KPJ,makeHeir,lsUse,lsLvl,lsRec,slogHtml,ROUGH,cpic,hasFocus,hprice,nextStep,foldHtml,upDiff,reportText,tele,loadBackup,skRank,skCapped,skEdge,brkCosts,skillsHtml,SKRANK,reach,farOK,moodOf,moodMult,likeOf,compPairs,companionDaily,makeErrand,courierJobs,famRefresh,COLLS,MSTEPS,legacyHtml,guideHtml,sfx,routeHab,vestFams,CAS_GAMES,roulettePay,bjScore,bjSoft,isBJ,slotMult,slotRoll,SLOT_SYM,SLOT_TOT,dicePay,vpEval,VP_PAY,makeDeck,rColor,cas,casMin,casMax,DOINGS,DOING_BY,todaysDoings,doDoing,NPCS,NPC_BY,aff,npcsHere,ROUGH,casinoTier,roughAmbush,runAmbush,fenceStock,dealerStock,pitBouts,hasContra,hasHot,collectorEnemy,placeKnown,TOWNS,GOODS,DIST,CARTS,T,KT,dist,knowT,where,atHome,tradeLv,cargoCap,cargoUsed,midPrice,buyPrice,sellPrice,marketTick,bk,bankDaily,loanLimit,bankRate,ventureOffers,arrive,swapShop,rollTrip,tripNight,spawnEvent,addRep,repTitle,featureButtons,placeOpen,innCost,ptownView,habOf,HABX,giveTip,tipPool,HAB,NEWZ,ARCHX,MONFAM,makeEnemyHab,MONMAT,ZGATHER,DGMAT,BOSSZ,BOSSD,MATF,MATK,ZPRIM,dropMat,trophyFor,K,knowZ,knowB,knowBN,tipPool,giveTip,heroAge,itemQuip,MATQ,ITQ,DPY,absorbCost,inheritCost,POW,coreFam,powRes,powSlots,inhSlots,attuneCost,ESS,CONF,essBonus,confluences,essSlots,essOf,essCap,HOME,STAFF,BIZ,TRAINX,estHome,estBuild,checkDeed,needMet,estateDaily,refreshBounties,bountyKill,brank,invMax,addSkillXp,weatherMult,rollWeather,envWeight,timeOfDay,season,monKind,BGS,PATHS,bgv,applyBg,pathTier,discipline,HINTS,hintHtml,autoAct,estLv,genCast,legacyCast,registerCast,retireCast,castIds,tavernIds,genCompanion,portrait,vetPass,ROLEKEYS,PASSK,monIcon,archOf,codexEntries,entryEnemy,bellOffset,codexView,packAlive,packF,PACKS,seeMon,meetComp,trustOf,canApproach,rkTrialReady,canInvite,guestFight,SCEN,COMPX,COMP,RELICS,SYN,synList,synFx,recruit,addRelic,buildParty,allyHit,companionAct,partyTurn,delveEnemy,abyssOpen,maxParty,DIFF,comboMult,applyPoison,applyBurn,ensureState,genDungeon,buildDgEnemy,getD,DG,DUNGEONS,PZ,QS,QLIST,EVD,QEV,DGE,startPuzzle,doExplore,qAvail,startQuest,stepDone,stepProg,qEvent,applyOut,completeDungeon,chestLoot,RIDDLES,LANDMARKS,fleeOK,perms,wf,get S(){return S;},set S(v){S=v;},ACT,P,genItem,genLegend,makeEnemy,danger,LEGENDS,ZONES,SK,newWorld,newHero,startCombat,playerAct,victory,sleepDay,render,rankIdx,xpNeed,catchMult,refreshBoard,refreshShop,contractDone,huntUnlocked,die,makeHeir,AF,BASES,TIER_ADJ,save,load};
 </script>
 </body>
 </html>
