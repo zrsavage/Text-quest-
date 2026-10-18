@@ -294,3 +294,6 @@ After your first kill and your return to town, a single pop-up explains time of 
 - Traits that spend Focus (Focus Siphon, Ambusher, Steady Guard, Scholar's Habit) only roll once the hero has been taught to focus, so nobody finds a dead trait early on.
 
 - The **Town Crier** is now part of the **Town Square**: the three latest items he is shouting appear under the square's own text. The **Trading Post** is now a button inside the **Market** (same button as before), and its Back button returns to the Market. Both tiles are gone from Explore the Town, and the announcements for them now point to the Square and the Market.
+
+## Longer boss fights
+- Bosses (region bosses, dungeon bosses, habitat and Abyss bosses) have 80% more health and hit 44% softer per blow, so the total damage you take is about the same as before but the fight lasts nearly twice as many turns. It is the same level of danger, with more time for patterns, guarding, potions and skills to matter.
