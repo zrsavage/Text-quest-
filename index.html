@@ -1622,7 +1622,7 @@ function victory(){
  if(e.tier==='b')lines.push(`👑 ${esc(e.name)} has fallen!`);
  fxTick();
  {const lost=(c.hp0-h.hp)/p.maxhp;if(e.tier==='n'&&lost<.1)S.easy=(S.easy||0)+1;else if(lost>.3)S.easy=0;
-  if(S.easy>=15){S.easy=0;lines.push('💡 You are crushing everything. Feeling too strong? Raise the <b>Challenge</b> in the Menu for tougher enemies and better rewards, or try the Abyss Stair.');}}
+  if(S.easy>=15){S.easy=0;lines.push('💡 You are crushing everything. Feeling too strong? Raise the <b>Challenge</b> in the Menu for tougher enemies and better rewards.');}}
  let done=false;
  if(ctx.type==='dg'&&S.dg){
   const dg=S.dg,r=dg.rooms[ctx.room];
@@ -2357,7 +2357,7 @@ qAvail=function(q){
 };
 
 /* ----- abyss stair (endless, scales with you) ----- */
-const abyssOpen=()=>Object.keys(S.world.map.cleared).length>=2;
+const abyssOpen=()=>!!(S.world.abyssFound||(S.world.delve&&S.world.delve.best>0));
 function delveEnemy(f){
  const h=S.hero,boss=f%5===0,el=!boss&&f%3===0,L=Math.max(1,h.lvl)+Math.floor(f*1.1)+(boss?2:0);
  let tpl;
@@ -3452,7 +3452,6 @@ VIEWS.town=function(){
   ${hu?btn('🚚 Tinker\'s Wagon','go','tinker','',false,'Scrap → random loot'):''}
   ${w.anc.length?btn('⚰️ Family Crypt','go','crypt','',!hu,'Face your ancestors'):''}
   ${hu&&(S.world.estate.deed||S.world.estate.seen)?btn('🏡 Estate','go','estate','',false,S.world.estate.deed?HOME[estLv('home')].n+(S.world.estate.vault.gold||S.world.estate.vault.items.length?' · goods waiting':''):'Land of your own, for a price'):''}
-  ${abyssOpen()&&hu?(S.dl?btn('🌀 Abyss Stair','go','delve','pri',false,'Resume your descent'):btn('🌀 Abyss Stair','delveStart',undefined,'',h.sta<2||!!S.dg,`2⚡ · endless · best floor ${w.delve.best||0}`)):''}
  </div>
  <div style="margin-top:10px">${btn('🛏️ Sleep until morning','sleep',undefined,'good',!!S.dg,S.dg?'Leave the dungeon first':'Restore HP & stamina · next day · refreshes shop/board')}</div>
  <h2>Recent events</h2>${logHtml(S.log,6)}`;
@@ -9998,6 +9997,26 @@ BIZ.unshift(
    if(E&&!E.deed&&!E.seen&&h.lvl>=5&&Math.random()<.15){E.seen=true;note('🪧 A notice on the guild door: the mayor\'s clerk is selling plots by the town wall.','y');}
    if(!S.world.forgeSeen&&h.lvl>=6&&Math.random()<.15){S.world.forgeSeen=true;note('🔨 A smith has set up a forge in the Market. He tempers and mends gear.','y');}
   }catch(e){}
+ };
+}
+/* ----- the Abyss Stair is something you come across in the deep places, and you go down from the wilds ----- */
+{
+ const _cd=completeDungeon;
+ completeDungeon=function(D){
+  const r=_cd.apply(this,arguments);
+  try{const w=S.world;
+   if(!w.abyssFound&&Object.keys(w.map.cleared).length>=3){w.abyssFound=true;
+    note('🌀 Behind the last chamber a stair cuts down into the rock, wider than the tunnel that led to it. It does not seem to end. You can find it again from the wilds.','y');}
+  }catch(e){}
+  return r;
+ };
+ const _dw=dressWilds;
+ dressWilds=function(html){
+  let t=_dw(html);
+  try{const h=S.hero,w=S.world;
+   if(abyssOpen()&&!S.dg)t+=`<div class="card"><div class="row2"><b>🌀 The Abyss Stair</b><span class="tag">best floor ${w.delve.best||0}</span></div><div class="sm mut">The stair you found below the dungeons. Endless, and built from your own strength.</div><div style="margin-top:8px">${S.dl?btn('Resume your descent','go','delve','pri c'):btn('Go down','delveStart',undefined,'c',h.sta<2,'2⚡')}</div></div>`;
+  }catch(e){}
+  return t;
  };
 }
 /* ----- a slow start: bodies heal over days, not overnight, until you are properly seasoned ----- */

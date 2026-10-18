@@ -333,3 +333,6 @@ A fold in the Market. Gold tempers a worn piece: +6% to every stat on it per tem
 
 ## Found, not announced
 The Estate office and the Forge no longer appear on their own. The estate shows after you notice the land-for-sale sign (a street wander from level 3, or a guild notice from level 5). The Forge shows after you see the smith (a street wander from level 4, a notice from level 6, or the first time your gear wears below 75%). The clue appears in Recent events, not as a pop-up. Existing estate owners are unaffected.
+
+## The Abyss Stair is found, not listed
+The Abyss Stair no longer sits in town. Clearing a third dungeon reveals the stair behind the last chamber (a line in Recent events), and it then appears as a card on the Hunt & Explore screen. Saves that already reached an Abyss floor keep access.
