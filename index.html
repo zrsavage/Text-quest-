@@ -196,8 +196,8 @@ function wroll(ws){let t=ws.reduce((a,b)=>a+b,0),r=Math.random()*t;for(let i=0;i
 const GUILD='Lanternwatch Guild', TOWN='Hollowmere';
 const DPY=120;
 const EARLY_HP=1.3, EARLY_ATK=1.6;
-const lowAtk=l=>l>=4?1:[.82,.88,.94][Math.max(0,l-1)];
-const lowHp=l=>l>=5?1:[1.6,1.4,1.2,1.1][Math.max(0,l-1)];
+const lowAtk=l=>l>=6?1:[.95,1.3,1.6,1.8,1.6][Math.max(0,l-1)];
+const lowHp=l=>l>=5?1:[1.6,1.9,2.1,2][Math.max(0,l-1)];
 const FIGHT_COST=1, BOSS_COST=3, INV_MAX=40, UNLOCK_TC=30, HEIR_TC=3, GUILD_KILLS=25;
 const SLOTS=['weapon','helm','armor','boots','ring','amulet'];
 const SLOT_ICON={weapon:'⚔️',helm:'🪖',armor:'🛡️',boots:'👢',ring:'💍',amulet:'📿'};
@@ -8955,7 +8955,7 @@ const bondLvl=id=>Math.min(5,1+Math.floor((((S.world.story||{})[id]||{}).uses||0
 // ---------- what the playtest report now tells us ----------
 {
  const _vt=victory;
- victory=function(){const c=S.cb,tn=c?c.turn:0;_vt.apply(this,arguments);try{const t=tele();t.turns=(t.turns||0)+tn;}catch(e){}};
+ victory=function(){const c=S.cb,tn=c?c.turn:0;_vt.apply(this,arguments);try{const t=tele();t.turns=(t.turns||0)+tn;if(S.hero.hp<P().maxhp*.3)t.close=(t.close||0)+1;}catch(e){}};
  const _sl5=sleepDay;
  sleepDay=function(){
   _sl5.apply(this,arguments);
@@ -8976,6 +8976,7 @@ const bondLvl=id=>Math.min(5,1+Math.floor((((S.world.story||{})[id]||{}).uses||0
   let s=_rt();const h=S.hero,t=tele();
   const L=[];
   L.push(`Fight length: average ${t.wins?(t.turns/t.wins).toFixed(1):0} turns per win`);
+  L.push(`Close calls (won with under 30% health): ${t.close||0} of ${t.wins} wins`);
   const ks=Object.keys(h.skills||{});
   L.push(`Skills held ${ks.length}: ${ks.map(k=>`${SK[k].n} Lv${h.skills[k]} (${(h.su&&h.su[k])||0} uses)`).join(', ')||'none'}`);
   const gs=synGroups();L.push(`Sets: ${gs.map(g=>`${g.t} x${g.n+(g.asp?1:0)} +${g.pct}%`).join(', ')||'none'}`);
