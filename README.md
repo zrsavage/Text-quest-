@@ -345,3 +345,6 @@ Journal, Guide tab, top fold. A short reminder for each mechanic the player has 
 
 ## More portraits
 57 more painted portraits (human foes of the wilds, habitat creatures, and dungeon bosses), generated as 4x4 sheets and cut to 96px. Only The Archivist of Nothing still uses a drawn icon.
+
+## Companion portraits
+Painted portraits for 20 of the 21 named companions (the Monk is still drawn), and for The Archivist of Nothing. Generated companions in later generations keep their drawn faces.
