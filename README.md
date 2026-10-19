@@ -342,3 +342,6 @@ Thirty small signs, unexplained, hint at six presences that are never named: one
 
 ## Things you have learned
 Journal, Guide tab, top fold. A short reminder for each mechanic the player has already met (stamina, danger, odds wheels, skills and the one-job rule, aspects, wicks and vestiges, tinkering, gear and wear, companions and roles, guild, seasons, towns, bank, estate, heirs). A lesson only appears once its feature has been seen, so nothing is spoiled.
+
+## More portraits
+57 more painted portraits (human foes of the wilds, habitat creatures, and dungeon bosses), generated as 4x4 sheets and cut to 96px. Only The Archivist of Nothing still uses a drawn icon.
