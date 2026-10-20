@@ -3960,7 +3960,7 @@ function pathHtml(){
  const h=S.hero,bg=BGS[h.bg];let t='';
  if(bg)t+=`<div class="card sm">${bg.ic} <b>${bg.n}</b> · ${bg.pd}${bgf()>1?` · family tradition ×${bgf().toFixed(2)}`:''}</div>`;
  if(!h.path){
-  if(h.lvl>=PATH_LVL[0])t+=`<div class="card" style="border-color:var(--acc)"><h3>Choose your path</h3><p class="sm mut">The skills you master through use feed your path. It lasts for this life.</p>${Object.keys(PATHS).map(id=>{const P_=PATHS[id];return btn(`${P_.ic} ${P_.n}`,'pathPick',id,'pri',false,P_.tiers.map((x,i)=>`Lv ${PATH_LVL[i]}: ${x[0]}`).join(' · ')+'<br>Feeds on: '+P_.aff.map(k=>SK[k].n).join(', '));}).join('<div style="height:6px"></div>')}</div>`;
+  if(h.lvl>=PATH_LVL[0])t+=`<div class="card" style="border-color:var(--acc)"><h3>Choose your path</h3><p class="sm mut">The skills you master through use feed your path. It lasts for this life.</p>${Object.keys(PATHS).map(id=>{const P_=PATHS[id];return btn(`${P_.ic} ${P_.n}`,'pathPick',id,'pri',false,P_.tiers.map((x,i)=>`Lv ${PATH_LVL[i]}: ${x[0]}`).join(' · ')+`<br>${P_.aff.filter(k=>h.skills[k]).length} of your skills feed this path`);}).join('<div style="height:6px"></div>')}</div>`;
   else t+=`<div class="card sm mut">At level ${PATH_LVL[0]} you can choose a specialization path.</div>`;
  }else{
   const P_=PATHS[h.path];
@@ -9117,6 +9117,7 @@ applyTheme();
    if(!(()=>{try{return essSlots()>essOf().length;}catch(e){return false;}})())t=t.replace(/<h2>[^<]*Aspects<\/h2>([\s\S]*?)(?=<h1)/,(m,x)=>foldShut('heroasp','<h2 style="margin:0">Aspects</h2>',x));
    t=t.replace(/<h2>[^<]*Combat<\/h2>([\s\S]*?)(?=<h2>)/,(m,x)=>foldShut('herocmb','<h2 style="margin:0">Combat</h2>',x));
    t=t.replace(/<h3 style="margin-top:12px">[^<]*Forget a skill<\/h3>([\s\S]*?)(?=<h2>|$)/,(m,x)=>foldShut('heroforget','<h3 style="margin:12px 0 0">Forget a skill</h3>',x));
+   t=t.replace(/(<p class="[^"]*">Skills grow by use[\s\S]*?<\/p>)([\s\S]*?)(?=<button class="foldh" data-a="mfold" data-p="heroforget">)/,(m,p1,x)=>{const n=(x.match(/<div class="card"><div class="row2"><b>/g)||[]).length;return p1+foldShut('heroskd',`<span>Each skill in detail (${n})</span>`,x);});
   }catch(e){}
   return t;
  };
@@ -9368,18 +9369,18 @@ ACT.btnsize=function(){const n=(sizeN()+1)%3;PRE.big=n>=1;PRE.roomy=n>=2;prefSav
 }
 
 // ---------- the Journal in four parts ----------
-const JGRP={quests:['quests'],world:['places','best'],me:['perks','legacy'],guide:['guide']};
-const JGN={quests:'📜 Quests',world:'🗺️ World',me:'🏘️ Family',guide:'🔧 Help'};
+const JGRP={quests:['quests'],world:['places','best'],me:['perks','legacy','guide']};
+const JGN={quests:'📜 Quests',world:'🗺️ World',me:'🏘️ Me'};
 const jgrpOf=t=>Object.keys(JGRP).find(g=>JGRP[g].includes(t))||'quests';
 ACT.jgrp=function(g){S.jgrp=g;S.jtab=JGRP[g][0];};
 {
  const _jv=VIEWS.journal;
  VIEWS.journal=function(){
   const g=S.jgrp&&JGRP[S.jgrp]?S.jgrp:jgrpOf(S.jtab||'quests'),save=S.jtab;
-  const tabs=`<div class="grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:8px">${Object.keys(JGRP).map(k=>btn(JGN[k],'jgrp',k,g===k?'pri c':'c')).join('')}</div>`;
+  const tabs=`<div class="grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:8px">${Object.keys(JGRP).map(k=>btn(JGN[k],'jgrp',k,g===k?'pri c':'c')).join('')}</div>`;
   const parts=JGRP[g].map(tb=>{S.jtab=tb;let x=_jv();return x.replace(/^<h1>[^<]*<\/h1>/,'').replace(/<div class="grid" style="grid-template-columns:repeat\(\d,1fr\);margin-bottom:8px">[\s\S]*?<\/div>/,'');});
   S.jtab=JGRP[g].includes(save)?save:JGRP[g][0];
-  const heads={places:'Places',best:'Codex',perks:'Town perks',legacy:'Family'};
+  const heads={places:'Places',best:'Codex',perks:'Town perks',legacy:'Family',guide:'Help'};
   const body=JGRP[g].length>1?JGRP[g].map((tb,i)=>`<h2>${heads[tb]}</h2>${parts[i]}`).join(''):parts[0];
   return '<h1>📖 Journal</h1>'+tabs+body;
  };
@@ -10155,6 +10156,49 @@ const CPIC={"brom": "data:image/webp;base64,UklGRg4JAABXRUJQVlA4IAIJAACQIwCdASpg
  const pic=(id,sz)=>`<img class="mpic" src="${CPIC[id]}" width="${sz}" height="${sz}" alt="" style="border-radius:50%;border:2px solid #2b3140;object-fit:cover">`;
  cpic=function(id,sz){return CPIC[id]?pic(id,sz||40):_cp.apply(this,arguments);};
  portrait=function(id,sz){return CPIC[id]?pic(id,sz||40):_pt.apply(this,arguments);};
+}
+/* ----- the Hunt screen shows what you can do here, and keeps the rest tucked away ----- */
+{
+ const _hv=VIEWS.hunt;
+ VIEWS.hunt=function(){
+  let t=_hv.apply(this,arguments);
+  try{
+   if(S.dg||S.trip)return t;
+   // forage joins Hunt and Scout in the region card
+   let forage=null;
+   t=t.replace(/<div class="card sm ftile">[\s\S]*?(<button class="btn[^"]*" data-a="forage"[^>]*>)([\s\S]*?)<\/button><\/div>/,(m,open,lab)=>{forage=open.replace(/class="btn[^"]*"/,'class="btn"')+'🌿 Forage<small>1⚡ · materials</small></button>';return '';});
+   // weather becomes a single line, with the detail one tap away
+   t=t.replace(/<div class="envrow">((?:<div class="ec">[\s\S]*?<\/div>)+)<\/div>/,(m,inner)=>{
+    const names=[...inner.matchAll(/<b>([^<]*)<\/b>/g)].map(x=>x[1]).join(' · ');
+    return foldShut('huntenv',`<span class="sm">${names}</span>`,`<div class="envrow">${inner}</div>`);
+   });
+   // split the region cards
+   const i0=t.search(/<div class="card rcard"/);
+   const endMark='<button class="btn c" data-a="go" data-p="town"';
+   const i1=t.lastIndexOf(endMark);
+   if(i0>=0&&i1>i0){
+    const head=t.slice(0,i0),body=t.slice(i0,i1),tail=t.slice(i1);
+    const cards=body.split(/(?=<div class="card rcard")/).filter(Boolean);
+    const open=cards.filter(c=>/data-a="zone"/.test(c)),locked=cards.filter(c=>!/data-a="zone"/.test(c));
+    let out='';
+    open.forEach((c,k)=>{
+     const last=k===open.length-1;
+     if(last){
+      if(forage)c=c.replace(/(<button class="btn[^"]*" data-a="explore"[^>]*>[\s\S]*?<\/button>)(<\/div>)/,'$1'+forage+'$2').replace(/<div class="grid"[^>]*>(?=<button class="btn pri"[^>]*data-a="zone")/,'<div class="grid" style="grid-template-columns:repeat(3,1fr)">');
+      // wanderers fold
+      c=c.replace(/<h3>Wanderers<\/h3>([\s\S]*)<\/div>$/,(m,w)=>{const n=(w.match(/data-a="talk"/g)||[]).length;return foldShut('wand',`<span>Wanderers (${n}) ❗</span>`,w)+'</div>';});
+      out+=c;
+     }else{
+      const nm=(c.match(/<div class="rn">([^<]*)<\/div>/)||[])[1]||'Region',lv=(c.match(/<div class="rl">([^<]*)<\/div>/)||[])[1]||'';
+      out+=`<div class="card rcard" style="padding:8px 12px;--zh:${(c.match(/--zh:([^;"]*)/)||[,'#888'])[1]}"><div class="row2"><b>${nm}</b><span class="tag">${lv}</span></div>${(c.match(/<button class="btn pri" data-a="zone"[\s\S]*?<\/button>/)||[''])[0].replace('class="btn pri"','class="btn c"')}</div>`;
+     }
+    });
+    if(locked.length)out+=foldShut('regLocked',`<span class="sm mut">Further regions (${locked.length})</span>`,locked.join(''));
+    t=head+out+tail;
+   }
+  }catch(e){window.__huntErr=e&&e.message;}
+  return t;
+ };
 }
 /* ----- a slow start: bodies heal over days, not overnight, until you are properly seasoned ----- */
 const nightRecovery=()=>{const L=S.hero.lvl;return L>=8?1:Math.min(1,.38+.09*(L-1));};

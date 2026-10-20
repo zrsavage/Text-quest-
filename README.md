@@ -348,3 +348,8 @@ Journal, Guide tab, top fold. A short reminder for each mechanic the player has 
 
 ## Companion portraits
 Painted portraits for 20 of the 21 named companions (the Monk is still drawn), and for The Archivist of Nothing. Generated companions in later generations keep their drawn faces.
+
+## Simpler screens
+- **Hunt & Explore:** the region card holds Hunt, Scout and Forage side by side. Weather is one line, wanderers and locked regions sit in folds, and earlier regions shrink to one line.
+- **Hero:** the path card no longer lists every skill, and the per-skill detail is in a fold.
+- **Journal:** three tabs (Quests, World, Me); the Guide and lessons live under Me.
