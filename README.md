@@ -353,3 +353,6 @@ Painted portraits for 20 of the 21 named companions (the Monk is still drawn), a
 - **Hunt & Explore:** the region card holds Hunt, Scout and Forage side by side. Weather is one line, wanderers and locked regions sit in folds, and earlier regions shrink to one line.
 - **Hero:** the path card no longer lists every skill, and the per-skill detail is in a fold.
 - **Journal:** three tabs (Quests, World, Me); the Guide and lessons live under Me.
+
+## The world notices
+From level 5 on Normal or harder, ordinary foes scale with how easily the last 20 fights went. A hero who loses under about 22% of their health per fight meets foes up to 30% harder and 35% tougher; one who loses over half meets foes 8% softer. Bosses and dungeon foes are unaffected. This came from a playtest report: 83 fights at level 10, 9% average loss and 2 close calls, far easier than the balance simulation predicted.
